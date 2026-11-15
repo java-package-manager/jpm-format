@@ -9,10 +9,10 @@ text. Lint rules only report.
 
 ### JavaFormat
 
-The layout of the code: indentation, line breaks, spacing. Palantir Java Format, close to IntelliJ's
-default style: 120 columns, 4-space indents, 8-space continuation indents. Configure with
-`formatter.lineWidth` (120 or 100), `formatter.indentWidth` (4, or 2 with width 100) and
-`formatter.useTabs`. Text blocks are never re-indented. Turn the whole formatter off with
+The layout of the code: indentation, line breaks, spacing. jpm-format's fork of Palantir Java Format, close to
+IntelliJ's default style: 120 columns, 4-space indents, 8-space continuation indents. Configure with
+`formatter.lineWidth` (20 to 1000), `formatter.indentWidth` (1 to 16), `formatter.continuationIndentWidth`
+(1 to 32; twice `indentWidth` by default, as IntelliJ's 4 and 8) and `formatter.useTabs`. Text blocks are never re-indented. Turn the whole formatter off with
 `formatter.enabled: false`.
 
 ### ImportOrder

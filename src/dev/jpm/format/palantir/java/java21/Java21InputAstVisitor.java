@@ -37,6 +37,11 @@ public class Java21InputAstVisitor extends Java14InputAstVisitor {
         super(builder, indentMultiplier);
     }
 
+    /** jpm-format: explicit block and continuation indent widths. */
+    public Java21InputAstVisitor(OpsBuilder builder, int indent, int continuationIndent) {
+        super(builder, indent, continuationIndent);
+    }
+
     @Override
     protected ExpressionTree getGuard(final CaseTree node) {
         return node.getGuard();

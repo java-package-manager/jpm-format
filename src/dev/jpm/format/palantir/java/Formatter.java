@@ -137,7 +137,7 @@ public final class Formatter {
         } else if (getRuntimeVersion() >= 14) {
             visitor = createVisitor("dev.jpm.format.palantir.java.java14.Java14InputAstVisitor", opsBuilder, options);
         } else {
-            visitor = new JavaInputAstVisitor(opsBuilder, options.indentationMultiplier());
+            visitor = new JavaInputAstVisitor(opsBuilder, options.indent(), options.continuationIndent());
         }
 
         visitor.scan(unit, null);
@@ -208,8 +208,8 @@ public final class Formatter {
         try {
             return Class.forName(className)
                     .asSubclass(JavaInputAstVisitor.class)
-                    .getConstructor(OpsBuilder.class, int.class)
-                    .newInstance(builder, options.indentationMultiplier());
+                    .getConstructor(OpsBuilder.class, int.class, int.class) // jpm-format: explicit widths
+                    .newInstance(builder, options.indent(), options.continuationIndent());
         } catch (ReflectiveOperationException e) {
             throw new LinkageError(e.getMessage());
         }

@@ -55,8 +55,9 @@ project root (not both). In a workspace, a module's own `project.jsonc` applies 
       "ignore": ["src/generated/**"],              // .cache, dist, build, target, .git … are always ignored
       "formatter": {
         "enabled": true,
-        "lineWidth": 120,                          // 120 with indentWidth 4 (default), or 100 with 4 or 2
-        "indentWidth": 4,
+        "lineWidth": 120,                          // 20 to 1000
+        "indentWidth": 4,                          // 1 to 16
+        "continuationIndentWidth": 8,              // wrapped lines; twice indentWidth by default, as in IntelliJ
         "useTabs": false,
         "licenseHeader": "/* Copyright $YEAR Acme */"   // or { "file": "LICENSE_HEADER" }
       },
@@ -238,10 +239,9 @@ This is the first version. Not done yet:
 
 - **Native binary.** jpm starts extensions on a JVM today; a GraalVM build (`jpm build --native`) needs
   testing first, since running javac inside a native image is uncommon.
-- **IntelliJ parity.** The forked layout engine still formats exactly as Palantir 2.103.0. Porting IntelliJ's
-  formatter adjustments and options
-  (from IntelliJ Community, Apache 2.0, onto javac's tree) is next; until then `lineWidth` and `indentWidth`
-  accept only the combinations above. More inspections follow, with null checks and data flow last.
+- **IntelliJ parity.** The forked layout engine formats as Palantir 2.103.0, with free line and indent widths.
+  Porting IntelliJ's other formatter adjustments and options (from IntelliJ Community, Apache 2.0, onto javac's
+  tree) is next. More inspections follow, with null checks and data flow last.
 - **Elsewhere:** `jpm import` translating Spotless config (in jpm), restoring the cache in `setup-jpm`, and
   the IntelliJ plugin running `jpm format` on save (in jpm-intellij).
 

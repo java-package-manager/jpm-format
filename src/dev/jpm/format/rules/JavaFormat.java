@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class JavaFormat implements Formatter {
     public static final String ID = "JavaFormat";
 
-    private static final Map<JavaFormatterOptions.Style, dev.jpm.format.palantir.java.Formatter> FORMATTERS =
+    private static final Map<List<Integer>, dev.jpm.format.palantir.java.Formatter> FORMATTERS =
             new ConcurrentHashMap<>();
 
     @Override
@@ -70,13 +70,14 @@ public final class JavaFormat implements Formatter {
                     "the formatter needs javac's internals; run the JVM with " + String.join(" ", Exports.flags()));
         }
         var s = ctx.settings();
-        JavaFormatterOptions.Style style = s.lineWidth() == 120
-                ? JavaFormatterOptions.Style.PALANTIR
-                : s.indentWidth() == 2 ? JavaFormatterOptions.Style.GOOGLE : JavaFormatterOptions.Style.AOSP;
+        // Palantir's style with jpm-format's widths; its GOOGLE and AOSP styles differ only in these
         return FORMATTERS.computeIfAbsent(
-                style,
-                st -> dev.jpm.format.palantir.java.Formatter.createFormatter(JavaFormatterOptions.builder()
-                        .style(st)
+                List.of(s.lineWidth(), s.indentWidth(), s.continuationIndentWidth()),
+                k -> dev.jpm.format.palantir.java.Formatter.createFormatter(JavaFormatterOptions.builder()
+                        .style(JavaFormatterOptions.Style.PALANTIR)
+                        .maxLineLength(s.lineWidth())
+                        .indent(s.indentWidth())
+                        .continuationIndent(s.continuationIndentWidth())
                         .formatJavadoc(false)
                         .build()));
     }

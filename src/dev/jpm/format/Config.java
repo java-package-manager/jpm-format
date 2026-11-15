@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {
  *   "extends": ["config/format.jsonc"],
  *   "ignore": ["src/generated/**"],
- *   "formatter": { "enabled": true, "lineWidth": 120, "indentWidth": 4, "useTabs": false,
+ *   "formatter": { "enabled": true, "lineWidth": 120, "indentWidth": 4, "continuationIndentWidth": 8, "useTabs": false,
  *                  "licenseHeader": "/* (c) $YEAR Me *&#47;" },
  *   "imports": { "removeUnused": true, "sort": true, "groups": ["*", ["java.*", "javax.*"], "static *"],
  *                "wildcardThreshold": 0 },
@@ -66,6 +66,7 @@ public final class Config {
             boolean formatterEnabled,
             int lineWidth,
             int indentWidth,
+            int continuationIndentWidth,
             boolean useTabs,
             String licenseHeader,
             boolean removeUnusedImports,
@@ -286,12 +287,14 @@ public final class Config {
         Map<String, Object> f = obj(c.get("formatter"), "formatter");
         Map<String, Object> im = obj(c.get("imports"), "imports");
         Map<String, Object> li = obj(c.get("linter"), "linter");
-        int width = (int) num(f.getOrDefault("lineWidth", 120L), "formatter.lineWidth");
-        int indent = (int) num(f.getOrDefault("indentWidth", 4L), "formatter.indentWidth");
-        if (!((width == 120 && indent == 4) || (width == 100 && (indent == 4 || indent == 2)))) {
-            throw new FormatException("formatter: lineWidth " + width + " with indentWidth " + indent
-                    + " is not supported yet; use 120/4 (the default), 100/4 or 100/2");
-        }
+        int width = range(f.getOrDefault("lineWidth", 120L), "formatter.lineWidth", 20, 1000);
+        int indent = range(f.getOrDefault("indentWidth", 4L), "formatter.indentWidth", 1, 16);
+        // IntelliJ's continuation indent: 8 with its 4-space indent
+        int continuation = range(
+                f.getOrDefault("continuationIndentWidth", (long) (2 * indent)),
+                "formatter.continuationIndentWidth",
+                1,
+                32);
         String header = null;
         Object h = f.get("licenseHeader");
         if (h instanceof String s) header = s;
@@ -345,6 +348,7 @@ public final class Config {
                 bool(f.getOrDefault("enabled", true), "formatter.enabled"),
                 width,
                 indent,
+                continuation,
                 bool(f.getOrDefault("useTabs", false), "formatter.useTabs"),
                 header,
                 bool(im.getOrDefault("removeUnused", true), "imports.removeUnused"),
@@ -360,7 +364,7 @@ public final class Config {
     private static final Set<String> TOP =
             Set.of("$schema", "extends", "ignore", "formatter", "imports", "linter", "overrides");
     private static final Set<String> FORMATTER =
-            Set.of("enabled", "lineWidth", "indentWidth", "useTabs", "licenseHeader");
+            Set.of("enabled", "lineWidth", "indentWidth", "continuationIndentWidth", "useTabs", "licenseHeader");
     private static final Set<String> IMPORTS = Set.of("removeUnused", "sort", "groups", "wildcardThreshold");
     private static final Set<String> LINTER = Set.of("enabled", "recommended", "rules");
 
@@ -441,6 +445,12 @@ public final class Config {
     private static boolean bool(Object o, String where) {
         if (o instanceof Boolean b) return b;
         throw new FormatException(where + " must be true or false");
+    }
+
+    private static int range(Object o, String where, int min, int max) {
+        long n = num(o, where);
+        if (n < min || n > max) throw new FormatException(where + " must be from " + min + " to " + max + ", not " + n);
+        return (int) n;
     }
 
     private static long num(Object o, String where) {

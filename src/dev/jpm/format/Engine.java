@@ -136,8 +136,8 @@ public final class Engine {
                 findings.add(internal(
                         cur,
                         Registry.RULE_CRASH,
-                        f.id() + " produced code that does not parse (" + next.errors().get(0).message()
-                                + "); its changes were dropped"));
+                        f.id() + " produced code that does not parse ("
+                                + next.errors().get(0).message() + "); its changes were dropped"));
                 continue;
             }
             cur = next;
@@ -157,7 +157,8 @@ public final class Engine {
         Formatter blame = formatted.lastChange();
         if (blame == null) return differences; // nothing changes: nothing to report
         Lint rule = registry.rules.get(blame.id());
-        FileContext ctx = new FileContext(src, rule, settings.level(rule, registry.builtin(rule)), settings, null, differences);
+        FileContext ctx =
+                new FileContext(src, rule, settings.level(rule, registry.builtin(rule)), settings, null, differences);
         wrap(blame, () -> formatted.out().text).check(ctx);
         List<Finding> out = new ArrayList<>();
         for (Finding f : own) if (differences.stream().anyMatch(d -> overlaps(f, d))) out.add(f);

@@ -67,6 +67,11 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
         super(builder, indentMultiplier);
     }
 
+    /** jpm-format: explicit block and continuation indent widths. */
+    public Java14InputAstVisitor(OpsBuilder builder, int indent, int continuationIndent) {
+        super(builder, indent, continuationIndent);
+    }
+
     @Override
     protected void handleModule(boolean first, CompilationUnitTree node) {
         if (COMPILATION_UNIT_TREE_GET_MODULE == null) {

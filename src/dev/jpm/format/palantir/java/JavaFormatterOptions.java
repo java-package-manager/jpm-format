@@ -59,9 +59,20 @@ public final class JavaFormatterOptions {
 
     private final boolean formatJavadoc;
 
-    private JavaFormatterOptions(Style style, boolean formatJavadoc) {
+    // jpm-format: widths that override the style's, or 0 for the style's own
+    private final int maxLineLength;
+
+    private final int indent;
+
+    private final int continuationIndent;
+
+    private JavaFormatterOptions(
+            Style style, boolean formatJavadoc, int maxLineLength, int indent, int continuationIndent) {
         this.style = style;
         this.formatJavadoc = formatJavadoc;
+        this.maxLineLength = maxLineLength;
+        this.indent = indent;
+        this.continuationIndent = continuationIndent;
     }
 
     /** Returns the multiplier for the unit of indent. */
@@ -70,7 +81,17 @@ public final class JavaFormatterOptions {
     }
 
     public int maxLineLength() {
-        return style.maxLineLength();
+        return maxLineLength > 0 ? maxLineLength : style.maxLineLength();
+    }
+
+    /** jpm-format: the block indent in spaces; the style's is twice its multiplier. */
+    public int indent() {
+        return indent > 0 ? indent : 2 * style.indentationMultiplier();
+    }
+
+    /** jpm-format: the indent of wrapped lines in spaces; the style's is four times its multiplier. */
+    public int continuationIndent() {
+        return continuationIndent > 0 ? continuationIndent : 4 * style.indentationMultiplier();
     }
 
     public boolean formatJavadoc() {
@@ -99,6 +120,12 @@ public final class JavaFormatterOptions {
 
         private boolean formatJavadoc = false;
 
+        private int maxLineLength;
+
+        private int indent;
+
+        private int continuationIndent;
+
         private Builder() {}
 
         public Builder style(Style style) {
@@ -111,8 +138,31 @@ public final class JavaFormatterOptions {
             return this;
         }
 
+        /** jpm-format: the column limit instead of the style's. */
+        public Builder maxLineLength(int maxLineLength) {
+            this.maxLineLength = positive(maxLineLength, "maxLineLength");
+            return this;
+        }
+
+        /** jpm-format: the block indent in spaces instead of the style's. */
+        public Builder indent(int indent) {
+            this.indent = positive(indent, "indent");
+            return this;
+        }
+
+        /** jpm-format: the indent of wrapped lines in spaces instead of the style's. */
+        public Builder continuationIndent(int continuationIndent) {
+            this.continuationIndent = positive(continuationIndent, "continuationIndent");
+            return this;
+        }
+
+        private static int positive(int n, String what) {
+            if (n <= 0) throw new IllegalArgumentException(what + " must be positive, not " + n);
+            return n;
+        }
+
         public JavaFormatterOptions build() {
-            return new JavaFormatterOptions(style, formatJavadoc);
+            return new JavaFormatterOptions(style, formatJavadoc, maxLineLength, indent, continuationIndent);
         }
     }
 }

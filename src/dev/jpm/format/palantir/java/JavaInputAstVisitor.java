@@ -278,7 +278,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     protected final OpsBuilder builder;
 
     protected static final Indent.Const ZERO = Indent.Const.ZERO;
-    protected final int indentMultiplier;
+    // jpm-format: explicit widths instead of upstream's indentMultiplier (block indent 2x, continuation 4x it)
+    protected final int continuationIndent;
     protected final Indent.Const minusTwo;
     protected final Indent.Const minusFour;
     protected final Indent.Const plusTwo;
@@ -311,12 +312,20 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
      * @param builder the {@link OpsBuilder}
      */
     public JavaInputAstVisitor(OpsBuilder builder, int indentMultiplier) {
+        this(builder, 2 * indentMultiplier, 4 * indentMultiplier);
+    }
+
+    /**
+     * jpm-format: a visitor with explicit widths: {@code indent} for blocks ({@code plusTwo}) and
+     * {@code continuationIndent} for wrapped lines ({@code plusFour}). Upstream derives both from one multiplier.
+     */
+    public JavaInputAstVisitor(OpsBuilder builder, int indent, int continuationIndent) {
         this.builder = builder;
-        this.indentMultiplier = indentMultiplier;
-        minusTwo = Indent.Const.make(-2, indentMultiplier);
-        minusFour = Indent.Const.make(-4, indentMultiplier);
-        plusTwo = Indent.Const.make(+2, indentMultiplier);
-        plusFour = Indent.Const.make(+4, indentMultiplier);
+        this.continuationIndent = continuationIndent;
+        minusTwo = Indent.Const.make(-indent, 1);
+        minusFour = Indent.Const.make(-continuationIndent, 1);
+        plusTwo = Indent.Const.make(+indent, 1);
+        plusFour = Indent.Const.make(+continuationIndent, 1);
     }
 
     /** A record of whether we have visited into an expression. */
@@ -2855,7 +2864,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         }
         // don't break after the first element if it is every small, unless the
         // chain starts with another expression
-        int minLength = indentMultiplier * 4;
+        int minLength = continuationIndent; // jpm-format: was indentMultiplier * 4
         int length = needDot0 ? minLength : 0;
         for (ExpressionTree e : items) {
             if (needDot) {

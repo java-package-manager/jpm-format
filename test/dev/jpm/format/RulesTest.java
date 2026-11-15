@@ -55,6 +55,37 @@ class RulesTest {
     }
 
     @Test
+    void javaFormatWithAnyWidthAndIndent() {
+        String in = "class A { void f() { if (true) { call(aaaaaaaaaa, bbbbbbbbbb, cccccccccc, dddddddddd); } } }";
+        // 3-space blocks, 6-space continuation lines, wrapped at 50 columns
+        RuleTester t =
+                RuleTester.of(new JavaFormat()).config("{\"formatter\": {\"lineWidth\": 50, \"indentWidth\": 3}}");
+        t.assertFormats(in, """
+                class A {
+                   void f() {
+                      if (true) {
+                         call(
+                               aaaaaaaaaa,
+                               bbbbbbbbbb,
+                               cccccccccc,
+                               dddddddddd);
+                      }
+                   }
+                }
+                """);
+        // IntelliJ's own pairing, made explicit: 4 and 8
+        RuleTester intellij = RuleTester.of(new JavaFormat())
+                .config("{\"formatter\": {\"lineWidth\": 80, \"indentWidth\": 4, \"continuationIndentWidth\": 8}}");
+        assertEquals(
+                RuleTester.of(new JavaFormat())
+                        .config("{\"formatter\": {\"lineWidth\": 80}}")
+                        .format(in),
+                intellij.format(in));
+        String narrow = intellij.format(in);
+        assertTrue(narrow.lines().allMatch(l -> l.length() <= 80), narrow);
+    }
+
+    @Test
     void importOrderFollowsIntelliJLayout() {
         RuleTester.of(new ImportOrder()).assertFormats("""
                 package p;

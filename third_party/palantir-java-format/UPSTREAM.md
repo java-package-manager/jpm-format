@@ -31,5 +31,12 @@ Equivalence was checked by formatting 677 files (upstream's test data, jpm's and
 styles with the 2.103.0 jar and with the fork: all 2,031 outputs are byte-identical. `PalantirTestdataTest` keeps
 upstream's 226 formatter test cases (`test/assets/palantir/testdata`) as a regression suite.
 
-Later changes are jpm-format's own (IntelliJ-style options and behaviour); `git log -- src/dev/jpm/format/palantir`
-lists them. Upstream fixes are picked up by hand: compare with the upstream commit above.
+Later changes are jpm-format's own, marked `jpm-format:` in the code; `git log -- src/dev/jpm/format/palantir` lists
+them:
+
+- **Free widths.** `JavaFormatterOptions` takes `maxLineLength`, `indent` and `continuationIndent` in place of the
+  style's, and the visitors take the two indents instead of upstream's single multiplier (which meant blocks at 2x
+  and continuation lines at 4x it). Each style's defaults are unchanged; formatting the corpus above in all three
+  styles, and with `PALANTIR` plus each other style's widths, still matches 2.103.0 byte for byte.
+
+Upstream fixes are picked up by hand: compare with the upstream commit above.

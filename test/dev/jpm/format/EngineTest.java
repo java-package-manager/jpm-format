@@ -390,11 +390,11 @@ class EngineTest {
                 assertThrows(FormatException.class, this::open).getMessage().contains("is in category \"suspicious\""));
         write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"tabs\": true } } } }");
         assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("unknown key \"tabs\""));
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"lineWidth\": 80 } } } }");
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"lineWidth\": 5 } } } }");
         Workspace ws = open();
         assertTrue(assertThrows(FormatException.class, () -> ws.config.settings("A.java"))
                 .getMessage()
-                .contains("not supported yet"));
+                .contains("formatter.lineWidth must be from 20 to 1000, not 5"));
         write("project.jsonc", "{ \"extensions\": { \"format\": {} } }");
         write("jpm-format.jsonc", "{}");
         assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("keep one"));
