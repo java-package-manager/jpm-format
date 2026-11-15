@@ -8,6 +8,8 @@
   "url": "https://github.com/java-package-manager/jpm-format",
   "java": "21",
   "main": "dev.jpm.format.Main",
+  // jpm generates this class with NAME and VERSION from this file; Main.VERSION reads it
+  "defineClass": "dev.jpm.format.BuildConfig",
   "runtime": {
     // the layout engine; Apache 2.0, a fork of google-java-format
     "com.palantir.javaformat:palantir-java-format": "2.103.0"

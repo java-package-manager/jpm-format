@@ -24,7 +24,8 @@ import java.util.concurrent.ForkJoinPool;
  * {@code jpm-format}).
  */
 public final class Main {
-    public static final String VERSION = "0.2.0";
+    /** The version in project.jsonc, from the {@code BuildConfig} class jpm generates ({@code "defineClass"}). */
+    public static final String VERSION = BuildConfig.VERSION;
 
     static final String HELP = """
             jpm format - format and lint Java code
