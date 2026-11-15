@@ -165,6 +165,47 @@ class EngineTest {
     }
 
     @Test
+    void typeAwareRulesWorkInModularProjects() throws IOException {
+        write("src/module-info.java", "module com.acme {\n    exports com.acme;\n}\n");
+        String code = "package com.acme;\n\npublic class Thing implements Comparable<Thing> {\n"
+                + "    public int compareTo(Thing o) {\n        return 0;\n    }\n}\n";
+        write("src/com/acme/Thing.java", code);
+        write("test/com/acme/ThingTest.java", code.replace("Thing", "ThingTest"));
+        Project typed = new Project(
+                dir,
+                List.of(new Project.Module(dir, List.of(dir.resolve("src"), dir.resolve("test")), List.of())),
+                null);
+        Workspace ws = Workspace.open(dir, typed, false, w -> {});
+        PrintStream err = System.err;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        try {
+            System.setErr(new PrintStream(captured, true, StandardCharsets.UTF_8));
+            for (String rel : List.of("src/com/acme/Thing.java", "test/com/acme/ThingTest.java")) {
+                List<String> fs =
+                        ws.engine.run(rel, Files.readString(dir.resolve(rel)), Engine.Mode.CHECK).findings().stream()
+                                .map(Finding::brief)
+                                .toList();
+                assertEquals(
+                        List.of("4:16 style/MissingOverrideAnnotation Method 'compareTo' overrides a supertype method"
+                                + " but has no @Override"),
+                        fs,
+                        rel);
+            }
+            assertEquals(
+                    List.of(),
+                    ws.engine
+                            .run(
+                                    "src/module-info.java",
+                                    Files.readString(dir.resolve("src/module-info.java")),
+                                    Engine.Mode.CHECK)
+                            .findings());
+        } finally {
+            System.setErr(err);
+        }
+        assertEquals("", captured.toString(StandardCharsets.UTF_8), "javac must not print to stderr");
+    }
+
+    @Test
     void theFormatterSupportsThisJdk() {
         // CI runs on JDK 21, where javac still has what Palantir reads; newer JDKs make Main relaunch on one
         assertTrue(Jdks.formatterSupported(), Jdks.unsupportedMessage());

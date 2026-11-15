@@ -6,7 +6,10 @@ import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.Trees;
 
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -42,6 +45,31 @@ public final class Source {
     }
 
     /** An in-memory file for javac. */
+    /** Where javac writes its own messages, such as its crash banner; we report through diagnostics instead. */
+    static PrintWriter quiet() {
+        return new PrintWriter(Writer.nullWriter());
+    }
+
+    /** An in-memory file for javac at its real path, so javac can tell which source folder it is in. */
+    static JavaFileObject fileObject(Path file, String text) {
+        return new InMemory(file.toAbsolutePath().normalize().toUri(), text);
+    }
+
+    /** Source text javac reads from memory, at a real file's address. */
+    static final class InMemory extends SimpleJavaFileObject {
+        private final String text;
+
+        InMemory(URI uri, String text) {
+            super(uri, JavaFileObject.Kind.SOURCE);
+            this.text = text;
+        }
+
+        @Override
+        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
+            return text;
+        }
+    }
+
     static JavaFileObject fileObject(String path, String text) {
         String name = path.replace('\\', '/');
         if (!name.endsWith(".java")) name += ".java";
@@ -58,7 +86,7 @@ public final class Source {
         if (JAVAC == null) throw new FormatException("jpm-format needs a JDK (with javac), not a JRE");
         DiagnosticCollector<JavaFileObject> diags = new DiagnosticCollector<>();
         JavacTask task = (JavacTask) JAVAC.getTask(
-                null, null, diags, List.of("-proc:none", "-Xlint:none"), null, List.of(fileObject(path, text)));
+                quiet(), null, diags, List.of("-proc:none", "-Xlint:none"), null, List.of(fileObject(path, text)));
         List<SyntaxError> errs = new ArrayList<>();
         CompilationUnitTree cu = null;
         try {

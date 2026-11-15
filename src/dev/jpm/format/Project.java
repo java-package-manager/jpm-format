@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.tools.DiagnosticCollector;
+import javax.tools.FileObject;
+import javax.tools.ForwardingJavaFileManager;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
@@ -153,8 +156,34 @@ public final class Project {
 
     // ------------------------------------------------------------------ attribution
 
-    private static final ThreadLocal<StandardJavaFileManager> FILE_MANAGERS =
-            ThreadLocal.withInitial(() -> Source.JAVAC.getStandardFileManager(null, null, StandardCharsets.UTF_8));
+    private static final ThreadLocal<JavaFileManager> FILE_MANAGERS = ThreadLocal.withInitial(
+            () -> new InMemoryAware(Source.JAVAC.getStandardFileManager(null, null, StandardCharsets.UTF_8)));
+
+    /**
+     * javac's file manager only knows its own file objects: in module mode it asks which source folder holds
+     * each file, and throws for the in-memory ones we attribute (their text may not be on disk yet). This
+     * answers from the file's path instead.
+     */
+    private static final class InMemoryAware extends ForwardingJavaFileManager<StandardJavaFileManager> {
+        InMemoryAware(StandardJavaFileManager fm) {
+            super(fm);
+        }
+
+        @Override
+        public boolean contains(Location location, FileObject fo) throws IOException {
+            if (!(fo instanceof Source.InMemory)) return super.contains(location, fo);
+            Path p = Path.of(fo.toUri());
+            for (Path dir : fileManager.getLocationAsPaths(location)) if (p.startsWith(dir)) return true;
+            return false;
+        }
+
+        @Override
+        public boolean isSameFile(FileObject a, FileObject b) {
+            if (a instanceof Source.InMemory || b instanceof Source.InMemory)
+                return a.toUri().equals(b.toUri());
+            return super.isSameFile(a, b);
+        }
+    }
 
     /** Attributes one file's text against its module's classpath; null if the file has no module. */
     public TypeInfo attribute(Path file, String text) {
@@ -166,22 +195,33 @@ public final class Project {
                 "-implicit:none",
                 "-XDshould-stop.ifError=FLOW",
                 "-XDshould-stop.ifNoError=FLOW"));
-        opts.add("-classpath");
-        opts.add(join(m.classpath()));
+        Path abs = file.toAbsolutePath().normalize();
         List<Path> srcs = m.sourceDirs().stream().filter(Files::isDirectory).toList();
-        if (!srcs.isEmpty()) {
+        Path modular = srcs.stream()
+                .filter(d -> abs.startsWith(d) && Files.isRegularFile(d.resolve("module-info.java")))
+                .findFirst()
+                .orElse(null);
+        if (modular != null) {
+            // a named module reads its dependencies from the module path, as jpm runs it
+            opts.add("--module-path");
+            opts.add(join(m.classpath()));
             opts.add("-sourcepath");
-            opts.add(join(srcs));
+            opts.add(modular.toString());
+        } else {
+            // other folders (such as tests) see the classpath and the non-modular sources only
+            opts.add("-classpath");
+            opts.add(join(m.classpath()));
+            List<Path> plain = srcs.stream()
+                    .filter(d -> !Files.isRegularFile(d.resolve("module-info.java")))
+                    .toList();
+            if (!plain.isEmpty()) {
+                opts.add("-sourcepath");
+                opts.add(join(plain));
+            }
         }
         DiagnosticCollector<JavaFileObject> diags = new DiagnosticCollector<>();
         JavacTask task = (JavacTask) Source.JAVAC.getTask(
-                null,
-                FILE_MANAGERS.get(),
-                diags,
-                opts,
-                null,
-                List.of(Source.fileObject(
-                        root.relativize(file.toAbsolutePath().normalize()).toString(), text)));
+                Source.quiet(), FILE_MANAGERS.get(), diags, opts, null, List.of(Source.fileObject(abs, text)));
         try {
             CompilationUnitTree cu = null;
             for (CompilationUnitTree u : task.parse()) cu = u;
