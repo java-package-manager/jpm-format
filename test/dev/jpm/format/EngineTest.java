@@ -81,6 +81,33 @@ class EngineTest {
         }
     }
 
+    /** Runs after JavaFormat and undoes one of its choices on purpose. */
+    static final class NoSpaceAfterIf implements Formatter {
+        @Override
+        public String id() {
+            return "NoSpaceAfterIf";
+        }
+
+        @Override
+        public String format(Context ctx) {
+            return ctx.source().replace("if (", "if(");
+        }
+    }
+
+    @Test
+    void checkJudgesTheWholePipeline() {
+        RuleTester t = RuleTester.withBuiltins(new NoSpaceAfterIf());
+        String formatted = t.format("class A { void f(boolean b) { if (b) { } } }");
+        assertTrue(formatted.contains("        if(b) {}\n"), formatted);
+        // what `jpm format` produces passes --check, although JavaFormat alone would put the space back
+        assertEquals(List.of(), t.findings(formatted));
+        // a real difference is still reported, once, by the formatter that makes it
+        String unformatted = formatted.replace("    void f", "  void f");
+        assertEquals(List.of("2:1 format/JavaFormat Code is not formatted"), t.findings(unformatted));
+        String spaced = formatted.replace("if(b)", "if (b)");
+        assertEquals(List.of("3:1 custom/NoSpaceAfterIf Code is not formatted"), t.findings(spaced));
+    }
+
     @Test
     void formattersAreAlsoLinters() {
         RuleTester t = RuleTester.of(new Upper());

@@ -86,27 +86,15 @@ public final class Engine {
         }
         List<Active> rules = active(settings);
         Source cur = src;
-        if (mode == Mode.FORMAT) {
-            for (Active a : rules) {
-                if (!(a.rule() instanceof Formatter f)) continue;
-                String out = apply(f, cur, settings, findings);
-                if (out.equals(cur.text)) continue;
-                Source next = new Source(rel, out);
-                if (!next.errors().isEmpty()) {
-                    findings.add(internal(
-                            cur,
-                            Registry.RULE_CRASH,
-                            f.id() + " produced code that does not parse ("
-                                    + next.errors().get(0).message() + "); its changes were dropped"));
-                    continue;
-                }
-                cur = next;
-            }
-        }
+        // what `jpm format` makes of the file; in check mode, the reference formatting findings are judged by
+        Pipeline formatted = pipeline(src, settings, rules, mode == Mode.FORMAT ? findings : new ArrayList<>());
+        if (mode == Mode.FORMAT) cur = formatted.out();
+        boolean clean = formatted.out().text.equals(src.text);
         Supplier<TypeInfo> types = typesFor(cur);
         List<int[]> protectedRegions = null;
+        List<Finding> formatting = new ArrayList<>();
         for (Active a : rules) {
-            if (mode == Mode.FORMAT && a.rule() instanceof Formatter) continue;
+            if (a.rule() instanceof Formatter && (mode == Mode.FORMAT || clean)) continue;
             List<Finding> sink = new ArrayList<>();
             FileContext ctx = new FileContext(cur, a.rule(), a.level(), settings, types, sink);
             try {
@@ -125,11 +113,62 @@ public final class Engine {
             } catch (RuntimeException | StackOverflowError e) {
                 findings.add(internal(cur, Registry.RULE_CRASH, a.rule().id() + " failed: " + e));
             }
-            findings.addAll(sink);
+            (a.rule() instanceof Formatter ? formatting : findings).addAll(sink);
         }
+        if (mode == Mode.CHECK && !clean) findings.addAll(attribute(src, settings, formatted, formatting));
         List<Finding> result = suppress(cur, settings, rules, findings);
         result.sort(Comparator.comparingInt(Finding::start).thenComparing(Finding::rule));
         return new Result(rel, text, cur.text, result, false);
+    }
+
+    /** The result of running every formatter in order, and the last one that changed the text. */
+    private record Pipeline(Source out, Formatter lastChange) {}
+
+    private Pipeline pipeline(Source src, Config.Settings settings, List<Active> rules, List<Finding> findings) {
+        Source cur = src;
+        Formatter last = null;
+        for (Active a : rules) {
+            if (!(a.rule() instanceof Formatter f)) continue;
+            String out = apply(f, cur, settings, findings);
+            if (out.equals(cur.text)) continue;
+            Source next = new Source(src.path, out);
+            if (!next.errors().isEmpty()) {
+                findings.add(internal(
+                        cur,
+                        Registry.RULE_CRASH,
+                        f.id() + " produced code that does not parse (" + next.errors().get(0).message()
+                                + "); its changes were dropped"));
+                continue;
+            }
+            cur = next;
+            last = f;
+        }
+        return new Pipeline(cur, last);
+    }
+
+    /**
+     * Formatting findings for {@code --check}: each formatter judged on its own would also flag what a later
+     * formatter changes on purpose, so its findings count only where the file differs from what the whole pipeline
+     * makes of it. Differences no single formatter explains (formatters working together) are reported for the last
+     * formatter that changed the text.
+     */
+    private List<Finding> attribute(Source src, Config.Settings settings, Pipeline formatted, List<Finding> own) {
+        List<Finding> differences = new ArrayList<>();
+        Formatter blame = formatted.lastChange();
+        if (blame == null) return differences; // nothing changes: nothing to report
+        Lint rule = registry.rules.get(blame.id());
+        FileContext ctx = new FileContext(src, rule, settings.level(rule, registry.builtin(rule)), settings, null, differences);
+        wrap(blame, () -> formatted.out().text).check(ctx);
+        List<Finding> out = new ArrayList<>();
+        for (Finding f : own) if (differences.stream().anyMatch(d -> overlaps(f, d))) out.add(f);
+        for (Finding d : differences) if (out.stream().noneMatch(f -> overlaps(f, d))) out.add(d);
+        return out;
+    }
+
+    /** True if two findings touch; an insertion (empty range) touches what is right next to it. */
+    private static boolean overlaps(Finding a, Finding b) {
+        if (a.start() == a.end() || b.start() == b.end()) return a.start() <= b.end() && b.start() <= a.end();
+        return a.start() < b.end() && b.start() < a.end();
     }
 
     /** Formats only {@code [start, end)} with the core formatter, for editors. */
