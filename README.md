@@ -210,7 +210,16 @@ document and range formatting, quick fixes for each finding, and "Format and app
 `jpm format --check` in CI. `--reporter github` gives pull-request annotations and is picked automatically
 in GitHub Actions; `--reporter sarif` feeds code scanning; `--reporter json` is for scripts. Results are
 cached in `.cache/format/`, keyed by file content, config, tool version and, for type-aware rules, the
-classpath, so unchanged files are skipped; restore that folder between CI runs to keep the speed-up.
+classpath, so unchanged files are skipped; restore that folder between CI runs to keep the speed-up. With
+[setup-jpm](https://github.com/java-package-manager/setup-jpm) 1.1 or newer that is one input:
+
+```yaml
+      - uses: java-package-manager/setup-jpm@1
+        with:
+          format-cache: true
+      - run: jpm add -g github:java-package-manager/jpm-format
+      - run: jpm format --check
+```
 
 ## Spotless compatibility
 
@@ -242,8 +251,8 @@ This is the first version. Not done yet:
 - **IntelliJ parity.** The forked layout engine formats as Palantir 2.103.0, with free line and indent widths.
   Porting IntelliJ's other formatter adjustments and options (from IntelliJ Community, Apache 2.0, onto javac's
   tree) is next. More inspections follow, with null checks and data flow last.
-- **Elsewhere:** `jpm import` translating Spotless config (in jpm), restoring the cache in `setup-jpm`, and
-  the IntelliJ plugin running `jpm format` on save (in jpm-intellij).
+- **Elsewhere:** `jpm import` translating Spotless config (in jpm), and the IntelliJ plugin running
+  `jpm format` on save (in jpm-intellij).
 
 ## Developing
 
