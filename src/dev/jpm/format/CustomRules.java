@@ -35,7 +35,8 @@ final class CustomRules {
     static final String SERVICE = "META-INF/services/" + RuleSet.class.getName();
     private static final Pattern PACKAGE = Pattern.compile("(?m)^\\s*package\\s+([\\w.]+)\\s*;");
 
-    private CustomRules() {}
+    private CustomRules() {
+    }
 
     /** The rule sources in {@code rules/}, sorted. */
     static List<Path> sources(Path root) {

@@ -53,7 +53,8 @@ public final class Main {
             // @formatter:off ... // @formatter:on.
             """;
 
-    private Main() {}
+    private Main() {
+    }
 
     public static void main(String[] argv) {
         int code;

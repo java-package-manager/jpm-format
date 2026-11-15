@@ -12,7 +12,8 @@ import java.util.List;
  * same region. Regions are matched by their markers, which formatters keep, in order.
  */
 final class Regions {
-    private Regions() {}
+    private Regions() {
+    }
 
     /** Quick test before looking for regions. */
     static boolean mayHave(String text) {

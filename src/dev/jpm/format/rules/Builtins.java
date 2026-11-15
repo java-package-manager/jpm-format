@@ -1,15 +1,17 @@
 package dev.jpm.format.rules;
 
 import dev.jpm.format.api.Rules;
+import dev.jpm.format.intellij.IntelliJ;
 
 /**
  * The built-in rules, compiled into jpm-format. Formatters run in this order: license header, unused imports,
- * redundant modifiers, import order, then the layout itself last.
+ * redundant modifiers, import order, the layout itself, then the IntelliJ adjustments to it.
  */
 public final class Builtins {
     static final String DOCS = "https://github.com/java-package-manager/jpm-format/blob/main/docs/rules.md#";
 
-    private Builtins() {}
+    private Builtins() {
+    }
 
     public static void register(Rules rules) {
         rules.add(new LicenseHeader());
@@ -17,6 +19,7 @@ public final class Builtins {
         rules.add(new UnnecessaryModifier());
         rules.add(new ImportOrder());
         rules.add(new JavaFormat());
+        IntelliJ.register(rules); // adjustments toward IntelliJ's code style, right after the layout engine
 
         rules.add(new MissingOverrideAnnotation());
         rules.add(new StringEquality());

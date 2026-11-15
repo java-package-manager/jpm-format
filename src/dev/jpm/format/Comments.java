@@ -14,7 +14,8 @@ public final class Comments {
         }
     }
 
-    private Comments() {}
+    private Comments() {
+    }
 
     public static List<Comment> scan(String s) {
         List<Comment> out = new ArrayList<>();

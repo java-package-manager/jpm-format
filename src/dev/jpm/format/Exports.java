@@ -19,7 +19,8 @@ public final class Exports {
 
     private static volatile boolean open;
 
-    private Exports() {}
+    private Exports() {
+    }
 
     /** True if javac's internals are exported to unnamed modules. */
     public static boolean exported() {

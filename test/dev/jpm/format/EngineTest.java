@@ -47,7 +47,8 @@ class EngineTest {
 
     record Named(String id) implements Lint {
         @Override
-        public void check(Context ctx) {}
+        public void check(Context ctx) {
+        }
     }
 
     @Test
@@ -98,7 +99,7 @@ class EngineTest {
     void checkJudgesTheWholePipeline() {
         RuleTester t = RuleTester.withBuiltins(new NoSpaceAfterIf());
         String formatted = t.format("class A { void f(boolean b) { if (b) { } } }");
-        assertTrue(formatted.contains("        if(b) {}\n"), formatted);
+        assertTrue(formatted.contains("        if(b) {\n        }\n"), formatted);
         // what `jpm format` produces passes --check, although JavaFormat alone would put the space back
         assertEquals(List.of(), t.findings(formatted));
         // a real difference is still reported, once, by the formatter that makes it
@@ -506,7 +507,8 @@ class EngineTest {
                 class Sample {
                     void f() {
                         int unusedX;
-                        if (b == true) {}
+                        if (b == true) {
+                        }
                     }
 
                     boolean b;
@@ -607,7 +609,7 @@ class EngineTest {
         assertTrue(o.contains("\"code\":\"complexity/PointlessBooleanExpression\""), o);
         assertTrue(
                 o.contains(
-                        "\"newText\":\"class L {\\n    void f() {\\n        if (b == true) {}\\n    }\\n\\n    boolean b;\\n}\\n\""),
+                        "\"newText\":\"class L {\\n    void f() {\\n        if (b == true) {\\n        }\\n    }\\n\\n    boolean b;\\n}\\n\""),
                 o);
         assertTrue(o.contains("\"title\":\"Simplify (PointlessBooleanExpression)\""), o);
         assertTrue(o.contains("\"id\":4,\"error\":{") && o.contains("-32601"), o);

@@ -15,6 +15,28 @@ IntelliJ's default style: 120 columns, 4-space indents, 8-space continuation ind
 (1 to 32; twice `indentWidth` by default, as IntelliJ's 4 and 8) and `formatter.useTabs`. Text blocks are never re-indented. Turn the whole formatter off with
 `formatter.enabled: false`.
 
+### EmptyBodies
+
+IntelliJ's "Keep when reformatting: simple methods / classes / blocks in one line", off by default: an empty body is
+written `{` and `}` on two lines, the brace under the line that opens it. Applies to methods and constructors, named
+classes, initializer blocks and the blocks of `if`, `else`, loops, `try`, `catch`, `finally` and `synchronized`.
+Lambdas, anonymous classes, `switch` cases and array initializers keep `{}`. Runs after `JavaFormat`; off with
+`formatter.style: "palantir"`.
+
+### MemberBlankLines
+
+IntelliJ's "Minimum blank lines": one blank line around methods, nested classes and initializer blocks; none
+required between fields, after the class header or before its end. The blank line goes before the member's
+comments (its Javadoc, a line comment), which Palantir Java Format leaves out. Runs after `JavaFormat`; off with
+`formatter.style: "palantir"`.
+
+### KeepBlankLines
+
+IntelliJ's "Keep maximum blank lines" (in declarations, in code and before `}`): blank lines the code already had
+stay, up to `formatter.maxBlankLines` (2 by default, 1 to 10). Palantir Java Format keeps one and none before a
+closing brace. Lines the layout engine joins stay joined. Runs after `JavaFormat`; off with
+`formatter.style: "palantir"`.
+
 ### ImportOrder
 
 Sorts imports into `imports.groups` (default: all other imports, then `java.*` and `javax.*`, then static

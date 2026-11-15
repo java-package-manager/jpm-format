@@ -10,7 +10,8 @@ import com.sun.source.util.TreeScanner;
 
 /** Finds the element (declaration, import or statement) that follows an offset, for suppression comments. */
 final class Elements {
-    private Elements() {}
+    private Elements() {
+    }
 
     /** {@code [start, end)} of the outermost element starting at or after {@code offset}, or null. */
     static int[] next(Source src, int offset) {

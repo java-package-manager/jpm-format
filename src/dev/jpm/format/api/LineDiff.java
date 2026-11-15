@@ -8,7 +8,8 @@ final class LineDiff {
     /** {@code [start, end)} of the old text, made of whole lines, becomes {@code replacement}. */
     record Hunk(int start, int end, String replacement) {}
 
-    private LineDiff() {}
+    private LineDiff() {
+    }
 
     /** Above this many changed lines (old times new) the middle is reported as one hunk. */
     private static final long MAX_CELLS = 4_000_000;

@@ -18,7 +18,8 @@ import java.util.stream.Stream;
  * accident.
  */
 final class SnapshotTests {
-    private SnapshotTests() {}
+    private SnapshotTests() {
+    }
 
     static int run(List<String> args) {
         boolean update = false;

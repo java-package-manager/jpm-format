@@ -62,7 +62,8 @@ final class Suppressions {
     private final List<Entry> entries = new ArrayList<>();
     final List<Problem> problems = new ArrayList<>();
 
-    private Suppressions() {}
+    private Suppressions() {
+    }
 
     static Suppressions of(Source src, Registry registry) {
         Suppressions s = new Suppressions();

@@ -2,6 +2,7 @@ package dev.jpm.format;
 
 import dev.jpm.format.api.Context;
 import dev.jpm.format.api.Finding;
+import dev.jpm.format.api.Fix;
 import dev.jpm.format.api.Formatter;
 import dev.jpm.format.api.Lint;
 import dev.jpm.format.api.Severity;
@@ -126,10 +127,12 @@ public final class Engine {
 
     private Pipeline pipeline(Source src, Config.Settings settings, List<Active> rules, List<Finding> findings) {
         Source cur = src;
+        Source layoutInput = null;
         Formatter last = null;
         for (Active a : rules) {
             if (!(a.rule() instanceof Formatter f)) continue;
-            String out = apply(f, cur, settings, findings);
+            if (f instanceof JavaFormat) layoutInput = cur;
+            String out = apply(f, cur, layoutInput, settings, findings);
             if (out.equals(cur.text)) continue;
             Source next = new Source(src.path, out);
             if (!next.errors().isEmpty()) {
@@ -149,8 +152,9 @@ public final class Engine {
     /**
      * Formatting findings for {@code --check}: each formatter judged on its own would also flag what a later
      * formatter changes on purpose, so its findings count only where the file differs from what the whole pipeline
-     * makes of it. Differences no single formatter explains (formatters working together) are reported for the last
-     * formatter that changed the text.
+     * makes of it: a difference is reported by the formatters whose fixes make exactly that change. A difference
+     * no single formatter explains (formatters working together) is reported with the pipeline's text, for the
+     * first formatter that touched it.
      */
     private List<Finding> attribute(Source src, Config.Settings settings, Pipeline formatted, List<Finding> own) {
         List<Finding> differences = new ArrayList<>();
@@ -160,10 +164,56 @@ public final class Engine {
         FileContext ctx =
                 new FileContext(src, rule, settings.level(rule, registry.builtin(rule)), settings, null, differences);
         wrap(blame, () -> formatted.out().text).check(ctx);
+        // the formatters' own findings in pipeline order
+        List<String> order = registry.rules.all().stream().map(Lint::id).toList();
+        List<Finding> ordered = new ArrayList<>(own);
+        ordered.sort(Comparator.comparingInt(f -> order.indexOf(f.rule())));
         List<Finding> out = new ArrayList<>();
-        for (Finding f : own) if (differences.stream().anyMatch(d -> overlaps(f, d))) out.add(f);
-        for (Finding d : differences) if (out.stream().noneMatch(f -> overlaps(f, d))) out.add(d);
+        for (Finding d : differences) {
+            List<Finding> here = ordered.stream().filter(f -> overlaps(f, d)).toList();
+            String want = d.fix().apply(src.text);
+            List<Finding> exact = new ArrayList<>();
+            List<Fix.Edit> together = new ArrayList<>();
+            for (Finding f : here) if (f.fix() != null) together.addAll(f.fix().edits());
+            if (!together.isEmpty()
+                    && disjoint(together)
+                    && Fix.apply(src.text, together).equals(want)) {
+                exact.addAll(here.stream().filter(f -> f.fix() != null).toList()); // they make this change together
+            } else {
+                for (Finding f : here)
+                    if (f.fix() != null && f.fix().apply(src.text).equals(want)) exact.add(f);
+            }
+            if (!exact.isEmpty()) {
+                for (Finding f : exact) if (!out.contains(f)) out.add(f);
+                continue;
+            }
+            // formatters working together: report the change the pipeline makes, for the first one that touched it
+            // (for unformatted code, the layout engine)
+            Finding by = here.isEmpty() ? d : here.get(0);
+            out.add(new Finding(
+                    by.rule(),
+                    by.category(),
+                    by.severity(),
+                    d.path(),
+                    d.start(),
+                    d.end(),
+                    d.line(),
+                    d.column(),
+                    d.endLine(),
+                    d.endColumn(),
+                    d.message(),
+                    d.fix()));
+        }
         return out;
+    }
+
+    /** True if no two edits overlap, so applying them together is well defined. */
+    private static boolean disjoint(List<Fix.Edit> edits) {
+        List<Fix.Edit> sorted = new ArrayList<>(edits);
+        sorted.sort(Comparator.comparingInt(Fix.Edit::start).thenComparingInt(Fix.Edit::end));
+        for (int k = 1; k < sorted.size(); k++)
+            if (sorted.get(k).start() < sorted.get(k - 1).end()) return false;
+        return true;
     }
 
     /** True if two findings touch; an insertion (empty range) touches what is right next to it. */
@@ -185,7 +235,14 @@ public final class Engine {
 
     /** Runs one formatter on {@code cur}, keeping protected regions; in debug mode, checks idempotence. */
     private String apply(Formatter f, Source cur, Config.Settings settings, List<Finding> findings) {
-        FileContext ctx = new FileContext(cur, f, Severity.ERROR, settings, typesFor(cur), new ArrayList<>());
+        return apply(f, cur, null, settings, findings);
+    }
+
+    /** {@code layoutInput}: what the layout engine received, once it has run in this pipeline (else null). */
+    private String apply(
+            Formatter f, Source cur, Source layoutInput, Config.Settings settings, List<Finding> findings) {
+        FileContext ctx =
+                new FileContext(cur, f, Severity.ERROR, settings, typesFor(cur), new ArrayList<>(), layoutInput);
         String out;
         try {
             out = f.format(ctx);
@@ -200,7 +257,8 @@ public final class Engine {
         if (debug && !out.equals(cur.text)) {
             Source once = new Source(cur.path, out);
             if (once.errors().isEmpty()) {
-                FileContext c2 = new FileContext(once, f, Severity.ERROR, settings, typesFor(once), new ArrayList<>());
+                FileContext c2 = new FileContext(
+                        once, f, Severity.ERROR, settings, typesFor(once), new ArrayList<>(), layoutInput);
                 String twice;
                 try {
                     twice = Regions.restore(once, f.format(c2));

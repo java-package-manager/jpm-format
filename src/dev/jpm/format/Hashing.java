@@ -6,7 +6,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
 final class Hashing {
-    private Hashing() {}
+    private Hashing() {
+    }
 
     static String sha256(String s) {
         try {

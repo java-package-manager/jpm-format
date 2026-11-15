@@ -20,14 +20,16 @@ public final class Registry {
     /** A rule the engine itself reports for; its {@link #check} does nothing. */
     record Internal(String id, String category, Severity severity) implements Lint {
         @Override
-        public void check(Context ctx) {}
+        public void check(Context ctx) {
+        }
     }
 
     static final String PARSE_ERROR = "ParseError";
     static final String NOT_IDEMPOTENT = "NotIdempotent";
     static final String RULE_CRASH = "RuleCrash";
 
-    private Registry() {}
+    private Registry() {
+    }
 
     /** The built-in rules only. */
     public static Registry builtins() {

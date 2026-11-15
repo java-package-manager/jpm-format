@@ -22,6 +22,7 @@ public final class FileContext implements Context {
     private final Config.Settings settings;
     private final Supplier<TypeInfo> types;
     private final List<Finding> sink;
+    private final Source layoutInput;
 
     FileContext(
             Source src,
@@ -30,17 +31,38 @@ public final class FileContext implements Context {
             Config.Settings settings,
             Supplier<TypeInfo> types,
             List<Finding> sink) {
+        this(src, rule, level, settings, types, sink, null);
+    }
+
+    FileContext(
+            Source src,
+            Lint rule,
+            Severity level,
+            Config.Settings settings,
+            Supplier<TypeInfo> types,
+            List<Finding> sink,
+            Source layoutInput) {
         this.src = src;
         this.rule = rule;
         this.level = level;
         this.settings = settings;
         this.types = types;
         this.sink = sink;
+        this.layoutInput = layoutInput;
     }
 
     /** The file's settings, for built-in rules. */
     public Config.Settings settings() {
         return settings;
+    }
+
+    /**
+     * The file as the layout engine (JavaFormat) received it, for the rules that adjust its output; the current
+     * source if the layout engine has not run. The layout engine only changes whitespace, so the two have the same
+     * non-whitespace text, which is how its output lines up with what it replaced.
+     */
+    public Source layoutInput() {
+        return layoutInput != null ? layoutInput : src;
     }
 
     /** The parsed source, for built-in rules. */

@@ -4,6 +4,7 @@ import dev.jpm.format.api.Formatter;
 import dev.jpm.format.api.Lint;
 import dev.jpm.format.api.Rules;
 import dev.jpm.format.api.Severity;
+import dev.jpm.format.intellij.IntelliJRule;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -67,6 +68,8 @@ public final class Config {
             int lineWidth,
             int indentWidth,
             int continuationIndentWidth,
+            boolean intellijStyle,
+            int maxBlankLines,
             boolean useTabs,
             String licenseHeader,
             boolean removeUnusedImports,
@@ -84,14 +87,19 @@ public final class Config {
             boolean formatting = rule instanceof Formatter;
             boolean on = switch (rule.id()) {
                 case "JavaFormat" -> formatterEnabled;
+                // the IntelliJ rules adjust the layout engine's output: on with it, unless the style is "palantir"
+                default ->
+                    rule instanceof IntelliJRule
+                            ? formatterEnabled && intellijStyle
+                            : formatting || (linterEnabled && (recommended || !builtin));
                 case "LicenseHeader" -> formatterEnabled && licenseHeader != null;
                 case "ImportOrder" -> sortImports;
                 case "UnusedImport" -> removeUnusedImports;
-                default -> formatting || (linterEnabled && (recommended || !builtin));
             };
             if (s != null) {
                 if (s.level() == Severity.OFF) return Severity.OFF;
                 if (rule.id().equals("LicenseHeader") && licenseHeader == null) return Severity.OFF;
+                if (rule instanceof IntelliJRule && !(formatterEnabled && intellijStyle)) return Severity.OFF;
                 if (formatting || linterEnabled) return s.level();
                 return Severity.OFF;
             }
@@ -295,6 +303,14 @@ public final class Config {
                 "formatter.continuationIndentWidth",
                 1,
                 32);
+        Object st = f.getOrDefault("style", "intellij");
+        if (!"intellij".equals(st) && !"palantir".equals(st)) {
+            throw new FormatException(
+                    "formatter.style must be \"intellij\" (the default) or \"palantir\", not " + Json.write(st));
+        }
+        // IntelliJ's "keep maximum blank lines" (in code, in declarations and before '}')
+        // 1 is the least: the layout engine keeps one blank line wherever the code had any
+        int maxBlank = range(f.getOrDefault("maxBlankLines", 2L), "formatter.maxBlankLines", 1, 10);
         String header = null;
         Object h = f.get("licenseHeader");
         if (h instanceof String s) header = s;
@@ -349,6 +365,8 @@ public final class Config {
                 width,
                 indent,
                 continuation,
+                "intellij".equals(st),
+                maxBlank,
                 bool(f.getOrDefault("useTabs", false), "formatter.useTabs"),
                 header,
                 bool(im.getOrDefault("removeUnused", true), "imports.removeUnused"),
@@ -363,8 +381,15 @@ public final class Config {
 
     private static final Set<String> TOP =
             Set.of("$schema", "extends", "ignore", "formatter", "imports", "linter", "overrides");
-    private static final Set<String> FORMATTER =
-            Set.of("enabled", "lineWidth", "indentWidth", "continuationIndentWidth", "useTabs", "licenseHeader");
+    private static final Set<String> FORMATTER = Set.of(
+            "enabled",
+            "style",
+            "lineWidth",
+            "indentWidth",
+            "continuationIndentWidth",
+            "maxBlankLines",
+            "useTabs",
+            "licenseHeader");
     private static final Set<String> IMPORTS = Set.of("removeUnused", "sort", "groups", "wildcardThreshold");
     private static final Set<String> LINTER = Set.of("enabled", "recommended", "rules");
 

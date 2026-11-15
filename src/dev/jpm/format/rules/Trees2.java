@@ -21,7 +21,8 @@ import java.util.Set;
 
 /** Small helpers on javac trees shared by the built-in rules. */
 final class Trees2 {
-    private Trees2() {}
+    private Trees2() {
+    }
 
     /** Every simple name referred to under {@code root} (identifiers, member selects, method references). */
     static Set<String> names(Tree root) {

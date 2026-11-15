@@ -34,12 +34,18 @@ automatically.
 
 ## Formatting style
 
-The layout comes from jpm-format's fork of [Palantir Java Format](https://github.com/palantir/palantir-java-format)
-(Apache 2.0, itself a fork of google-java-format), whose output is already close to IntelliJ's default Java code
-style: 120
-columns, 4-space indents, 8-space continuation indents. Imports follow IntelliJ's layout: all other imports,
-then `java.*` and `javax.*`, then static imports, each group sorted alphabetically and separated by a blank
-line. Javadoc is not reflowed.
+IntelliJ IDEA's default Java code style. The layout comes from jpm-format's fork of
+[Palantir Java Format](https://github.com/palantir/palantir-java-format) (Apache 2.0, itself a fork of
+google-java-format), whose output is already close to it: 120 columns, 4-space indents, 8-space continuation
+indents. The IntelliJ rules (`src/dev/jpm/format/intellij/`) then adjust it where IntelliJ's defaults differ:
+
+- blank lines the code has are kept, up to 2 (also before a closing brace), where Palantir keeps 1;
+- methods, nested classes and initializers get a blank line around them, also when they start with a comment;
+- empty methods, classes and blocks are written `{` and `}` on two lines; lambdas and anonymous classes keep `{}`.
+
+`"formatter": {"style": "palantir"}` turns them off, for Palantir Java Format's output as it is. Imports follow
+IntelliJ's layout: all other imports, then `java.*` and `javax.*`, then static imports, each group sorted
+alphabetically and separated by a blank line. Javadoc is not reflowed.
 
 ## Configuration
 
@@ -55,9 +61,11 @@ project root (not both). In a workspace, a module's own `project.jsonc` applies 
       "ignore": ["src/generated/**"],              // .cache, dist, build, target, .git … are always ignored
       "formatter": {
         "enabled": true,
+        "style": "intellij",                       // or "palantir": Palantir Java Format's output as it is
         "lineWidth": 120,                          // 20 to 1000
         "indentWidth": 4,                          // 1 to 16
         "continuationIndentWidth": 8,              // wrapped lines; twice indentWidth by default, as in IntelliJ
+        "maxBlankLines": 2,                        // blank lines kept in a row, 1 to 10 (1: as Palantir)
         "useTabs": false,
         "licenseHeader": "/* Copyright $YEAR Acme */"   // or { "file": "LICENSE_HEADER" }
       },
@@ -93,6 +101,9 @@ merging imports into a wildcard can make names ambiguous.
 | Rule | Category | Kind | |
 |---|---|---|---|
 | `JavaFormat` | format | formatter | Layout (forked from Palantir Java Format) |
+| `EmptyBodies` | format | formatter | IntelliJ: empty bodies on two lines |
+| `MemberBlankLines` | format | formatter | IntelliJ: a blank line around methods, classes and initializers |
+| `KeepBlankLines` | format | formatter | IntelliJ: blank lines kept, up to `maxBlankLines` |
 | `ImportOrder` | format | formatter | Import groups and order |
 | `LicenseHeader` | format | formatter | Header from `formatter.licenseHeader` |
 | `UnusedImport` | style | formatter | Unused, redundant and duplicate imports |
@@ -248,9 +259,9 @@ This is the first version. Not done yet:
 
 - **Native binary.** jpm starts extensions on a JVM today; a GraalVM build (`jpm build --native`) needs
   testing first, since running javac inside a native image is uncommon.
-- **IntelliJ parity.** The forked layout engine formats as Palantir 2.103.0, with free line and indent widths.
-  Porting IntelliJ's other formatter adjustments and options (from IntelliJ Community, Apache 2.0, onto javac's
-  tree) is next. More inspections follow, with null checks and data flow last.
+- **IntelliJ parity.** The IntelliJ rules cover blank lines and empty bodies so far; more of IntelliJ's defaults
+  (wrapping of long method chains and argument lists, Javadoc formatting) and its options follow, as rules in
+  `src/dev/jpm/format/intellij/`. More inspections follow too, with null checks and data flow last.
 - **Elsewhere:** `jpm import` translating Spotless config (in jpm), and the IntelliJ plugin running
   `jpm format` on save (in jpm-intellij).
 

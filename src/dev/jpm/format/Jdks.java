@@ -18,7 +18,8 @@ public final class Jdks {
 
     private static volatile Boolean supported;
 
-    private Jdks() {}
+    private Jdks() {
+    }
 
     /** True if the running JDK's javac has what the formatter needs. */
     public static boolean formatterSupported() {
