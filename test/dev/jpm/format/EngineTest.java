@@ -130,6 +130,47 @@ class EngineTest {
     }
 
     @Test
+    void invisibleDifferencesAreNamed() {
+        RuleTester t = RuleTester.of(new JavaFormat());
+        // a package-info.java whose last line has no newline
+        assertEquals(
+                List.of("4:1 format/JavaFormat Missing newline at end of file"),
+                t.findings("@NullMarked\npackage p;\n\nimport org.jspecify.annotations.NullMarked;"));
+        assertEquals(List.of("1:1 format/JavaFormat Trailing whitespace"), t.findings("class A {}   \n"));
+        Formatter lf = new Formatter() {
+            @Override
+            public String id() {
+                return "Lf";
+            }
+
+            @Override
+            public String format(Context ctx) {
+                return ctx.source().replace("\r\n", "\n");
+            }
+        };
+        assertEquals(
+                List.of("1:1 custom/Lf Line endings should be LF"),
+                RuleTester.of(lf).findings("class A {\r\n}\r\n"));
+    }
+
+    @Test
+    void crlfFilesKeepTheirLineEndings() {
+        String out = RuleTester.withBuiltins()
+                .config("{\"formatter\": {\"licenseHeader\": \"/*\\n * Acme\\n */\"}}")
+                .format("import b.B;\r\nimport java.util.List;\r\nimport a.A;\r\nclass C { A a; B b; List<A> l; }\r\n");
+        assertEquals(
+                "/*\r\n * Acme\r\n */\r\n\r\nimport a.A;\r\nimport b.B;\r\n\r\nimport java.util.List;\r\n\r\n"
+                        + "class C {\r\n    A a;\r\n    B b;\r\n    List<A> l;\r\n}\r\n",
+                out);
+    }
+
+    @Test
+    void theFormatterSupportsThisJdk() {
+        // CI runs on JDK 21, where javac still has what Palantir reads; newer JDKs make Main relaunch on one
+        assertTrue(Jdks.formatterSupported(), Jdks.unsupportedMessage());
+    }
+
+    @Test
     void syntaxErrorsAreReported() {
         List<String> fs = RuleTester.of(new JavaFormat()).findings("class A { void f( }");
         assertEquals(1, fs.size());

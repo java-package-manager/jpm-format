@@ -224,6 +224,9 @@ The common Spotless steps are built in: import order (`ImportOrder`), removing u
 - Palantir needs javac's internal packages. jpm starts extensions on a plain JVM, so jpm-format exports them
   itself on JDK 21–23, and on newer JDKs starts a second JVM with `--add-exports` (with class data sharing,
   so later starts are fast).
+- Newer JDKs changed javac's internal tree in a way Palantir cannot read yet. When jpm starts jpm-format on
+  such a JDK, it moves the run to JDK 21 (`jpm java home 21`, which installs it if needed);
+  `JPM_FORMAT_JAVA_HOME` picks the JDK instead.
 
 ## Status
 

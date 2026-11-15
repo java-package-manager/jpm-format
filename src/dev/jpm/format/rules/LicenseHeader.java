@@ -2,6 +2,7 @@ package dev.jpm.format.rules;
 
 import dev.jpm.format.Comments;
 import dev.jpm.format.FileContext;
+import dev.jpm.format.Source;
 import dev.jpm.format.api.Context;
 import dev.jpm.format.api.Formatter;
 
@@ -37,6 +38,8 @@ public final class LicenseHeader implements Formatter {
         String header = fc.settings().licenseHeader();
         if (header == null) return ctx.source();
         String src = ctx.source();
+        String nl = Source.newline(src);
+        header = header.replace("\n", nl);
         List<Comments.Comment> comments = fc.parsed().comments();
         int code = 0;
         int firstCommentEnd = -1;
@@ -55,11 +58,11 @@ public final class LicenseHeader implements Formatter {
         String want = withYear(
                 header, declarationFirst ? prefix : firstCommentEnd < 0 ? "" : src.substring(0, firstCommentEnd));
         if (declarationFirst) {
-            return want + "\n" + (code < src.length() ? "\n" : "") + src.substring(code);
+            return want + nl + (code < src.length() ? nl : "") + src.substring(code);
         }
         // a file without a package: keep its other leading comments (such as a class's Javadoc)
         if (firstCommentEnd >= 0 && src.substring(0, firstCommentEnd).strip().equals(want)) return src;
-        return want + "\n\n" + src.stripLeading();
+        return want + nl + nl + src.stripLeading();
     }
 
     /** The header with {@code $YEAR} filled in, keeping the year from {@code existing} when it matches. */

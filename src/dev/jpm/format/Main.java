@@ -85,8 +85,14 @@ public final class Main {
             return 0;
         }
         boolean nativeImage = System.getProperty("org.graalvm.nativeimage.imagecode") != null;
-        if (!nativeImage && !Exports.open() && System.getenv("JPM_FORMAT_CHILD") == null) {
-            return relaunch(args, System.getProperty("java.class.path"));
+        boolean child = System.getenv("JPM_FORMAT_CHILD") != null;
+        if (!nativeImage && !Jdks.formatterSupported()) {
+            if (child) throw new FormatException(Jdks.unsupportedMessage());
+            // jpm picked a JDK whose javac the formatter cannot read: run on a supported one instead
+            return relaunch(args, System.getProperty("java.class.path"), Jdks.supportedJava());
+        }
+        if (!nativeImage && !Exports.open() && !child) {
+            return relaunch(args, System.getProperty("java.class.path"), javaExecutable());
         }
         if (nativeImage && System.getenv("JPM_FORMAT_CHILD") == null) {
             Path root = Project.findRoot(Path.of(""));
@@ -97,7 +103,7 @@ public final class Main {
                     throw new FormatException(
                             "this project has custom rules, which need a JVM; set JPM_FORMAT_CLASSPATH to jpm-format's jar classpath");
                 }
-                return relaunch(args, cp);
+                return relaunch(args, cp, javaExecutable());
             }
         }
         String cmd = args.isEmpty() ? "" : args.get(0);
@@ -109,14 +115,13 @@ public final class Main {
         };
     }
 
-    /** Runs this command again on a JVM with javac's internals exported. */
-    static int relaunch(List<String> args, String classpath) {
-        String java = javaExecutable();
+    /** Runs this command again on the JVM {@code java} (JDK 19 or newer) with javac's internals exported. */
+    static int relaunch(List<String> args, String classpath, String java) {
         List<String> cmd = new ArrayList<>();
         cmd.add(java);
         cmd.addAll(Exports.flags());
         boolean jarsOnly = Arrays.stream(classpath.split(File.pathSeparator)).allMatch(e -> e.endsWith(".jar"));
-        if (Runtime.version().feature() >= 19 && jarsOnly) { // CDS refuses directories on the classpath
+        if (jarsOnly) { // CDS refuses directories on the classpath
             // class data sharing: the second start onwards loads classes from an archive
             Path cds = Path.of(
                     System.getProperty("user.home"),

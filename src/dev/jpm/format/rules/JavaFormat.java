@@ -7,6 +7,7 @@ import dev.jpm.format.Comments;
 import dev.jpm.format.Exports;
 import dev.jpm.format.FileContext;
 import dev.jpm.format.FormatException;
+import dev.jpm.format.Jdks;
 import dev.jpm.format.api.Context;
 import dev.jpm.format.api.Formatter;
 
@@ -62,6 +63,7 @@ public final class JavaFormat implements Formatter {
     }
 
     private static com.palantir.javaformat.java.Formatter palantir(FileContext ctx) {
+        if (!Jdks.formatterSupported()) throw new FormatException(Jdks.unsupportedMessage());
         if (!Exports.open()) {
             throw new FormatException(
                     "the formatter needs javac's internals; run the JVM with " + String.join(" ", Exports.flags()));

@@ -27,13 +27,31 @@ public interface Formatter extends Lint {
         String in = ctx.source();
         String out = format(ctx);
         for (LineDiff.Hunk h : LineDiff.hunks(in, out)) {
-            ctx.report(h.start(), h.end(), message(h), Fix.replace("Format", h.start(), h.end(), h.replacement()));
+            String old = in.substring(h.start(), h.end());
+            ctx.report(
+                    h.start(),
+                    h.end(),
+                    message(old, h, in.length()),
+                    Fix.replace("Format", h.start(), h.end(), h.replacement()));
         }
     }
 
-    private static String message(LineDiff.Hunk h) {
-        if (h.replacement().isEmpty()) return "Code should be removed by the formatter";
+    /** Names differences that cannot be seen in a listing: line endings, trailing spaces, the last newline. */
+    private static String message(String old, LineDiff.Hunk h, int length) {
+        String neu = h.replacement();
+        if (h.end() == length && (neu.equals(old + "\n") || neu.equals(old + "\r\n"))) {
+            return "Missing newline at end of file";
+        }
+        if (!old.equals(neu) && old.replace("\r\n", "\n").equals(neu.replace("\r\n", "\n"))) {
+            return neu.contains("\r\n") ? "Line endings should be CRLF" : "Line endings should be LF";
+        }
+        if (!old.equals(neu) && strip(old).equals(strip(neu))) return "Trailing whitespace";
+        if (neu.isEmpty()) return "Code should be removed by the formatter";
         if (h.start() == h.end()) return "Code should be added by the formatter";
         return "Code is not formatted";
+    }
+
+    private static String strip(String s) {
+        return s.replaceAll("[ \t]+(?=\r?\n|$)", "");
     }
 }

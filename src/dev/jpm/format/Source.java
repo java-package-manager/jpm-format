@@ -122,6 +122,12 @@ public final class Source {
         return lineStarts;
     }
 
+    /** The file's line separator: CRLF if its first line ends with one, else LF. */
+    public static String newline(String text) {
+        int i = text.indexOf('\n');
+        return i > 0 && text.charAt(i - 1) == '\r' ? "\r\n" : "\n";
+    }
+
     /** 1-based line of an offset. */
     public int line(int offset) {
         int[] ls = lineStarts();

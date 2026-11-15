@@ -4,6 +4,7 @@ import com.sun.source.tree.ImportTree;
 import dev.jpm.format.Comments;
 import dev.jpm.format.Config;
 import dev.jpm.format.FileContext;
+import dev.jpm.format.Source;
 import dev.jpm.format.api.Context;
 import dev.jpm.format.api.Formatter;
 
@@ -65,7 +66,7 @@ public final class ImportOrder implements Formatter {
         for (ImportTree t : imports)
             all.add(new Imp(t.isStatic(), t.getQualifiedIdentifier().toString()));
         List<Imp> list = wildcards(new ArrayList<>(all), s.wildcardThreshold());
-        String block = layout(list, s.importGroups());
+        String block = layout(list, s.importGroups(), Source.newline(ctx.source()));
         return ctx.source().substring(0, start) + block + ctx.source().substring(end);
     }
 
@@ -82,7 +83,7 @@ public final class ImportOrder implements Formatter {
         return new ArrayList<>(out);
     }
 
-    static String layout(List<Imp> imps, List<List<String>> groups) {
+    static String layout(List<Imp> imps, List<List<String>> groups, String nl) {
         List<List<Imp>> buckets = new ArrayList<>();
         for (int k = 0; k < groups.size(); k++) buckets.add(new ArrayList<>());
         for (Imp i : imps) buckets.get(group(i, groups)).add(i);
@@ -92,12 +93,12 @@ public final class ImportOrder implements Formatter {
             b.sort(Comparator.comparing(Imp::name, ORDER));
             StringBuilder sb = new StringBuilder();
             for (Imp i : b) {
-                if (!sb.isEmpty()) sb.append('\n');
+                if (!sb.isEmpty()) sb.append(nl);
                 sb.append(i.line());
             }
             parts.add(sb.toString());
         }
-        return String.join("\n\n", parts);
+        return String.join(nl + nl, parts);
     }
 
     /** The group of the most specific matching pattern; the last group if none matches. */
