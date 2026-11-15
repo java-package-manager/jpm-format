@@ -1,4 +1,5 @@
 // jpm-format: the `jpm format` extension. Install with `jpm add -g github:java-package-manager/jpm-format`.
+// Building it needs jpm 0.7.1 or newer, which compiles without --release so "javacArgs" can open javac.
 {
   "name": "jpm-format",
   "group": "dev.jpm",
@@ -10,11 +11,39 @@
   "main": "dev.jpm.format.Main",
   // jpm generates this class with NAME and VERSION from this file; Main.VERSION reads it
   "defineClass": "dev.jpm.format.BuildConfig",
+  // the layout engine (src/dev/jpm/format/palantir, forked from Palantir Java Format) is built on javac's
+  // internal syntax tree
+  "javacArgs": [
+    "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+    "--add-exports", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+    "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+    "--add-exports", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+    "--add-exports", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+    "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
+  ],
   "runtime": {
-    // the layout engine; Apache 2.0, a fork of google-java-format
-    "com.palantir.javaformat:palantir-java-format": "2.103.0"
+    "com.google.guava:guava": "33.7.2-jre",
+    "org.functionaljava:functionaljava": "5.0",
+    // only for the layout engine's debug output (DebugRenderer)
+    "com.fasterxml.jackson.core:jackson-databind": "2.22.4",
+    "com.fasterxml.jackson.datatype:jackson-datatype-jdk8": "2.22.4",
+    "com.fasterxml.jackson.module:jackson-module-parameter-names": "2.22.4"
+  },
+  "dev": {
+    // annotation processors the layout engine is written for, as upstream builds it
+    "org.immutables:value": "2.12.3",
+    "org.derive4j:derive4j": "1.1.1",
+    "org.derive4j:derive4j-annotation": "1.1.1",
+    // javax.annotation.Nullable and CheckReturnValue, as upstream uses them; compile time only
+    "com.google.code.findbugs:jsr305": "3.0.2"
   },
   "test": {
     "org.junit.jupiter:junit-jupiter": "5.11.4"
+  },
+  "extensions": {
+    "format": {
+      // vendored code keeps upstream's layout, so it stays easy to compare with upstream
+      "ignore": ["src/dev/jpm/format/palantir/**"]
+    }
   }
 }

@@ -1,8 +1,6 @@
 package dev.jpm.format.rules;
 
 import com.google.common.collect.Range;
-import com.palantir.javaformat.java.FormatterException;
-import com.palantir.javaformat.java.JavaFormatterOptions;
 import dev.jpm.format.Comments;
 import dev.jpm.format.Exports;
 import dev.jpm.format.FileContext;
@@ -10,19 +8,22 @@ import dev.jpm.format.FormatException;
 import dev.jpm.format.Jdks;
 import dev.jpm.format.api.Context;
 import dev.jpm.format.api.Formatter;
+import dev.jpm.format.palantir.java.FormatterException;
+import dev.jpm.format.palantir.java.JavaFormatterOptions;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The layout of the code: indentation, line breaks and spacing. It is Palantir Java Format, whose output is
- * close to IntelliJ's default Java code style: 120 columns, 4-space indents and 8-space continuation indents.
+ * The layout of the code: indentation, line breaks and spacing. The engine is jpm-format's fork of Palantir Java
+ * Format ({@code dev.jpm.format.palantir}), whose output is close to IntelliJ's default Java code style: 120
+ * columns, 4-space indents and 8-space continuation indents.
  */
 public final class JavaFormat implements Formatter {
     public static final String ID = "JavaFormat";
 
-    private static final Map<JavaFormatterOptions.Style, com.palantir.javaformat.java.Formatter> FORMATTERS =
+    private static final Map<JavaFormatterOptions.Style, dev.jpm.format.palantir.java.Formatter> FORMATTERS =
             new ConcurrentHashMap<>();
 
     @Override
@@ -62,7 +63,7 @@ public final class JavaFormat implements Formatter {
         }
     }
 
-    private static com.palantir.javaformat.java.Formatter palantir(FileContext ctx) {
+    private static dev.jpm.format.palantir.java.Formatter palantir(FileContext ctx) {
         if (!Jdks.formatterSupported()) throw new FormatException(Jdks.unsupportedMessage());
         if (!Exports.open()) {
             throw new FormatException(
@@ -74,7 +75,7 @@ public final class JavaFormat implements Formatter {
                 : s.indentWidth() == 2 ? JavaFormatterOptions.Style.GOOGLE : JavaFormatterOptions.Style.AOSP;
         return FORMATTERS.computeIfAbsent(
                 style,
-                st -> com.palantir.javaformat.java.Formatter.createFormatter(JavaFormatterOptions.builder()
+                st -> dev.jpm.format.palantir.java.Formatter.createFormatter(JavaFormatterOptions.builder()
                         .style(st)
                         .formatJavadoc(false)
                         .build()));

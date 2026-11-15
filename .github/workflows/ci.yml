@@ -48,6 +48,9 @@ jobs:
         run: |
           curl -fsSL https://github.com/java-package-manager/jpm/releases/latest/download/install.sh | sh
           echo "$HOME/.jpm/bin" >> "$GITHUB_PATH"
+          # the layout engine needs "javacArgs" with --add-exports, which jpm 0.7.1 compiles (no --release)
+          v=$("$HOME/.jpm/bin/jpm" --version | cut -d' ' -f2)
+          printf '%s\n%s\n' "0.7.1" "$v" | sort -V -C || { echo "::error::jpm $v is too old; jpm-format needs 0.7.1 or newer"; exit 1; }
 
       - name: Test
         # --frozen once project.lock is committed

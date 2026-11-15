@@ -4,7 +4,7 @@
 with an opinionated IntelliJ-style default and your own rules.
 
 ```sh
-jpm add -g github:java-package-manager/jpm-format
+jpm add -g github:java-package-manager/jpm-format   # needs jpm 0.7.1 or newer
 jpm format            # format every file and apply every safe fix
 jpm format --check    # change nothing; report problems and exit 1 if there are any (for CI)
 ```
@@ -34,8 +34,9 @@ automatically.
 
 ## Formatting style
 
-The layout comes from [Palantir Java Format](https://github.com/palantir/palantir-java-format) (Apache 2.0, a
-fork of google-java-format), whose output is already close to IntelliJ's default Java code style: 120
+The layout comes from jpm-format's fork of [Palantir Java Format](https://github.com/palantir/palantir-java-format)
+(Apache 2.0, itself a fork of google-java-format), whose output is already close to IntelliJ's default Java code
+style: 120
 columns, 4-space indents, 8-space continuation indents. Imports follow IntelliJ's layout: all other imports,
 then `java.*` and `javax.*`, then static imports, each group sorted alphabetically and separated by a blank
 line. Javadoc is not reflowed.
@@ -90,7 +91,7 @@ merging imports into a wildcard can make names ambiguous.
 
 | Rule | Category | Kind | |
 |---|---|---|---|
-| `JavaFormat` | format | formatter | Layout (Palantir Java Format) |
+| `JavaFormat` | format | formatter | Layout (forked from Palantir Java Format) |
 | `ImportOrder` | format | formatter | Import groups and order |
 | `LicenseHeader` | format | formatter | Header from `formatter.licenseHeader` |
 | `UnusedImport` | style | formatter | Unused, redundant and duplicate imports |
@@ -220,6 +221,9 @@ The common Spotless steps are built in: import order (`ImportOrder`), removing u
 - One parser for everything: javac's, as Palantir uses, with Palantir's token stream for comments and
   whitespace. It parses every Java version exactly as the compiler does, and the same tree serves the
   formatter, the linter and type attribution.
+- The layout engine is a fork of Palantir Java Format 2.103.0 in `src/dev/jpm/format/palantir/`, so its rules can
+  change; [third_party/palantir-java-format/UPSTREAM.md](third_party/palantir-java-format/UPSTREAM.md) says what was
+  copied and what changed since. Upstream's 226 formatter test cases run as `PalantirTestdataTest`.
 - Built-in rules are compiled into jpm-format. Files are processed in parallel.
 - Palantir needs javac's internal packages. jpm starts extensions on a plain JVM, so jpm-format exports them
   itself on JDK 21–23, and on newer JDKs starts a second JVM with `--add-exports` (with class data sharing,
@@ -234,13 +238,18 @@ This is the first version. Not done yet:
 
 - **Native binary.** jpm starts extensions on a JVM today; a GraalVM build (`jpm build --native`) needs
   testing first, since running javac inside a native image is uncommon.
-- **IntelliJ parity.** The layout is Palantir's as is. Porting IntelliJ's formatter adjustments and options
+- **IntelliJ parity.** The forked layout engine still formats exactly as Palantir 2.103.0. Porting IntelliJ's
+  formatter adjustments and options
   (from IntelliJ Community, Apache 2.0, onto javac's tree) is next; until then `lineWidth` and `indentWidth`
   accept only the combinations above. More inspections follow, with null checks and data flow last.
 - **Elsewhere:** `jpm import` translating Spotless config (in jpm), restoring the cache in `setup-jpm`, and
   the IntelliJ plugin running `jpm format` on save (in jpm-intellij).
 
 ## Developing
+
+Building jpm-format needs jpm 0.7.1 or newer: the layout engine is built on javac's internal syntax tree, which
+`"javacArgs"` opens with `--add-exports`, and older jpm versions always compile with `--release`, which javac
+refuses together with that. Installing jpm-format (`jpm add -g`) builds it from source, so this applies there too.
 
 ```sh
 jpm test
@@ -252,4 +261,5 @@ jpm start -- --check            # jpm-format on itself, on its runtime classpath
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Palantir Java Format, a dependency, is Apache 2.0.
+MIT, see [LICENSE](LICENSE). The forked layout engine in `src/dev/jpm/format/palantir/` is Apache 2.0, from Palantir
+Java Format and google-java-format: see [third_party/palantir-java-format](third_party/palantir-java-format).
