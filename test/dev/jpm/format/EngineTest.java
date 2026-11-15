@@ -1,0 +1,506 @@
+package dev.jpm.format;
+
+import dev.jpm.format.api.Context;
+import dev.jpm.format.api.Finding;
+import dev.jpm.format.api.Formatter;
+import dev.jpm.format.api.Lint;
+import dev.jpm.format.api.RuleTester;
+import dev.jpm.format.api.Rules;
+import dev.jpm.format.api.Severity;
+import dev.jpm.format.rules.JavaFormat;
+import dev.jpm.format.rules.PointlessBooleanExpression;
+import dev.jpm.format.rules.UnusedLocalVariable;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class EngineTest {
+    @TempDir
+    Path dir;
+
+    private Path write(String rel, String text) throws IOException {
+        Path p = dir.resolve(rel);
+        Files.createDirectories(p.getParent());
+        Files.writeString(p, text);
+        return p;
+    }
+
+    private Workspace open() {
+        return Workspace.open(dir, Project.untyped(dir, "test"), false, w -> {});
+    }
+
+    // ------------------------------------------------------------------ rule API
+
+    record Named(String id) implements Lint {
+        @Override
+        public void check(Context ctx) {}
+    }
+
+    @Test
+    void rulesAreOrderedByAddBeforeAndAddAfter() {
+        Rules r = new Rules().add(new Named("A")).add(new Named("C"));
+        r.addBefore("C", new Named("B")).addAfter("C", new Named("D"));
+        assertEquals(List.of("A", "B", "C", "D"), r.all().stream().map(Lint::id).toList());
+        assertThrows(IllegalArgumentException.class, () -> r.addBefore("Nope", new Named("E")));
+        assertThrows(IllegalArgumentException.class, () -> r.add(new Named("A")));
+        assertThrows(IllegalArgumentException.class, () -> r.add(new Named("bad id")));
+    }
+
+    @Test
+    void defaultMetadata() {
+        Lint l = new Named("X");
+        assertEquals("custom", l.category());
+        assertEquals(Severity.WARN, l.severity());
+        assertEquals(Severity.ERROR, new Upper().severity());
+    }
+
+    /** Upper-cases "todo" comments; a formatter with the built-in check. */
+    static final class Upper implements Formatter {
+        @Override
+        public String id() {
+            return "UpperTodo";
+        }
+
+        @Override
+        public String format(Context ctx) {
+            return ctx.source().replace("// todo", "// TODO");
+        }
+    }
+
+    @Test
+    void formattersAreAlsoLinters() {
+        RuleTester t = RuleTester.of(new Upper());
+        String in = "class A {\n    // todo one\n    int x;\n}\n";
+        List<Finding> fs = t.check(in);
+        assertEquals(1, fs.size());
+        assertEquals("2:1 custom/UpperTodo Code is not formatted", fs.get(0).brief());
+        assertEquals(Severity.ERROR, fs.get(0).severity());
+        assertEquals(
+                "class A {\n    // TODO one\n    int x;\n}\n", fs.get(0).fix().apply(in));
+        assertEquals("class A {\n    // TODO one\n    int x;\n}\n", t.format(in));
+    }
+
+    @Test
+    void nonIdempotentFormattersAreReportedInDebugMode() {
+        Formatter grows = new Formatter() {
+            @Override
+            public String id() {
+                return "Grows";
+            }
+
+            @Override
+            public String format(Context ctx) {
+                return ctx.source() + "//\n";
+            }
+        };
+        List<String> fs = RuleTester.of(grows).findings("class A {}\n");
+        assertTrue(
+                fs.stream().anyMatch(s -> s.contains("internal/NotIdempotent Grows is not idempotent")), fs.toString());
+    }
+
+    @Test
+    void brokenFormatterOutputIsDropped() {
+        Formatter breaks = new Formatter() {
+            @Override
+            public String id() {
+                return "Breaks";
+            }
+
+            @Override
+            public String format(Context ctx) {
+                return ctx.source().replace("}", "");
+            }
+        };
+        RuleTester t = RuleTester.of(breaks);
+        assertEquals("class A {}\n", t.format("class A {}\n"));
+    }
+
+    @Test
+    void syntaxErrorsAreReported() {
+        List<String> fs = RuleTester.of(new JavaFormat()).findings("class A { void f( }");
+        assertEquals(1, fs.size());
+        assertTrue(fs.get(0).contains("syntax/ParseError"), fs.toString());
+    }
+
+    // ------------------------------------------------------------------ formatter off
+
+    @Test
+    void formatterOffRegionsAreKept() {
+        RuleTester t = RuleTester.of(new JavaFormat());
+        String in = """
+                class A {
+                    // @formatter:off
+                    int[] m = { 1,0,
+                                0,1 };
+                    // @formatter:on
+                    int   x;
+                    // jpm-ignore format
+                    void   keep( ) { }
+                    void   fix( ) { }
+                }
+                """;
+        String out = t.format(in);
+        assertTrue(out.contains("    int[] m = { 1,0,\n                0,1 };\n"), out);
+        assertTrue(out.contains("    int x;"), out);
+        assertTrue(out.contains("    void   keep( ) { }"), out);
+        assertTrue(out.contains("    void fix() {}"), out);
+        assertEquals(List.of(), t.findings(out));
+    }
+
+    // ------------------------------------------------------------------ suppressions
+
+    @Test
+    void suppressionComments() {
+        RuleTester t = RuleTester.of(new UnusedLocalVariable(), new PointlessBooleanExpression());
+        String in = """
+                class A {
+                    void f() {
+                        // jpm-ignore lint/correctness/UnusedLocalVariable: needed for the debugger
+                        int a = 1;
+                        int b = 2;
+                        // jpm-ignore-start lint/correctness: generated
+                        int c = 3;
+                        int d = 4;
+                        // jpm-ignore-end lint/correctness
+                        // jpm-ignore lint/correctness/UnusedLocalVariable
+                        int e = 5;
+                        // jpm-ignore lint/complexity: nothing to suppress
+                        int g = 6;
+                        // jpm-ignore lint/nope/Rule: bad
+                    }
+                    @SuppressWarnings("unused") void h() { int i = 1; }
+                    @SuppressWarnings({"UnusedLocalVariable"}) void j() { int k = 1; }
+                    void l() {
+                        //noinspection UnusedLocalVariable
+                        int m = 1;
+                    }
+                }
+                """;
+        assertEquals(
+                List.of(
+                        "5:13 correctness/UnusedLocalVariable Local variable 'b' is never used",
+                        "10:9 suppressions/InvalidSuppression Suppression needs a reason: // jpm-ignore lint/correctness/UnusedLocalVariable: <reason>",
+                        "11:13 correctness/UnusedLocalVariable Local variable 'e' is never used",
+                        "12:9 suppressions/UnusedSuppression Unused suppression: nothing matches lint/complexity here",
+                        "13:13 correctness/UnusedLocalVariable Local variable 'g' is never used",
+                        "14:9 suppressions/InvalidSuppression Unknown category \"nope\"; categories are [complexity, correctness, custom, internal, suppressions, syntax]"),
+                t.findings(in));
+    }
+
+    @Test
+    void wholeFileSuppression() {
+        RuleTester t = RuleTester.of(new UnusedLocalVariable(), new PointlessBooleanExpression());
+        assertEquals(
+                List.of("2:41 complexity/PointlessBooleanExpression 'b == true' can be simplified to 'b'"),
+                t.findings("// jpm-ignore-all lint/correctness/UnusedLocalVariable: legacy code\n"
+                        + "class A { boolean b; void f() { int x = b == true ? 1 : 0; } }"));
+    }
+
+    @Test
+    void suppressionOutlivesReformatting() {
+        // the formatter splits the method over several lines; the comment still covers all of it
+        RuleTester t = RuleTester.withBuiltins();
+        String in =
+                "class A {\n    // jpm-ignore lint/correctness/UnusedLocalVariable: demo\n    void f() { int x = 1; }\n}\n";
+        String out = t.format(in);
+        assertEquals(
+                "class A {\n    // jpm-ignore lint/correctness/UnusedLocalVariable: demo\n    void f() {\n        int x = 1;\n    }\n}\n",
+                out);
+        assertEquals(List.of(), t.findings(out));
+    }
+
+    // ------------------------------------------------------------------ config
+
+    @Test
+    void configFromManifestWithExtendsOverridesAndIgnore() throws IOException {
+        write("shared/format.jsonc", """
+                { "linter": { "rules": { "suspicious": { "EmptyCatchBlock": "error" } } } }
+                """);
+        write("project.jsonc", """
+                {
+                  "name": "demo",
+                  // comments and trailing commas are fine
+                  "extensions": { "format": {
+                    "extends": ["shared/format.jsonc"],
+                    "ignore": ["src/gen/**"],
+                    "overrides": [ { "include": ["test/**"], "linter": { "rules": { "suspicious": { "EmptyCatchBlock": "off" } } } } ],
+                  } },
+                }
+                """);
+        String code = "class A { void f() { try {} catch (Exception e) {} } }\n";
+        write("src/A.java", code);
+        write("test/A.java", code);
+        write("src/gen/G.java", code);
+        Workspace ws = open();
+        assertEquals(List.of(dir.resolve("src/A.java"), dir.resolve("test/A.java")), ws.files(List.of()));
+        Lint ecb = ws.registry.rules.get("EmptyCatchBlock");
+        assertEquals(Severity.ERROR, ws.config.settings("src/A.java").level(ecb, true));
+        assertEquals(Severity.OFF, ws.config.settings("test/A.java").level(ecb, true));
+        assertTrue(ws.config.ignored("src/gen/G.java"));
+        assertTrue(ws.config.ignored("dist/x.java"));
+    }
+
+    @Test
+    void separateConfigFileAndModuleConfigs() throws IOException {
+        write("jpm-format.jsonc", "{ \"linter\": { \"recommended\": false } }");
+        write("project.jsonc", "{ \"name\": \"root\", \"workspace\": [\"lib\"] }");
+        write(
+                "lib/project.jsonc",
+                "{ \"name\": \"lib\", \"extensions\": { \"format\": { \"linter\": { \"recommended\": true } } } }");
+        Workspace ws = open();
+        Lint ecb = ws.registry.rules.get("EmptyCatchBlock");
+        assertEquals(Severity.OFF, ws.config.settings("src/A.java").level(ecb, true));
+        assertEquals(Severity.WARN, ws.config.settings("lib/src/A.java").level(ecb, true));
+        assertEquals(Severity.ERROR, ws.config.settings("src/A.java").level(ws.registry.rules.get("JavaFormat"), true));
+    }
+
+    @Test
+    void configErrors() throws IOException {
+        write(
+                "project.jsonc",
+                "{ \"extensions\": { \"format\": { \"linter\": { \"rules\": { \"style\": { \"NoSuchRule\": \"warn\" } } } } } }");
+        assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("no rule named NoSuchRule"));
+        write(
+                "project.jsonc",
+                "{ \"extensions\": { \"format\": { \"linter\": { \"rules\": { \"style\": { \"EmptyCatchBlock\": \"warn\" } } } } } }");
+        assertTrue(
+                assertThrows(FormatException.class, this::open).getMessage().contains("is in category \"suspicious\""));
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"tabs\": true } } } }");
+        assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("unknown key \"tabs\""));
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"lineWidth\": 80 } } } }");
+        Workspace ws = open();
+        assertTrue(assertThrows(FormatException.class, () -> ws.config.settings("A.java"))
+                .getMessage()
+                .contains("not supported yet"));
+        write("project.jsonc", "{ \"extensions\": { \"format\": {} } }");
+        write("jpm-format.jsonc", "{}");
+        assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("keep one"));
+    }
+
+    @Test
+    void ruleOptionsReachTheRule() {
+        Lint withOptions = new Lint() {
+            @Override
+            public String id() {
+                return "Opts";
+            }
+
+            @Override
+            public void check(Context ctx) {
+                ctx.report(0, 1, "max=" + ctx.options().get("max"), null);
+            }
+        };
+        RuleTester t = RuleTester.of(withOptions)
+                .config(
+                        "{ \"linter\": { \"rules\": { \"custom\": { \"Opts\": { \"level\": \"error\", \"options\": { \"max\": 3 } } } } } }");
+        List<Finding> fs = t.check("class A {}");
+        assertEquals("max=3", fs.get(0).message());
+        assertEquals(Severity.ERROR, fs.get(0).severity());
+    }
+
+    // ------------------------------------------------------------------ workspace: custom rules, cache, test kit
+
+    @Test
+    void customRulesFromTheRulesFolder() throws IOException {
+        write(
+                "project.jsonc",
+                "{ \"name\": \"demo\", \"extensions\": { \"format\": { \"linter\": { \"rules\": { \"custom\": { \"NoPrintln\": \"error\" } } } } } }");
+        write("rules/NoPrintln.java", """
+                import com.sun.source.tree.MemberSelectTree;
+                import com.sun.source.util.TreeScanner;
+                import dev.jpm.format.api.*;
+
+                public class NoPrintln implements Lint {
+                    public String id() { return "NoPrintln"; }
+                    public void check(Context ctx) {
+                        new TreeScanner<Void, Void>() {
+                            @Override public Void visitMemberSelect(MemberSelectTree t, Void v) {
+                                if (t.getIdentifier().contentEquals("println")) ctx.report(t, "No println");
+                                return super.visitMemberSelect(t, v);
+                            }
+                        }.scan(ctx.tree(), null);
+                    }
+                }
+                """);
+        write("rules/Ordered.java", """
+                package demo.rules;
+                import dev.jpm.format.api.*;
+
+                public class Ordered implements RuleSet {
+                    public void register(Rules rules) {
+                        rules.addBefore("JavaFormat", new Formatter() {
+                            public String id() { return "Banner"; }
+                            public String format(Context ctx) {
+                                return ctx.source().startsWith("// banner") ? ctx.source() : "// banner\\n" + ctx.source();
+                            }
+                        });
+                    }
+                }
+                """);
+        Workspace ws = open();
+        List<String> ids = ws.registry.rules.all().stream().map(Lint::id).toList();
+        assertEquals(ids.indexOf("JavaFormat") - 1, ids.indexOf("Banner"));
+        assertTrue(ids.contains("NoPrintln"));
+
+        Engine.Result r =
+                ws.engine.run("src/A.java", "class A { void f() { System.out.println(); } }", Engine.Mode.FORMAT);
+        assertEquals("// banner\nclass A {\n    void f() {\n        System.out.println();\n    }\n}\n", r.output());
+        assertEquals(
+                List.of("4:9 custom/NoPrintln No println"),
+                r.findings().stream().map(Finding::brief).toList());
+        assertEquals(Severity.ERROR, r.findings().get(0).severity());
+        assertTrue(Files.isDirectory(dir.resolve(".cache/format/rules")));
+    }
+
+    @Test
+    void customRuleCompileErrorsAreReadable() throws IOException {
+        write("rules/Bad.java", "public class Bad implements dev.jpm.format.api.Lint { }");
+        FormatException e = assertThrows(FormatException.class, this::open);
+        assertTrue(e.getMessage().startsWith("Could not compile the custom rules:\n  Bad.java:1:"), e.getMessage());
+    }
+
+    @Test
+    void cacheSkipsUnchangedFiles() {
+        Workspace ws = open();
+        Cache c = Cache.open(dir, ws.cacheKey);
+        Engine.Result r = ws.engine.run("A.java", "class A { void f() { int x; } }\n", Engine.Mode.CHECK);
+        c.put("A.java", r.output(), false, r.findings());
+        c.save();
+        Cache again = Cache.open(dir, ws.cacheKey);
+        Cache.Entry e = again.get("A.java", "class A { void f() { int x; } }\n");
+        assertEquals(r.findings(), e.findings());
+        assertEquals(null, again.get("A.java", "class B {}\n"));
+        assertEquals(null, Cache.open(dir, "other-config").get("A.java", "class A { void f() { int x; } }\n"));
+    }
+
+    @Test
+    void snapshotTests() throws IOException {
+        Path in = write(
+                "rules/test/Sample.java", "class Sample { void f() { int unusedX; if (b == true) {} } boolean b; }\n");
+        Workspace ws = open();
+        assertEquals(0, SnapshotTests.run(ws, null, false)); // writes the snapshots
+        assertEquals("""
+                class Sample {
+                    void f() {
+                        int unusedX;
+                        if (b == true) {}
+                    }
+
+                    boolean b;
+                }
+                """, Files.readString(in.resolveSibling("Sample.expected.java")));
+        String findings = Files.readString(in.resolveSibling("Sample.findings"));
+        assertTrue(findings.contains("1:1 format/JavaFormat Code is not formatted\n"), findings);
+        assertTrue(
+                findings.contains("complexity/PointlessBooleanExpression 'b == true' can be simplified to 'b'\n"),
+                findings);
+        assertEquals(0, SnapshotTests.run(ws, null, false));
+        Files.writeString(in.resolveSibling("Sample.expected.java"), "changed\n");
+        PrintStream err = System.err;
+        try {
+            System.setErr(new PrintStream(new ByteArrayOutputStream()));
+            assertEquals(1, SnapshotTests.run(ws, null, false));
+            assertEquals(0, SnapshotTests.run(ws, null, true));
+        } finally {
+            System.setErr(err);
+        }
+        assertFalse(ws.files(List.of()).contains(in), "rule test inputs are not formatted");
+    }
+
+    // ------------------------------------------------------------------ reporters
+
+    @Test
+    void reporters() {
+        Workspace ws = open();
+        Engine.Result r = ws.engine.run(
+                "src/A.java", "class A { boolean b; boolean f() { return b == true; } }\n", Engine.Mode.CHECK);
+        List<Engine.Result> rs = List.of(r);
+        Reporter.Summary sum = new Reporter.Summary(1, 1, true, 5);
+
+        ByteArrayOutputStream json = new ByteArrayOutputStream();
+        Reporter.named("json").report(rs, sum, ws.registry, new PrintStream(json, true, StandardCharsets.UTF_8));
+        Map<String, Object> parsed = Json.object(json.toString(StandardCharsets.UTF_8), "json");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> fs = (List<Map<String, Object>>) parsed.get("findings");
+        assertEquals(r.findings(), fs.stream().map(Reporter::fromJson).toList());
+
+        ByteArrayOutputStream sarif = new ByteArrayOutputStream();
+        Reporter.named("sarif").report(rs, sum, ws.registry, new PrintStream(sarif, true, StandardCharsets.UTF_8));
+        Map<String, Object> s = Json.object(sarif.toString(StandardCharsets.UTF_8), "sarif");
+        assertEquals("2.1.0", s.get("version"));
+        assertTrue(sarif.toString(StandardCharsets.UTF_8)
+                .contains("\"ruleId\": \"complexity/PointlessBooleanExpression\""));
+
+        ByteArrayOutputStream gh = new ByteArrayOutputStream();
+        Reporter.named("github").report(rs, sum, ws.registry, new PrintStream(gh, true, StandardCharsets.UTF_8));
+        assertTrue(
+                gh.toString(StandardCharsets.UTF_8)
+                        .contains(
+                                "::warning file=src/A.java,line=1,col=43,endLine=1,endColumn=52,title=lint/complexity/PointlessBooleanExpression::'b == true' can be simplified to 'b'"),
+                gh.toString(StandardCharsets.UTF_8));
+        assertEquals("a%3Ab%2Cc%0Ad", Reporter.Github.prop("a:b,c\nd"));
+        assertThrows(FormatException.class, () -> Reporter.named("xml"));
+    }
+
+    // ------------------------------------------------------------------ json and lsp
+
+    @Test
+    void jsonc() {
+        Object v = Json.parse("// c\n{ \"a\": [1, 2.5, true, null, \"x\\n\\u0041\",], /* b */ \"b\": {}, }", "t");
+        assertEquals("{\"a\":[1,2.5,true,null,\"x\\nA\"],\"b\":{}}", Json.write(v));
+        assertThrows(FormatException.class, () -> Json.parse("{\"a\" 1}", "t"));
+    }
+
+    @Test
+    void languageServer() throws IOException {
+        Files.writeString(dir.resolve("project.jsonc"), "{ \"name\": \"demo\" }");
+        String uri = dir.resolve("src/L.java").toUri().toString();
+        String text = "class L { void f() { if (b == true) {} } boolean b; }\n";
+        StringBuilder in = new StringBuilder();
+        for (String m : List.of(
+                "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"rootUri\":"
+                        + Json.quote(dir.toUri().toString()) + "}}",
+                "{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didOpen\",\"params\":{\"textDocument\":{\"uri\":"
+                        + Json.quote(uri) + ",\"languageId\":\"java\",\"version\":1,\"text\":" + Json.quote(text)
+                        + "}}}",
+                "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"textDocument/formatting\",\"params\":{\"textDocument\":{\"uri\":"
+                        + Json.quote(uri) + "}}}",
+                "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"textDocument/codeAction\",\"params\":{\"textDocument\":{\"uri\":"
+                        + Json.quote(uri)
+                        + "},\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":50}}}}",
+                "{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"nope\"}",
+                "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"shutdown\"}",
+                "{\"jsonrpc\":\"2.0\",\"method\":\"exit\"}")) {
+            in.append("Content-Length: ")
+                    .append(m.getBytes(StandardCharsets.UTF_8).length)
+                    .append("\r\n\r\n")
+                    .append(m);
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        int code = new Lsp(new ByteArrayInputStream(in.toString().getBytes(StandardCharsets.UTF_8)), out).run();
+        assertEquals(0, code);
+        String o = out.toString(StandardCharsets.UTF_8);
+        assertTrue(o.contains("\"method\":\"textDocument/publishDiagnostics\""), o);
+        assertTrue(o.contains("\"code\":\"complexity/PointlessBooleanExpression\""), o);
+        assertTrue(
+                o.contains(
+                        "\"newText\":\"class L {\\n    void f() {\\n        if (b == true) {}\\n    }\\n\\n    boolean b;\\n}\\n\""),
+                o);
+        assertTrue(o.contains("\"title\":\"Simplify (PointlessBooleanExpression)\""), o);
+        assertTrue(o.contains("\"id\":4,\"error\":{") && o.contains("-32601"), o);
+    }
+}

@@ -1,0 +1,18 @@
+// jpm-format: the `jpm format` extension. Install with `jpm add -g github:java-package-manager/jpm-format`.
+{
+  "name": "jpm-format",
+  "group": "dev.jpm",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Format and lint jpm projects: an IntelliJ-style formatter, built-in inspections and custom rules",
+  "url": "https://github.com/java-package-manager/jpm-format",
+  "java": "21",
+  "main": "dev.jpm.format.Main",
+  "runtime": {
+    // the layout engine; Apache 2.0, a fork of google-java-format
+    "com.palantir.javaformat:palantir-java-format": "2.103.0"
+  },
+  "test": {
+    "org.junit.jupiter:junit-jupiter": "5.11.4"
+  }
+}
