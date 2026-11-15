@@ -57,11 +57,9 @@ jobs:
         run: jpm build
 
       - name: Format check of itself
-        run: |
-          set -eux
-          cp=$(jpm info --json --classpath | python3 -c 'import json,sys,os; m=json.load(sys.stdin)["modules"][0]; print(os.pathsep.join([m["jar"]] + m["compileClasspath"]))')
-          # GitHub annotations are picked automatically in Actions
-          JPM_PROJECT_DIR="$PWD" java -cp "$cp" dev.jpm.format.Main --check
+        # `jpm start` runs main on the runtime classpath, as an installed extension does;
+        # GitHub annotations are picked automatically in Actions
+        run: jpm start -- --check
 
   # jpm installs extensions from their Git source, so a release is just a tag: it is what
   # `jpm add -g github:java-package-manager/jpm-format` resolves (^<version>) instead of the main branch.

@@ -242,8 +242,7 @@ This is the first version. Not done yet:
 ```sh
 jpm test
 jpm build
-cp=$(jpm info --json --classpath | python3 -c 'import json,sys,os; m=json.load(sys.stdin)["modules"][0]; print(os.pathsep.join([m["jar"]] + m["compileClasspath"]))')
-JPM_PROJECT_DIR=/path/to/a/project java -cp "$cp" dev.jpm.format.Main --check
+jpm start -- --check            # jpm-format on itself, on its runtime classpath
 ```
 
 `JPM_FORMAT_RELAUNCH=1` forces the second-JVM path, to test it on JDK 21.

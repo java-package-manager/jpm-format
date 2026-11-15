@@ -61,8 +61,11 @@ public final class Main {
         } catch (FormatException e) {
             System.err.println("error: " + e.getMessage());
             code = 2;
-        } catch (RuntimeException e) {
-            System.err.println("error: unexpected failure: " + e);
+        } catch (RuntimeException | LinkageError e) {
+            StringBuilder msg = new StringBuilder("error: unexpected failure: " + e);
+            for (Throwable c = e.getCause(); c != null && c != c.getCause(); c = c.getCause())
+                msg.append("\n  caused by: ").append(c);
+            System.err.println(msg);
             if (System.getenv("JPM_VERBOSE") != null) e.printStackTrace();
             code = 70;
         }
@@ -243,6 +246,7 @@ public final class Main {
             return 130;
         } catch (ExecutionException e) {
             if (e.getCause() instanceof RuntimeException re) throw re;
+            if (e.getCause() instanceof Error err) throw err;
             throw new IllegalStateException(e.getCause());
         } finally {
             pool.shutdown();
