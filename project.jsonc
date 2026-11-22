@@ -9,6 +9,27 @@
   "url": "https://github.com/java-package-manager/jpm-format",
   "java": "21",
   "main": "dev.jpm.format.Main",
+  // what IDEs show for `jpm format` (jpm's extensions/list); needs jpm 0.12.0, which reads "extension"
+  "extension": {
+    "description": "Format and lint Java code",
+    "commands": {
+      "format": {
+        "description": "Format every file and apply every safe fix",
+        "options": {
+          "--check": { "description": "Change nothing; report formatting differences and lint findings, and exit 1 if there are any" },
+          "--stdin": { "argument": "path", "description": "Format standard input as if it were <path>; print the result" },
+          "--reporter": { "argument": "name", "description": "pretty (default), json, sarif or github" },
+          "--debug": { "description": "Run every formatter twice and report those whose output changes" },
+          "--no-cache": { "description": "Ignore and do not write .cache/format/" },
+          "--threads": { "argument": "n", "description": "Files processed in parallel (default: one per CPU)" }
+        }
+      },
+      "format lsp": { "description": "Run the language server (stdio)" },
+      "format test": { "description": "Run the rule tests in rules/test/", "options": { "--update": { "description": "Rewrite the snapshots" } } },
+      "format rules": { "description": "List the rules and how they are configured" }
+    },
+    "checks": { "format": { "description": "Every file is formatted and has no lint findings (jpm format --check)" } }
+  },
   // jpm generates this class with NAME and VERSION from this file; Main.VERSION reads it
   "defineClass": "dev.jpm.format.BuildConfig",
   // the layout engine (src/dev/jpm/format/palantir, forked from Palantir Java Format) is built on javac's
