@@ -28,7 +28,7 @@
       "format test": { "description": "Run the rule tests in rules/test/", "options": { "--update": { "description": "Rewrite the snapshots" } } },
       "format rules": { "description": "List the rules and how they are configured" }
     },
-    "checks": { "format": { "description": "Every file is formatted and has no lint findings (jpm format --check)" } }
+    "checks": { "format": { "description": "Every file is formatted and has no lint findings", "run": ["--check"] } }
   },
   // jpm generates this class with NAME and VERSION from this file; Main.VERSION reads it
   "defineClass": "dev.jpm.format.BuildConfig",
