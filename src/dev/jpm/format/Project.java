@@ -3,6 +3,12 @@ package dev.jpm.format;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.Trees;
+import dev.jpm.api.client.JpmClient;
+import dev.jpm.api.client.JpmError;
+import dev.jpm.api.client.JpmNotInstalled;
+import dev.jpm.api.client.LoadOptions;
+import dev.jpm.api.client.ProtocolMismatch;
+import dev.jpm.api.model.Classpaths;
 import dev.jpm.format.api.TypeInfo;
 
 import java.io.File;
@@ -14,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import javax.tools.DiagnosticCollector;
 import javax.tools.FileObject;
 import javax.tools.ForwardingJavaFileManager;
@@ -25,8 +30,8 @@ import javax.tools.StandardJavaFileManager;
 /**
  * The project being formatted: its root folder and, when known, each module's classpath for type-aware rules.
  *
- * <p>The classpath comes from {@code JPM_CLASSPATH} when jpm passes it, and otherwise from
- * {@code jpm info --json --classpath --ide}. Outside a jpm project, or when its dependencies are not installed,
+ * <p>The classpath comes from {@code JPM_CLASSPATH} when jpm passes it, and otherwise from jpm over its protocol
+ * ({@code jpm api}, with jpm's client dev.jpm:jpm-api). Outside a jpm project, or when its dependencies are not installed,
  * there is none: type-aware rules are skipped and everything else still runs.
  */
 public final class Project {
@@ -65,7 +70,7 @@ public final class Project {
         return found != null ? found : from.toAbsolutePath().normalize();
     }
 
-    /** Loads the classpath: {@code JPM_CLASSPATH}, else {@code jpm info}. Never throws. */
+    /** Loads the classpath: {@code JPM_CLASSPATH}, else jpm's {@code project/load} and {@code project/classpaths}. Never throws. */
     public static Project load(Path root) {
         String cp = System.getenv("JPM_CLASSPATH");
         if (cp != null && !cp.isBlank()) {
@@ -82,45 +87,39 @@ public final class Project {
         }
         String jpm = System.getenv("JPM_EXE");
         if (jpm == null || jpm.isBlank()) jpm = "jpm";
-        try {
-            Process p = new ProcessBuilder(jpm, "info", "--json", "--classpath", "--ide")
-                    .directory(root.toFile())
-                    .redirectErrorStream(false)
-                    .redirectError(ProcessBuilder.Redirect.DISCARD)
-                    .start();
-            p.getOutputStream().close();
-            String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            if (!p.waitFor(120, TimeUnit.SECONDS) || p.exitValue() != 0) {
-                return untyped(root, "`jpm info` failed (are the dependencies installed? run `jpm install`)");
-            }
-            int brace = out.indexOf('{');
-            if (brace < 0) return untyped(root, "`jpm info --json` printed no JSON");
-            return fromInfo(root, Json.object(out.substring(brace), "jpm info --json"));
-        } catch (IOException e) {
+        try (JpmClient client = JpmClient.start(List.of(jpm, "api"), root, Map.of(), "jpm-format", Main.VERSION)) {
+            dev.jpm.api.model.Project p = client.load(root, LoadOptions.defaults());
+            return fromModel(root, p, client.classpaths(root, List.of()));
+        } catch (JpmNotInstalled e) {
             return untyped(root, System.getenv("JPM_EXE") == null ? "jpm is not on PATH" : "could not run " + jpm);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return untyped(root, "interrupted");
-        } catch (FormatException e) {
+        } catch (ProtocolMismatch e) {
             return untyped(root, e.getMessage());
+        } catch (JpmError e) {
+            String m = String.valueOf(e.getMessage());
+            return untyped(root, m.contains("stopped") || m.contains("could not be reached")
+                    ? "this jpm does not serve the jpm protocol (`jpm api`, jpm 0.12.0 or newer)"
+                    : "jpm could not load the project: " + m);
         }
     }
 
-    @SuppressWarnings("unchecked")
-    static Project fromInfo(Path root, Map<String, Object> info) {
+    /** The modules jpm reports, each with its source folders and the classpath its main and test sources compile against. */
+    static Project fromModel(Path root, dev.jpm.api.model.Project p, Map<String, Classpaths> classpaths) {
         List<Module> mods = new ArrayList<>();
-        for (Object o : (List<Object>) info.getOrDefault("modules", List.of())) {
-            Map<String, Object> m = (Map<String, Object>) o;
-            if (m.get("dir") == null || !(m.get("compileClasspath") instanceof List<?> cpl)) continue;
+        for (dev.jpm.api.model.Module m : p.modules()) {
+            Classpaths c = classpaths.get(m.name());
+            if (c == null) continue;
             List<Path> srcs = new ArrayList<>();
-            for (String k : new String[] {"sourceDir", "testDir", "generatedSourceDir"}) {
-                if (m.get(k) instanceof String s) srcs.add(Path.of(s));
-            }
+            srcs.addAll(m.folders().sources());
+            srcs.addAll(m.folders().tests());
+            srcs.addAll(m.folders().generatedSources());
             List<Path> cp = new ArrayList<>();
-            for (Object e : cpl) cp.add(Path.of(String.valueOf(e)));
-            mods.add(new Module(Path.of((String) m.get("dir")), srcs, cp));
+            for (dev.jpm.api.model.Package pkg : c.testCompile()) {
+                if (pkg.classes() != null) cp.add(pkg.classes());
+                cp.addAll(pkg.jars());
+            }
+            mods.add(new Module(m.dir(), srcs, cp));
         }
-        if (mods.isEmpty()) return untyped(root, "`jpm info` listed no classpath (jpm 0.4.0 or newer is needed)");
+        if (mods.isEmpty()) return untyped(root, "jpm reported no modules");
         return new Project(root, mods, null);
     }
 

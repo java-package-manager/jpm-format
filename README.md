@@ -119,8 +119,9 @@ Details are in [docs/rules.md](docs/rules.md). Rule names match IntelliJ's inspe
 `@SuppressWarnings` and `//noinspection` suppressions carry over.
 
 **Type-aware rules** use javac's attribution against the project's classpath, from `JPM_CLASSPATH` or
-`jpm info --json --classpath`. Outside a jpm project, or with dependencies not installed, they are skipped
-with a warning; formatting and the other rules still run.
+jpm over its protocol (`jpm api`, jpm 0.12.0 or newer, with jpm's client `dev.jpm:jpm-api`). Outside a jpm
+project, with an older jpm, or when jpm cannot load the project, they are skipped with a warning that says
+why; formatting and the other rules still run.
 
 ## Suppressions
 
