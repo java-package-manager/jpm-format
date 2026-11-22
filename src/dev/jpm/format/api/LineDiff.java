@@ -29,7 +29,6 @@ final class LineDiff {
             out.add(hunk(a, b, la, lb, pre, pre + an, pre, pre + bn));
             return out;
         }
-        // LCS over the middle
         int[][] dp = new int[an + 1][bn + 1];
         for (int i = an - 1; i >= 0; i--) {
             for (int j = bn - 1; j >= 0; j--) {

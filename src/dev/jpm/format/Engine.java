@@ -87,7 +87,6 @@ public final class Engine {
         }
         List<Active> rules = active(settings);
         Source cur = src;
-        // what `jpm format` makes of the file; in check mode, the reference formatting findings are judged by
         Pipeline formatted = pipeline(src, settings, rules, mode == Mode.FORMAT ? findings : new ArrayList<>());
         if (mode == Mode.FORMAT) cur = formatted.out();
         boolean clean = formatted.out().text.equals(src.text);
@@ -101,7 +100,7 @@ public final class Engine {
             try {
                 if (a.rule() instanceof Formatter f && defaultCheck(f)) {
                     Source at = cur;
-                    wrap(f, () -> apply(f, at, settings, findings)).check(ctx); // also checks idempotence in debug mode
+                    wrap(f, () -> apply(f, at, settings, findings)).check(ctx);
                 } else {
                     a.rule().check(ctx);
                     if (a.rule() instanceof Formatter f) {
@@ -159,12 +158,11 @@ public final class Engine {
     private List<Finding> attribute(Source src, Config.Settings settings, Pipeline formatted, List<Finding> own) {
         List<Finding> differences = new ArrayList<>();
         Formatter blame = formatted.lastChange();
-        if (blame == null) return differences; // nothing changes: nothing to report
+        if (blame == null) return differences;
         Lint rule = registry.rules.get(blame.id());
         FileContext ctx =
                 new FileContext(src, rule, settings.level(rule, registry.builtin(rule)), settings, null, differences);
         wrap(blame, () -> formatted.out().text).check(ctx);
-        // the formatters' own findings in pipeline order
         List<String> order = registry.rules.all().stream().map(Lint::id).toList();
         List<Finding> ordered = new ArrayList<>(own);
         ordered.sort(Comparator.comparingInt(f -> order.indexOf(f.rule())));
@@ -178,7 +176,7 @@ public final class Engine {
             if (!together.isEmpty()
                     && disjoint(together)
                     && Fix.apply(src.text, together).equals(want)) {
-                exact.addAll(here.stream().filter(f -> f.fix() != null).toList()); // they make this change together
+                exact.addAll(here.stream().filter(f -> f.fix() != null).toList());
             } else {
                 for (Finding f : here)
                     if (f.fix() != null && f.fix().apply(src.text).equals(want)) exact.add(f);
@@ -187,8 +185,6 @@ public final class Engine {
                 for (Finding f : exact) if (!out.contains(f)) out.add(f);
                 continue;
             }
-            // formatters working together: report the change the pipeline makes, for the first one that touched it
-            // (for unformatted code, the layout engine)
             Finding by = here.isEmpty() ? d : here.get(0);
             out.add(new Finding(
                     by.rule(),

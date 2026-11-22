@@ -35,12 +35,12 @@ public final class KeepBlankLines implements IntelliJRule {
         while (true) {
             int i2 = skipSpace(in, i), j2 = skipSpace(out, j);
             boolean end = i2 >= in.length() || j2 >= out.length();
-            if (end && (i2 < in.length() || j2 < out.length())) return out; // texts do not line up
+            if (end && (i2 < in.length() || j2 < out.length())) return out;
             String gap = out.substring(j, j2);
             if (!first && !end) gap = gap(in.substring(i, i2), gap, max, nl);
             sb.append(gap);
             if (end) return sb.toString();
-            if (in.charAt(i2) != out.charAt(j2)) return out; // a rule before us changed more than whitespace
+            if (in.charAt(i2) != out.charAt(j2)) return out;
             sb.append(out.charAt(j2));
             i = i2 + 1;
             j = j2 + 1;

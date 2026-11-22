@@ -1,7 +1,3 @@
-/*
- * Ported from Palantir Java Format's FormatterIntegrationTest (Apache 2.0, see
- * third_party/palantir-java-format/LICENSE). The test cases in test/assets/palantir/testdata are upstream's.
- */
 package dev.jpm.format.palantir.java;
 
 import dev.jpm.format.Exports;

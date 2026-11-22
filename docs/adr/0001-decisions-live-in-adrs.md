@@ -1,0 +1,18 @@
+# 0001. Decisions live in ADRs; the forked layout engine keeps its comments
+
+Status: accepted
+
+## Decision
+
+- jpm-format's own Java sources and tests have no `//` or `/* */` comments, as in jpm (jpm's ADR 0001). A
+  non-obvious decision goes into an ADR here; Javadoc is not a comment.
+- The lint rule is `java checks/Comments.java check src test '!src/dev/jpm/format/palantir'`, run in CI,
+  with its baseline in `checks/comments-baseline.txt`, which may only go down. It becomes a jpm-format
+  rule once jpm-format can lint itself for it (jpm roadmap, Milestone 5).
+- `src/dev/jpm/format/palantir/` is a fork of Palantir Java Format and is left out:
+  - every forked file keeps its Apache 2.0 copyright header, as the license requires;
+  - upstream fixes are picked up by comparing with the upstream commit
+    (`third_party/palantir-java-format/UPSTREAM.md`), which only works while the forked files stay
+    close to upstream's text;
+  - jpm-format's own changes to the fork are marked `jpm-format:` in comments, which is how the fork
+    keeps track of them.

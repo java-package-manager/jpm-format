@@ -51,7 +51,7 @@ final class Cache {
                 entries.put(e.getKey(), new Entry((String) v.get("hash"), (Boolean) v.get("formatted"), fs));
             }
         } catch (IOException | RuntimeException e) {
-            entries.clear(); // a broken cache is just a cold one
+            entries.clear();
         }
     }
 
@@ -90,8 +90,7 @@ final class Cache {
             Path tmp = Files.createTempFile(file.getParent(), "results", ".tmp");
             Files.writeString(tmp, Json.write(root), StandardCharsets.UTF_8);
             Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (IOException e) {
-            // caching is best effort
+        } catch (IOException ignored) {
         }
     }
 }

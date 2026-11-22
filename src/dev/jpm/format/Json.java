@@ -178,8 +178,6 @@ public final class Json {
         }
     }
 
-    // ------------------------------------------------------------------ writing
-
     /** Writes compact JSON. */
     public static String write(Object v) {
         StringBuilder sb = new StringBuilder();

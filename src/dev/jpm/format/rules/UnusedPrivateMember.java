@@ -58,7 +58,6 @@ public final class UnusedPrivateMember implements Lint {
             public Void visitClass(ClassTree c, Void v) {
                 boolean record = c.getKind() == Tree.Kind.RECORD;
                 for (Tree m : c.getMembers()) {
-                    // a record's components appear as private fields; they are its API, not unused state
                     if (record
                             && m instanceof VariableTree rc
                             && !rc.getModifiers().getFlags().contains(Modifier.STATIC)) continue;

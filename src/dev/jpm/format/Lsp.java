@@ -44,7 +44,7 @@ final class Lsp {
                 if (msg == null) return shutdown ? 0 : 1;
                 Object id = msg.get("id");
                 String method = (String) msg.get("method");
-                if (method == null) continue; // a response to us; we send no requests
+                if (method == null) continue;
                 try {
                     Object result = handle(method, params(msg));
                     if (method.equals("exit")) return shutdown ? 0 : 1;
@@ -262,8 +262,6 @@ final class Lsp {
     private static Map<String, Object> error(int code, String msg) {
         return Map.of("code", code, "message", msg == null ? "error" : msg);
     }
-
-    // ------------------------------------------------------------------ JSON-RPC
 
     private Map<String, Object> read() throws IOException {
         int length = -1;

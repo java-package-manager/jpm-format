@@ -154,8 +154,6 @@ public final class Project {
         return Hashing.sha256(sb.toString());
     }
 
-    // ------------------------------------------------------------------ attribution
-
     private static final ThreadLocal<JavaFileManager> FILE_MANAGERS = ThreadLocal.withInitial(
             () -> new InMemoryAware(Source.JAVAC.getStandardFileManager(null, null, StandardCharsets.UTF_8)));
 
@@ -202,13 +200,11 @@ public final class Project {
                 .findFirst()
                 .orElse(null);
         if (modular != null) {
-            // a named module reads its dependencies from the module path, as jpm runs it
             opts.add("--module-path");
             opts.add(join(m.classpath()));
             opts.add("-sourcepath");
             opts.add(modular.toString());
         } else {
-            // other folders (such as tests) see the classpath and the non-modular sources only
             opts.add("-classpath");
             opts.add(join(m.classpath()));
             List<Path> plain = srcs.stream()

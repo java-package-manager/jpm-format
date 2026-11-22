@@ -22,13 +22,13 @@ final class Elements {
                 if (t == null) return null;
                 int s = src.start(t);
                 int e = src.end(t);
-                if (e >= 0 && e <= offset) return null; // entirely before
+                if (e >= 0 && e <= offset) return null;
                 if (s >= offset && isElement(t)) {
                     if (s < best[0] || (s == best[0] && e > best[1])) {
                         best[0] = s;
                         best[1] = e;
                     }
-                    return null; // children start no earlier
+                    return null;
                 }
                 return super.scan(t, v);
             }

@@ -43,7 +43,7 @@ class RulesTest {
                 .config("{\"formatter\": {\"useTabs\": true}}")
                 .format("class A { String s = \"\"\"\n    keep\n    \"\"\"; void f() { int y = 1; } }");
         assertTrue(out.contains("\n\tvoid f() {\n\t\tint y = 1;"), out);
-        assertTrue(out.contains("\n    keep\n    \"\"\";"), out); // text block content untouched
+        assertTrue(out.contains("\n    keep\n    \"\"\";"), out);
     }
 
     @Test
@@ -57,7 +57,6 @@ class RulesTest {
     @Test
     void javaFormatWithAnyWidthAndIndent() {
         String in = "class A { void f() { if (true) { call(aaaaaaaaaa, bbbbbbbbbb, cccccccccc, dddddddddd); } } }";
-        // 3-space blocks, 6-space continuation lines, wrapped at 50 columns
         RuleTester t =
                 RuleTester.of(new JavaFormat()).config("{\"formatter\": {\"lineWidth\": 50, \"indentWidth\": 3}}");
         t.assertFormats(in, """
@@ -73,7 +72,6 @@ class RulesTest {
                    }
                 }
                 """);
-        // IntelliJ's own pairing, made explicit: 4 and 8
         RuleTester intellij = RuleTester.of(new JavaFormat())
                 .config("{\"formatter\": {\"lineWidth\": 80, \"indentWidth\": 4, \"continuationIndentWidth\": 8}}");
         assertEquals(

@@ -43,8 +43,6 @@ class EngineTest {
         return Workspace.open(dir, Project.untyped(dir, "test"), false, w -> {});
     }
 
-    // ------------------------------------------------------------------ rule API
-
     record Named(String id) implements Lint {
         @Override
         public void check(Context ctx) {
@@ -100,9 +98,7 @@ class EngineTest {
         RuleTester t = RuleTester.withBuiltins(new NoSpaceAfterIf());
         String formatted = t.format("class A { void f(boolean b) { if (b) { } } }");
         assertTrue(formatted.contains("        if(b) {\n        }\n"), formatted);
-        // what `jpm format` produces passes --check, although JavaFormat alone would put the space back
         assertEquals(List.of(), t.findings(formatted));
-        // a real difference is still reported, once, by the formatter that makes it
         String unformatted = formatted.replace("    void f", "  void f");
         assertEquals(List.of("2:1 format/JavaFormat Code is not formatted"), t.findings(unformatted));
         String spaced = formatted.replace("if(b)", "if (b)");
@@ -160,7 +156,6 @@ class EngineTest {
     @Test
     void invisibleDifferencesAreNamed() {
         RuleTester t = RuleTester.of(new JavaFormat());
-        // a package-info.java whose last line has no newline
         assertEquals(
                 List.of("4:1 format/JavaFormat Missing newline at end of file"),
                 t.findings("@NullMarked\npackage p;\n\nimport org.jspecify.annotations.NullMarked;"));
@@ -235,7 +230,6 @@ class EngineTest {
 
     @Test
     void theFormatterSupportsThisJdk() {
-        // CI runs on JDK 21, where javac still has what Palantir reads; newer JDKs make Main relaunch on one
         assertTrue(Jdks.formatterSupported(), Jdks.unsupportedMessage());
     }
 
@@ -245,8 +239,6 @@ class EngineTest {
         assertEquals(1, fs.size());
         assertTrue(fs.get(0).contains("syntax/ParseError"), fs.toString());
     }
-
-    // ------------------------------------------------------------------ formatter off
 
     @Test
     void formatterOffRegionsAreKept() {
@@ -270,8 +262,6 @@ class EngineTest {
         assertTrue(out.contains("    void fix() {}"), out);
         assertEquals(List.of(), t.findings(out));
     }
-
-    // ------------------------------------------------------------------ suppressions
 
     @Test
     void suppressionComments() {
@@ -322,7 +312,6 @@ class EngineTest {
 
     @Test
     void suppressionOutlivesReformatting() {
-        // the formatter splits the method over several lines; the comment still covers all of it
         RuleTester t = RuleTester.withBuiltins();
         String in =
                 "class A {\n    // jpm-ignore lint/correctness/UnusedLocalVariable: demo\n    void f() { int x = 1; }\n}\n";
@@ -332,8 +321,6 @@ class EngineTest {
                 out);
         assertEquals(List.of(), t.findings(out));
     }
-
-    // ------------------------------------------------------------------ config
 
     @Test
     void configFromManifestWithExtendsOverridesAndIgnore() throws IOException {
@@ -422,8 +409,6 @@ class EngineTest {
         assertEquals(Severity.ERROR, fs.get(0).severity());
     }
 
-    // ------------------------------------------------------------------ workspace: custom rules, cache, test kit
-
     @Test
     void customRulesFromTheRulesFolder() throws IOException {
         write(
@@ -502,7 +487,7 @@ class EngineTest {
         Path in = write(
                 "rules/test/Sample.java", "class Sample { void f() { int unusedX; if (b == true) {} } boolean b; }\n");
         Workspace ws = open();
-        assertEquals(0, SnapshotTests.run(ws, null, false)); // writes the snapshots
+        assertEquals(0, SnapshotTests.run(ws, null, false));
         assertEquals("""
                 class Sample {
                     void f() {
@@ -531,8 +516,6 @@ class EngineTest {
         }
         assertFalse(ws.files(List.of()).contains(in), "rule test inputs are not formatted");
     }
-
-    // ------------------------------------------------------------------ reporters
 
     @Test
     void reporters() {
@@ -566,8 +549,6 @@ class EngineTest {
         assertEquals("a%3Ab%2Cc%0Ad", Reporter.Github.prop("a:b,c\nd"));
         assertThrows(FormatException.class, () -> Reporter.named("xml"));
     }
-
-    // ------------------------------------------------------------------ json and lsp
 
     @Test
     void jsonc() {

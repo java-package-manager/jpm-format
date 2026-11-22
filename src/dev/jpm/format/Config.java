@@ -87,7 +87,6 @@ public final class Config {
             boolean formatting = rule instanceof Formatter;
             boolean on = switch (rule.id()) {
                 case "JavaFormat" -> formatterEnabled;
-                // the IntelliJ rules adjust the layout engine's output: on with it, unless the style is "palantir"
                 default ->
                     rule instanceof IntelliJRule
                             ? formatterEnabled && intellijStyle
@@ -116,7 +115,7 @@ public final class Config {
 
     public final Path root;
     private final Map<String, Object> rootConfig;
-    private final List<Scoped> modules; // deepest first
+    private final List<Scoped> modules;
     private final List<PathMatcher> ignores = new ArrayList<>();
     private final Rules rules;
     private final Map<String, Settings> settingsByKey = new ConcurrentHashMap<>();
@@ -144,7 +143,6 @@ public final class Config {
     public static Config load(Path root, Rules rules, String extraHash) {
         Map<String, Object> rootCfg = rootConfig(root);
         List<Scoped> mods = new ArrayList<>();
-        // module manifests below the root (workspaces)
         try (var walk = Files.walk(root, 6)) {
             for (Path p : (Iterable<Path>) walk::iterator) {
                 if (!p.getFileName().toString().equals("project.jsonc")
@@ -250,8 +248,6 @@ public final class Config {
         return out;
     }
 
-    // ------------------------------------------------------------------ per file
-
     static String rel(Path root, Path p) {
         return root.relativize(p.toAbsolutePath().normalize()).toString().replace('\\', '/');
     }
@@ -297,7 +293,6 @@ public final class Config {
         Map<String, Object> li = obj(c.get("linter"), "linter");
         int width = range(f.getOrDefault("lineWidth", 120L), "formatter.lineWidth", 20, 1000);
         int indent = range(f.getOrDefault("indentWidth", 4L), "formatter.indentWidth", 1, 16);
-        // IntelliJ's continuation indent: 8 with its 4-space indent
         int continuation = range(
                 f.getOrDefault("continuationIndentWidth", (long) (2 * indent)),
                 "formatter.continuationIndentWidth",
@@ -308,8 +303,6 @@ public final class Config {
             throw new FormatException(
                     "formatter.style must be \"intellij\" (the default) or \"palantir\", not " + Json.write(st));
         }
-        // IntelliJ's "keep maximum blank lines" (in code, in declarations and before '}')
-        // 1 is the least: the layout engine keeps one blank line wherever the code had any
         int maxBlank = range(f.getOrDefault("maxBlankLines", 2L), "formatter.maxBlankLines", 1, 10);
         String header = null;
         Object h = f.get("licenseHeader");

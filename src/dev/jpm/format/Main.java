@@ -90,7 +90,6 @@ public final class Main {
         boolean child = System.getenv("JPM_FORMAT_CHILD") != null;
         if (!nativeImage && !Jdks.formatterSupported()) {
             if (child) throw new FormatException(Jdks.unsupportedMessage());
-            // jpm picked a JDK whose javac the formatter cannot read: run on a supported one instead
             return relaunch(args, System.getProperty("java.class.path"), Jdks.supportedJava());
         }
         if (!nativeImage && !Exports.open() && !child) {
@@ -99,7 +98,6 @@ public final class Main {
         if (nativeImage && System.getenv("JPM_FORMAT_CHILD") == null) {
             Path root = Project.findRoot(Path.of(""));
             if (!CustomRules.sources(root).isEmpty()) {
-                // a native image cannot load the project's rules: run this command on a JVM instead
                 String cp = System.getenv("JPM_FORMAT_CLASSPATH");
                 if (cp == null || cp.isBlank()) {
                     throw new FormatException(
@@ -123,8 +121,7 @@ public final class Main {
         cmd.add(java);
         cmd.addAll(Exports.flags());
         boolean jarsOnly = Arrays.stream(classpath.split(File.pathSeparator)).allMatch(e -> e.endsWith(".jar"));
-        if (jarsOnly) { // CDS refuses directories on the classpath
-            // class data sharing: the second start onwards loads classes from an archive
+        if (jarsOnly) {
             Path cds = Path.of(
                     System.getProperty("user.home"),
                     ".cache",
@@ -199,7 +196,7 @@ public final class Main {
             }
         }
         if (reporter == null) reporter = "true".equals(System.getenv("GITHUB_ACTIONS")) ? "github" : "pretty";
-        Reporter.named(reporter); // validate
+        Reporter.named(reporter);
         return new Options(check, reporter, debug, cache && !debug, Math.max(1, threads), stdin, paths);
     }
 

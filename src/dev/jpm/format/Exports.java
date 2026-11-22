@@ -35,7 +35,6 @@ public final class Exports {
     /** Exports javac's internals if needed and possible; true if they are exported afterwards. */
     public static synchronized boolean open() {
         if (exported()) return true;
-        // JPM_FORMAT_RELAUNCH=1 forces the relaunch path instead (for testing it)
         if (Runtime.version().feature() >= 24 || System.getenv("JPM_FORMAT_RELAUNCH") != null) return false;
         try {
             Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");

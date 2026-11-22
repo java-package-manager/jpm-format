@@ -19,7 +19,7 @@ public final class Builtins {
         rules.add(new UnnecessaryModifier());
         rules.add(new ImportOrder());
         rules.add(new JavaFormat());
-        IntelliJ.register(rules); // adjustments toward IntelliJ's code style, right after the layout engine
+        IntelliJ.register(rules);
 
         rules.add(new MissingOverrideAnnotation());
         rules.add(new StringEquality());

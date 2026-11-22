@@ -38,8 +38,7 @@ public final class MemberBlankLines implements IntelliJRule {
             public Void visitClass(ClassTree c, Void v) {
                 List<Tree> members = new ArrayList<>();
                 for (Tree m : c.getMembers()) {
-                    if (ctx.start(m) < 0 || ctx.end(m) <= 0) continue; // generated
-                    // a record's components are fields in its header, not members of its body
+                    if (ctx.start(m) < 0 || ctx.end(m) <= 0) continue;
                     if (c.getKind() == Tree.Kind.RECORD
                             && m instanceof VariableTree vt
                             && !vt.getModifiers().getFlags().contains(Modifier.STATIC)) continue;

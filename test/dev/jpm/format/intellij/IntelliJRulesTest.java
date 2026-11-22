@@ -50,7 +50,6 @@ class IntelliJRulesTest {
     @Test
     void maxBlankLinesIsConfigurable() {
         String in = "class A {\n    int a;\n\n\n\n\n    int b;\n}\n";
-        // 1 is what Palantir keeps
         assertEquals(
                 "class A {\n    int a;\n\n    int b;\n}\n",
                 intellij().config("{\"formatter\": {\"maxBlankLines\": 1}}").format(in));
@@ -61,7 +60,6 @@ class IntelliJRulesTest {
 
     @Test
     void linesTheLayoutJoinsStayJoined() {
-        // blank lines inside an expression the layout engine puts on one line are not put back
         intellij()
                 .assertFormats(
                         "class A {\n    int x = f(1,\n\n            2);\n}\n", "class A {\n    int x = f(1, 2);\n}\n");
@@ -185,7 +183,6 @@ class IntelliJRulesTest {
 
     @Test
     void theirOutputPassesCheck() {
-        // run in check mode, the IntelliJ rules must not report what the layout engine would undo
         RuleTester all = RuleTester.withBuiltins();
         String formatted = all.format("class A { void f() {}\n\n\n    /** D. */ void g() {} }");
         assertEquals(List.of(), all.findings(formatted));

@@ -118,7 +118,7 @@ public final class UnnecessaryModifier implements Formatter {
 
             @Override
             public Void visitMethod(MethodTree t, Tree.Kind outer) {
-                return scan(t.getBody(), null); // local classes are not members
+                return scan(t.getBody(), null);
             }
 
             @Override

@@ -121,7 +121,7 @@ final class CustomRules {
             }
             if (c.isInterface() || java.lang.reflect.Modifier.isAbstract(c.getModifiers())) continue;
             boolean isSet = RuleSet.class.isAssignableFrom(c), isRule = Lint.class.isAssignableFrom(c);
-            if (!isSet && !isRule) continue; // a helper class
+            if (!isSet && !isRule) continue;
             Object o;
             try {
                 o = c.getDeclaredConstructor().newInstance();
@@ -185,7 +185,7 @@ final class CustomRules {
             try {
                 Files.move(tmp, out);
             } catch (IOException e) {
-                if (!Files.isDirectory(out)) throw e; // another run won the race
+                if (!Files.isDirectory(out)) throw e;
             }
         } catch (IOException e) {
             throw new FormatException("Could not compile the custom rules: " + e.getMessage());

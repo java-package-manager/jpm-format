@@ -60,7 +60,6 @@ public final class LicenseHeader implements Formatter {
         if (declarationFirst) {
             return want + nl + (code < src.length() ? nl : "") + src.substring(code);
         }
-        // a file without a package: keep its other leading comments (such as a class's Javadoc)
         if (firstCommentEnd >= 0 && src.substring(0, firstCommentEnd).strip().equals(want)) return src;
         return want + nl + nl + src.stripLeading();
     }

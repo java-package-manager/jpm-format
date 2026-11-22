@@ -41,8 +41,11 @@ final class Suppressions {
 
     /** One suppression: what it targets and the offsets it covers. */
     private static final class Entry {
-        final Comments.Comment comment; // null for annotations and noinspection
-        final String target; // lint, lint/cat or lint/cat/Rule; or a bare name for annotations
+        /** The suppressing comment; null for annotations and noinspection. */
+        final Comments.Comment comment;
+        /** {@code lint}, {@code lint/cat} or {@code lint/cat/Rule}; or a bare name for annotations. */
+        final String target;
+
         final int from, to;
         final boolean jpm;
         boolean used;
@@ -93,7 +96,7 @@ final class Suppressions {
                     rest = rest.substring(k.length());
                 }
             }
-            if (!rest.isEmpty() && !Character.isWhitespace(rest.charAt(0))) continue; // jpm-ignored, etc.
+            if (!rest.isEmpty() && !Character.isWhitespace(rest.charAt(0))) continue;
             rest = rest.strip();
             if (kind.isEmpty() && (rest.equals("format") || rest.startsWith("format:") || rest.startsWith("format ")))
                 continue;
@@ -137,7 +140,6 @@ final class Suppressions {
                     while (line <= src.lineCount() && codeless(src, line)) line++;
                     int from = src.lineStart(line);
                     int to = Math.max(from, src.lineStart(line + 1) - 1);
-                    // and all of the element that starts on that line, so reformatting cannot move code out of reach
                     if (src.errors().isEmpty()) {
                         int[] el = Elements.next(src, from);
                         if (el != null && src.line(el[0]) == line) to = Math.max(to, el[1]);

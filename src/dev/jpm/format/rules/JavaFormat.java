@@ -70,7 +70,6 @@ public final class JavaFormat implements Formatter {
                     "the formatter needs javac's internals; run the JVM with " + String.join(" ", Exports.flags()));
         }
         var s = ctx.settings();
-        // Palantir's style with jpm-format's widths; its GOOGLE and AOSP styles differ only in these
         return FORMATTERS.computeIfAbsent(
                 List.of(s.lineWidth(), s.indentWidth(), s.continuationIndentWidth()),
                 k -> dev.jpm.format.palantir.java.Formatter.createFormatter(JavaFormatterOptions.builder()

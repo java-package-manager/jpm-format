@@ -42,7 +42,7 @@ public final class EmptyBodies implements IntelliJRule {
     public String format(Context ctx) {
         String src = ctx.source();
         String nl = Source.newline(src);
-        List<Integer> braces = new ArrayList<>(); // offsets of "{}" to split
+        List<Integer> braces = new ArrayList<>();
         new TreeScanner<Void, Void>() {
             private void block(Tree t) {
                 if (t instanceof BlockTree b && b.getStatements().isEmpty()) braces.add(ctx.start(b));
@@ -60,13 +60,12 @@ public final class EmptyBodies implements IntelliJRule {
                     int end = ctx.end(c);
                     if (end >= 2 && src.charAt(end - 1) == '}') braces.add(end - 2);
                 }
-                for (Tree m : c.getMembers()) if (m instanceof BlockTree) block(m); // initializers
+                for (Tree m : c.getMembers()) if (m instanceof BlockTree) block(m);
                 return super.visitClass(c, v);
             }
 
             @Override
             public Void visitNewClass(NewClassTree n, Void v) {
-                // an anonymous class keeps {}: scan inside it, but not its own body as a class
                 scan(n.getEnclosingExpression(), v);
                 scan(n.getIdentifier(), v);
                 scan(n.getTypeArguments(), v);
@@ -127,7 +126,7 @@ public final class EmptyBodies implements IntelliJRule {
         }.scan(ctx.tree(), null);
         List<Fix.Edit> edits = new ArrayList<>();
         for (int at : braces) {
-            if (at < 0 || !src.startsWith("{}", at)) continue; // not written as {} (a comment inside, or split already)
+            if (at < 0 || !src.startsWith("{}", at)) continue;
             edits.add(new Fix.Edit(at + 1, at + 1, nl + indentOf(src, at)));
         }
         return edits.isEmpty() ? src : Fix.apply(src, edits);

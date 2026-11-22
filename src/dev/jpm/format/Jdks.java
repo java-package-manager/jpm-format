@@ -63,7 +63,7 @@ public final class Jdks {
         if (jpm == null || jpm.isBlank()) jpm = "jpm";
         try {
             Process p = new ProcessBuilder(jpm, "java", "home", SUPPORTED)
-                    .redirectError(ProcessBuilder.Redirect.INHERIT) // shows a download, if jpm installs the JDK
+                    .redirectError(ProcessBuilder.Redirect.INHERIT)
                     .start();
             p.getOutputStream().close();
             String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8).strip();
