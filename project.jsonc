@@ -3,13 +3,13 @@
 {
   "name": "jpm-format",
   "group": "dev.jpm",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "license": "MIT",
   "description": "Format and lint jpm projects: an IntelliJ-style formatter, built-in inspections and custom rules",
   "url": "https://github.com/java-package-manager/jpm-format",
   "java": "21",
   "main": "dev.jpm.format.Main",
-  // what IDEs show for `jpm format` (jpm's extensions/list); needs jpm 0.12.0, which reads "extension"
+  // what IDEs show for `jpm format` (jpm's extensions/list), and the check `jpm check` runs
   "extension": {
     "description": "Format and lint Java code",
     "commands": {
@@ -43,9 +43,9 @@
     "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
   ],
   // jpm's client, dev.jpm:jpm-api, is published here
-  "repositories": ["https://repo.thenextlvl.net/releases", "https://repo.thenextlvl.net/snapshots"],
+  "repositories": ["https://repo.thenextlvl.net/releases"],
   "runtime": {
-    "dev.jpm:jpm-api": "0.11.0-20261122.190804-3",
+    "dev.jpm:jpm-api": "^0.12.0",
     "com.google.guava:guava": "33.7.2-jre",
     "org.functionaljava:functionaljava": "5.0",
     // only for the layout engine's debug output (DebugRenderer)

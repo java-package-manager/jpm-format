@@ -4,7 +4,7 @@
 with an opinionated IntelliJ-style default and your own rules.
 
 ```sh
-jpm add -g github:java-package-manager/jpm-format   # needs jpm 0.7.1 or newer
+jpm add -g github:java-package-manager/jpm-format   # needs jpm 0.12.0 or newer
 jpm format            # format every file and apply every safe fix
 jpm format --check    # change nothing; report problems and exit 1 if there are any (for CI)
 ```
@@ -268,7 +268,7 @@ This is the first version. Not done yet:
 
 ## Developing
 
-Building jpm-format needs jpm 0.7.1 or newer: the layout engine is built on javac's internal syntax tree, which
+Building jpm-format needs jpm 0.12.0 or newer: the layout engine is built on javac's internal syntax tree, which
 `"javacArgs"` opens with `--add-exports`, and older jpm versions always compile with `--release`, which javac
 refuses together with that. Installing jpm-format (`jpm add -g`) builds it from source, so this applies there too.
 

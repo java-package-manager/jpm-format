@@ -44,11 +44,6 @@ jobs:
         with:
           java: "21"
 
-      - name: Check the jpm version
-        run: |
-          # the layout engine needs "javacArgs" with --add-exports, which jpm 0.7.1 compiles (no --release)
-          v=$(jpm --version | cut -d' ' -f2)
-          printf '%s\n%s\n' "0.7.1" "$v" | sort -V -C || { echo "::error::jpm $v is too old; jpm-format needs 0.7.1 or newer"; exit 1; }
 
       - name: No comments in jpm-format's own sources
         run: java checks/Comments.java check src test '!src/dev/jpm/format/palantir'

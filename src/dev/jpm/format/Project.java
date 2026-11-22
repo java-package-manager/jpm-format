@@ -95,10 +95,7 @@ public final class Project {
         } catch (ProtocolMismatch e) {
             return untyped(root, e.getMessage());
         } catch (JpmError e) {
-            String m = String.valueOf(e.getMessage());
-            return untyped(root, m.contains("stopped") || m.contains("could not be reached")
-                    ? "this jpm does not serve the jpm protocol (`jpm api`, jpm 0.12.0 or newer)"
-                    : "jpm could not load the project: " + m);
+            return untyped(root, "jpm could not load the project: " + e.getMessage());
         }
     }
 
