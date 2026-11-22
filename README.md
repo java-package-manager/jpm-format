@@ -225,7 +225,7 @@ classpath, so unchanged files are skipped; restore that folder between CI runs t
 [setup-jpm](https://github.com/java-package-manager/setup-jpm) 1.1 or newer that is one input:
 
 ```yaml
-      - uses: java-package-manager/setup-jpm@1
+      - uses: java-package-manager/setup-jpm@v1
         with:
           format-cache: true
       - run: jpm add -g github:java-package-manager/jpm-format
