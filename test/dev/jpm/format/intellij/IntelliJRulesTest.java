@@ -524,6 +524,40 @@ class IntelliJRulesTest {
     }
 
     @Test
+    void javadocBlockTagsHaveNoBlankLinesBetweenThem() {
+        intellij().assertFormats("""
+                class A {
+                    /**
+                     * Adds.
+                     *
+                     * @param a the first
+                     *
+                     * @return   the sum
+                     *
+                     *
+                     * @since 1.0
+                     */
+                    int add(int a) {
+                        return a;
+                    }
+                }
+                """, """
+                class A {
+                    /**
+                     * Adds.
+                     *
+                     * @param a the first
+                     * @return the sum
+                     * @since 1.0
+                     */
+                    int add(int a) {
+                        return a;
+                    }
+                }
+                """);
+    }
+
+    @Test
     void javadocTagDescriptionsAlignAndATagListFollowsABlankLine() {
         intellij().assertFormats("""
                 class A {

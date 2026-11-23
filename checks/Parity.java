@@ -79,7 +79,8 @@ public final class Parity {
         if (!Files.isDirectory(reference)) {
             Path tmp = CACHE.resolve("reference.tmp");
             copy(sources, tmp);
-            run(List.of(ideaHome.resolve("bin/format.sh").toString(), "-allowDefaults", "-r", tmp.toString()), ROOT);
+            run(List.of(ideaHome.resolve("bin/format.sh").toString(), "-allowDefaults", "-r", tmp.toString()), ROOT,
+                    Map.of("IDEA_PROPERTIES", isolatedIdea().toString()));
             Files.move(tmp, reference);
         }
 
@@ -88,13 +89,13 @@ public final class Parity {
         copy(sources, ours);
         Files.writeString(ours.resolve("project.jsonc"), CONFIG);
         if (jpmFormat == null) {
-            try (Stream<Path> d = Files.list(ROOT.resolve("dist"))) {
-                Path bundle = d.filter(f -> f.getFileName().toString().endsWith("-bundle.jar"))
-                        .findFirst()
-                        .orElseThrow(() -> new IOException("no dist/*-bundle.jar: run `jpm build --bundle` first"));
-                jpmFormat = List.of(
-                        Path.of(System.getProperty("java.home"), "bin", "java").toString(), "-jar", bundle.toString());
-            }
+            java.util.regex.Matcher v = java.util.regex.Pattern.compile("\"version\"\\s*:\\s*\"([^\"]+)\"")
+                    .matcher(Files.readString(ROOT.resolve("project.jsonc")));
+            if (!v.find()) throw new IOException("no \"version\" in project.jsonc");
+            Path bundle = ROOT.resolve("dist/jpm-format-" + v.group(1) + "-bundle.jar");
+            if (!Files.isRegularFile(bundle)) throw new IOException("no " + ROOT.relativize(bundle) + ": run `jpm build --bundle` first");
+            jpmFormat = List.of(
+                    Path.of(System.getProperty("java.home"), "bin", "java").toString(), "-jar", bundle.toString());
         }
         List<String> cmd = new ArrayList<>(jpmFormat);
         cmd.add("--no-cache");
@@ -182,11 +183,32 @@ public final class Parity {
         Files.writeString(marker, sha + "\n");
     }
 
+    /**
+     * An idea.properties that gives IntelliJ config, system, plugins and log folders of its own, so format.sh
+     * formats with IntelliJ's defaults, not with the IDE settings (and default code style) of whoever runs it.
+     */
+    private static Path isolatedIdea() throws IOException {
+        Path home = CACHE.resolve("idea-home");
+        deleteTree(home);
+        Files.createDirectories(home);
+        StringBuilder props = new StringBuilder();
+        for (String k : List.of("config", "system", "plugins", "log")) {
+            props.append("idea.").append(k).append(".path=")
+                    .append(home.resolve(k).toAbsolutePath().toString().replace('\\', '/')).append('\n');
+        }
+        Path file = home.resolve("idea.properties");
+        Files.writeString(file, props.toString());
+        return file;
+    }
+
     private static void run(List<String> cmd, Path dir) throws Exception {
-        Process p = new ProcessBuilder(cmd)
-                .directory(dir.toFile())
-                .redirectErrorStream(true)
-                .start();
+        run(cmd, dir, Map.of());
+    }
+
+    private static void run(List<String> cmd, Path dir, Map<String, String> env) throws Exception {
+        ProcessBuilder pb = new ProcessBuilder(cmd).directory(dir.toFile()).redirectErrorStream(true);
+        pb.environment().putAll(env);
+        Process p = pb.start();
         byte[] out;
         try (InputStream in = p.getInputStream()) {
             out = in.readAllBytes();
