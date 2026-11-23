@@ -45,13 +45,13 @@
   // jpm's client, dev.jpm:jpm-api, is published here
   "repositories": ["https://repo.thenextlvl.net/releases"],
   "runtime": {
-    "dev.jpm:jpm-api": "^0.12.0",
-    "com.google.guava:guava": "33.7.2-jre",
+    "dev.jpm:jpm-api": "0.14.0",
+    "com.google.guava:guava": "33.8.0-jre",
     "org.functionaljava:functionaljava": "5.0",
     // only for the layout engine's debug output (DebugRenderer)
-    "com.fasterxml.jackson.core:jackson-databind": "2.22.4",
-    "com.fasterxml.jackson.datatype:jackson-datatype-jdk8": "2.22.4",
-    "com.fasterxml.jackson.module:jackson-module-parameter-names": "2.22.4"
+    "com.fasterxml.jackson.core:jackson-databind": "2.23.0",
+    "com.fasterxml.jackson.datatype:jackson-datatype-jdk8": "2.23.0",
+    "com.fasterxml.jackson.module:jackson-module-parameter-names": "2.23.0"
   },
   "dev": {
     // annotation processors the layout engine is written for, as upstream builds it
@@ -62,7 +62,7 @@
     "com.google.code.findbugs:jsr305": "3.0.2"
   },
   "test": {
-    "org.junit.jupiter:junit-jupiter": "5.11.4"
+    "org.junit.jupiter:junit-jupiter": "6.1.3"
   },
   "extensions": {
     // a release is a tag, which `jpm add` installs from: `jpm changeset publish` only tags
