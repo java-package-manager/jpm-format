@@ -47,9 +47,6 @@ public final class Source {
     }
 
     /**
-     * An in-memory file for javac.
-     */
-    /**
      * Where javac writes its own messages, such as its crash banner; we report through diagnostics instead.
      */
     static PrintWriter quiet() {

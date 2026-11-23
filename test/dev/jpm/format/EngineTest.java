@@ -25,6 +25,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -100,8 +101,8 @@ class EngineTest {
     @Test
     void checkJudgesTheWholePipeline() {
         RuleTester t = RuleTester.withBuiltins(new NoSpaceAfterIf());
-        String formatted = t.format("class A { void f(boolean b) { if (b) { } } }");
-        assertTrue(formatted.contains("        if(b) {\n        }\n"), formatted);
+        String formatted = t.format("class A { void f(boolean b) { if (b) { g(); } } void g() { } }");
+        assertTrue(formatted.contains("        if(b) {\n            g();\n        }\n"), formatted);
         assertEquals(List.of(), t.findings(formatted));
         String unformatted = formatted.replace("    void f", "  void f");
         assertEquals(List.of("2:1 format/JavaFormat Code is not formatted"), t.findings(unformatted));
@@ -482,8 +483,8 @@ class EngineTest {
         Cache again = Cache.open(dir, ws.cacheKey);
         Cache.Entry e = again.get("A.java", "class A { void f() { int x; } }\n");
         assertEquals(r.findings(), e.findings());
-        assertEquals(null, again.get("A.java", "class B {}\n"));
-        assertEquals(null, Cache.open(dir, "other-config").get("A.java", "class A { void f() { int x; } }\n"));
+        assertNull(again.get("A.java", "class B {}\n"));
+        assertNull(Cache.open(dir, "other-config").get("A.java", "class A { void f() { int x; } }\n"));
     }
 
     @Test

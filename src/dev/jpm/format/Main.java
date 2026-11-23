@@ -58,6 +58,7 @@ public final class Main {
     private Main() {
     }
 
+    @SuppressWarnings("ThrowablePrintStackTrace")
     public static void main(String[] argv) {
         int code;
         try {

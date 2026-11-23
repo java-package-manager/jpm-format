@@ -71,8 +71,7 @@ public final class Json {
                 i++;
                 Map<String, Object> m = new LinkedHashMap<>();
                 ws();
-                while (true) {
-                    if (peek('}')) break;
+                while (!peek('}')) {
                     if (i >= s.length() || s.charAt(i) != '"') throw error("expected a key");
                     String k = string();
                     ws();
@@ -95,8 +94,7 @@ public final class Json {
                 i++;
                 List<Object> l = new ArrayList<>();
                 ws();
-                while (true) {
-                    if (peek(']')) break;
+                while (!peek(']')) {
                     l.add(value());
                     ws();
                     if (peek(',')) {

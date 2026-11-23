@@ -70,11 +70,9 @@ public final class MemberBlankLines implements IntelliJRule {
     static int insertionLine(Context ctx, String src, Tree prev, Tree next) {
         int prevLine = ctx.line(ctx.end(prev) - 1);
         int nextLine = ctx.line(ctx.start(next));
-        for (int l = prevLine + 1; l <= nextLine; l++) {
-            int s = ctx.lineStart(l), e = ctx.lineStart(l + 1);
-            if (src.substring(s, Math.min(e, src.length())).isBlank()) return -1;
-            return l;
-        }
-        return -1;
+        int l = prevLine + 1;
+        if (l > nextLine) return -1;
+        int s = ctx.lineStart(l), e = ctx.lineStart(l + 1);
+        return src.substring(s, Math.min(e, src.length())).isBlank() ? -1 : l;
     }
 }
