@@ -49,9 +49,16 @@ IntelliJ's default Javadoc formatting, which Palantir Java Format does not do:
 - "Indent continuation lines", off: continuation lines of the other block tags start under the tag
 - "Generate `<p>` on empty lines": an empty line of the description that more text follows gets a `<p>`
 - a description written on the line after its `@param` or `@throws` name moves up to the tag
+- the parameter types of `{@link}`, `{@linkplain}` and `@see` references are separated by a comma and a space
 
 Text is not re-wrapped. Comments without a `*` at the start of every line, and comments with `<pre>` in their
 tags, are left as they are. Runs after `KeepBlankLines`; off with `formatter.style: "palantir"`.
+
+### LineCommentSpacing
+
+IntelliJ's "Add a space at line comment start", off by default: `//TODO` and `//$NON-NLS-1$` keep the text right
+after the slashes. Palantir Java Format adds a space. Runs after `JavadocLayout`; off with
+`formatter.style: "palantir"`.
 
 ### ImportOrder
 

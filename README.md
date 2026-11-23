@@ -105,6 +105,7 @@ merging imports into a wildcard can make names ambiguous.
 | `MemberBlankLines` | format | formatter | IntelliJ: a blank line around methods, classes and initializers |
 | `KeepBlankLines` | format | formatter | IntelliJ: blank lines kept, up to `maxBlankLines` |
 | `JavadocLayout` | format | formatter | IntelliJ: aligned `@param` and `@throws` descriptions, a blank line before the tags, `<p>` |
+| `LineCommentSpacing` | format | formatter | IntelliJ: `//comment` keeps its text right after the slashes |
 | `ImportOrder` | format | formatter | Import groups and order |
 | `LicenseHeader` | format | formatter | Header from `formatter.licenseHeader` |
 | `UnusedImport` | style | formatter | Unused, redundant and duplicate imports |
@@ -261,7 +262,7 @@ This is the first version. Not done yet:
 
 - **Native binary.** jpm starts extensions on a JVM today; a GraalVM build (`jpm build --native`) needs
   testing first, since running javac inside a native image is uncommon.
-- **IntelliJ parity.** The IntelliJ rules cover blank lines, empty bodies and Javadoc so far, measured against
+- **IntelliJ parity.** The IntelliJ rules cover blank lines, empty bodies, Javadoc and line comments so far, measured against
   IntelliJ's own formatter on real projects (`checks/Parity.java`, see CONTRIBUTING.md); more of IntelliJ's defaults
   (wrapping of long method chains and argument lists, Javadoc formatting) and its options follow, as rules in
   `src/dev/jpm/format/intellij/`. More inspections follow too, with null checks and data flow last.

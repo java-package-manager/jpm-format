@@ -15,7 +15,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class IntelliJRulesTest {
     private static RuleTester intellij() {
         return RuleTester.of(
-                new JavaFormat(), new EmptyBodies(), new MemberBlankLines(), new KeepBlankLines(), new JavadocLayout());
+                new JavaFormat(),
+                new EmptyBodies(),
+                new MemberBlankLines(),
+                new KeepBlankLines(),
+                new JavadocLayout(),
+                new LineCommentSpacing());
     }
 
     @Test
@@ -265,6 +270,50 @@ class IntelliJRulesTest {
                      */
                     void f() {
                     }
+                }
+                """);
+    }
+
+    @Test
+    void referencesGetASpaceAfterEachComma() {
+        intellij().assertFormats("""
+                class A {
+                    /**
+                     * Like {@link String#format(String,Object...)} and {@linkplain #f(int,int) f}.
+                     *
+                     * @see #f(int,int)
+                     */
+                    void f(int a, int b) {
+                    }
+                }
+                """, """
+                class A {
+                    /**
+                     * Like {@link String#format(String, Object...)} and {@linkplain #f(int, int) f}.
+                     *
+                     * @see #f(int, int)
+                     */
+                    void f(int a, int b) {
+                    }
+                }
+                """);
+    }
+
+    @Test
+    void lineCommentsKeepTheirTextRightAfterTheSlashes() {
+        intellij().assertFormats("""
+                class A {
+                    //TODO later
+                    int a = 1; //$NON-NLS-1$
+                    // already spaced
+                    int b;
+                }
+                """, """
+                class A {
+                    //TODO later
+                    int a = 1; //$NON-NLS-1$
+                    // already spaced
+                    int b;
                 }
                 """);
     }

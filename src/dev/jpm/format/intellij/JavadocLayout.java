@@ -15,7 +15,8 @@ import java.util.regex.Pattern;
  * description" (a blank line between the description and the first block tag), "Do not wrap one line comments"
  * being off ({@code /** Text. *}{@code /} becomes three lines), and "Indent continuation lines" being off (the
  * continuation lines of other block tags start under the tag), and "Generate {@code <p>} on empty lines" (an empty
- * line of the description that more text follows gets a {@code <p>}, outside {@code <pre>}). A description written on the line after its
+ * line of the description that more text follows gets a {@code <p>}, outside {@code <pre>}). The parameter types
+ * of {@code {@link}} and {@code @see} references are separated by a comma and a space. A description written on the line after its
  * {@code @param} or {@code @throws} name is joined onto the tag's line.
  *
  * <p>Text is not re-wrapped, and comments that do not have a {@code *} at the start of every line, or that contain
@@ -123,6 +124,7 @@ public final class JavadocLayout implements IntelliJRule {
             lines.add(firstTag, "");
             firstTag++;
         }
+        references(lines);
         join(lines, firstTag);
         align(lines, firstTag, "param");
         align(lines, firstTag, "throws");
@@ -178,6 +180,32 @@ public final class JavadocLayout implements IntelliJRule {
             if (n.isEmpty() || n.startsWith("<")) continue;
             lines.set(k, "<p>");
         }
+    }
+
+    private static final Pattern LINK = Pattern.compile("(\\{@link(?:plain)?\\s+[^}\\s(]*\\()([^)}]*)(\\))");
+    private static final Pattern SEE = Pattern.compile("^(@see\\s+[^\\s(]*\\()([^)]*)(\\))");
+
+    private static void references(List<String> lines) {
+        boolean pre = false;
+        for (int k = 0; k < lines.size(); k++) {
+            String l = lines.get(k);
+            if (l.contains("<pre>")) pre = true;
+            if (pre) {
+                if (l.contains("</pre>")) pre = false;
+                continue;
+            }
+            lines.set(k, spaced(SEE, spaced(LINK, l)));
+        }
+    }
+
+    private static String spaced(Pattern p, String l) {
+        Matcher m = p.matcher(l);
+        StringBuilder sb = new StringBuilder();
+        while (m.find())
+            m.appendReplacement(
+                    sb, Matcher.quoteReplacement(m.group(1) + m.group(2).replaceAll(",\\s*", ", ") + m.group(3)));
+        m.appendTail(sb);
+        return sb.toString();
     }
 
     private static void join(List<String> lines, int firstTag) {
