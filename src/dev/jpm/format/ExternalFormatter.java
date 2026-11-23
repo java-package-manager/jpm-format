@@ -56,13 +56,19 @@ public final class ExternalFormatter {
             if (config != null) throw new FormatException("formatter.eclipseConfig needs formatter.style \"eclipse\"");
             return null;
         }
+        Spec other = jarOrGit(style, root);
+        if (other != null) {
+            if (config != null) throw new FormatException("formatter.eclipseConfig needs formatter.style \"eclipse\"");
+            return other;
+        }
         int at = style.indexOf('@');
         String name = at < 0 ? style : style.substring(0, at);
         String version = at < 0 ? "latest" : style.substring(at + 1);
         String key = KEYS.get(name);
         if (key == null || version.isBlank()) {
             throw new FormatException("formatter.style must be \"intellij\" (the default), \"palantir\", \"palantir@<version>\","
-                    + " \"google-java-format[@<version>]\" or \"eclipse[@<version>]\", not \"" + style + "\"");
+                    + " \"google-java-format[@<version>]\", \"eclipse[@<version>]\", the URL of a jar, or a Git repository such as"
+                    + " \"github:author/formatter[@<version>|#<branch>]\", not \"" + style + "\"");
         }
         if (name.equals("palantir") && at < 0) return null;
         if (config != null && !name.equals("eclipse")) {
@@ -71,12 +77,33 @@ public final class ExternalFormatter {
         return new Spec(name, key, version, root, config);
     }
 
+    private static final java.util.regex.Pattern GIT = java.util.regex.Pattern.compile("((?:github|gitlab|codeberg):[^@#\\s]+/[^@#\\s]+)([@#].+)?");
+    private static final java.util.regex.Pattern SHA256 = java.util.regex.Pattern.compile("[0-9a-f]{64}");
+
+    private static Spec jarOrGit(String style, Path root) {
+        if (style.matches("(https?|file):.*")) {
+            int hash = style.indexOf("#sha256=");
+            String url = hash < 0 ? style : style.substring(0, hash);
+            String sha = hash < 0 ? null : style.substring(hash + "#sha256=".length()).toLowerCase(java.util.Locale.ROOT);
+            if (!url.endsWith(".jar")) throw new FormatException("formatter.style names a URL, which must be of a jar (ending in .jar): " + url);
+            if (sha != null && !SHA256.matcher(sha).matches()) throw new FormatException("formatter.style: #sha256= takes the jar's SHA-256 in hex");
+            return new Spec("jar", url, sha, root, null);
+        }
+        java.util.regex.Matcher g = GIT.matcher(style);
+        if (!g.matches()) return null;
+        String rest = g.group(2);
+        String version = rest == null ? "*" : rest.startsWith("@") ? rest.substring(1) : rest;
+        if (version.isBlank()) throw new FormatException("formatter.style " + style + " needs a version after @ or a branch after #");
+        return new Spec("git", g.group(1), version, root, null);
+    }
+
     /**
-     * Formats {@code source}, the file at {@code path} in the project, with the formatter of {@code spec}, resolving
-     * its jars on first use.
+     * Formats the file of {@code ctx} with the formatter of {@code spec}, resolving its jars on first use.
      */
-    public static String format(Spec spec, String source, String path) {
-        Object f = FORMATTERS.computeIfAbsent(spec.name() + "@" + spec.version() + "@" + spec.config(), k -> create(spec));
+    public static String format(Spec spec, FileContext ctx) {
+        String source = ctx.source(), path = ctx.path();
+        Object f = FORMATTERS.computeIfAbsent(spec.name() + "@" + spec.key() + "@" + spec.version() + "@" + spec.config(), k -> create(spec));
+        if (f instanceof RuleSetFormatters rs) return rs.format(ctx);
         try {
             if (spec.name().equals("eclipse")) {
                 Method m = f.getClass().getMethod("format", String.class, File.class);
@@ -95,6 +122,10 @@ public final class ExternalFormatter {
     }
 
     private static Object create(Spec spec) {
+        if (spec.name().equals("jar") || spec.name().equals("git")) {
+            List<Path> jars = spec.name().equals("jar") ? List.of(download(spec)) : resolve(spec.root(), Map.of(spec.key(), spec.version()));
+            return any(spec, jars);
+        }
         String version = spec.name().equals("eclipse") ? SPOTLESS : spec.version();
         ClassLoader loader = loader(resolve(spec.root(), Map.of(spec.key(), version)));
         try {
@@ -107,6 +138,113 @@ public final class ExternalFormatter {
             throw new FormatException("could not start " + spec.name() + ": " + e.getCause(), e.getCause());
         } catch (ReflectiveOperationException | LinkageError e) {
             throw new FormatException("could not start " + spec.name() + " " + spec.version() + ": " + e, e);
+        }
+    }
+
+    /**
+     * The formatters of jpm-format rule sets that the jars list as services, run in order, each on the previous one's
+     * output.
+     */
+    record RuleSetFormatters(List<dev.jpm.format.api.Formatter> formatters) {
+        String format(FileContext ctx) {
+            String cur = ctx.source();
+            for (dev.jpm.format.api.Formatter f : formatters) {
+                cur = f.format(new FileContext(new Source(ctx.path(), cur), f, dev.jpm.format.api.Severity.ERROR, ctx.settings(), null,
+                        new ArrayList<>()));
+            }
+            return cur;
+        }
+    }
+
+    private static final List<String> KNOWN = List.of("com.palantir.javaformat.java.Formatter", "com.google.googlejavaformat.java.Formatter");
+
+    /**
+     * The formatter in jars from a URL or a Git repository: Palantir's or google-java-format's (a fork or a build of
+     * them), else the formatters of the jpm-format rule sets they list in {@code META-INF/services}.
+     */
+    private static Object any(Spec spec, List<Path> jars) {
+        ClassLoader isolated = loader(jars);
+        try {
+            for (String name : KNOWN) {
+                Class<?> c;
+                try {
+                    c = isolated.loadClass(name);
+                } catch (ClassNotFoundException e) {
+                    continue;
+                }
+                return name.contains("palantir") ? palantir(isolated) : c.getConstructor().newInstance();
+            }
+        } catch (InvocationTargetException e) {
+            throw new FormatException("could not start the formatter of " + spec.key() + ": " + e.getCause(), e.getCause());
+        } catch (ReflectiveOperationException | LinkageError e) {
+            throw new FormatException("could not start the formatter of " + spec.key() + ": " + e, e);
+        }
+        List<URL> urls = new ArrayList<>();
+        for (Path j : jars) urls.add(url(j));
+        ClassLoader withApi = new URLClassLoader(urls.toArray(URL[]::new), ExternalFormatter.class.getClassLoader());
+        dev.jpm.format.api.Rules rules = new dev.jpm.format.api.Rules();
+        for (dev.jpm.format.api.RuleSet rs : java.util.ServiceLoader.load(dev.jpm.format.api.RuleSet.class, withApi)) {
+            if (rs.getClass().getClassLoader() != withApi) continue;
+            try {
+                rs.register(rules);
+            } catch (RuntimeException | LinkageError e) {
+                throw new FormatException(spec.key() + ": " + rs.getClass().getName() + " could not register its rules: " + e, e);
+            }
+        }
+        List<dev.jpm.format.api.Formatter> formatters = new ArrayList<>();
+        for (dev.jpm.format.api.Lint l : rules.all()) if (l instanceof dev.jpm.format.api.Formatter f) formatters.add(f);
+        if (formatters.isEmpty()) {
+            throw new FormatException(spec.key() + " has no formatter: its jars need Palantir's or google-java-format's Formatter class,"
+                    + " or a jpm-format RuleSet with a Formatter, listed in META-INF/services/dev.jpm.format.api.RuleSet");
+        }
+        return new RuleSetFormatters(List.copyOf(formatters));
+    }
+
+    /**
+     * The jar a URL names, downloaded once into {@code .cache/format/formatters/} and checked against the SHA-256 after
+     * {@code #sha256=} when there is one.
+     */
+    private static Path download(Spec spec) {
+        String url = spec.key();
+        Path target = spec.root().resolve(".cache").resolve("format").resolve("formatters").resolve(Hashing.sha256(url).substring(0, 32) + ".jar");
+        try {
+            if (!java.nio.file.Files.isRegularFile(target)) {
+                java.nio.file.Files.createDirectories(target.getParent());
+                Path part = target.resolveSibling(target.getFileName() + ".part");
+                if (url.startsWith("file:")) {
+                    java.nio.file.Files.copy(Path.of(java.net.URI.create(url)), part, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                } else {
+                    java.net.http.HttpClient http = java.net.http.HttpClient.newBuilder().followRedirects(java.net.http.HttpClient.Redirect.NORMAL).build();
+                    java.net.http.HttpResponse<Path> r = http.send(java.net.http.HttpRequest.newBuilder(java.net.URI.create(url))
+                            .header("User-Agent", "jpm-format").build(), java.net.http.HttpResponse.BodyHandlers.ofFile(part));
+                    if (r.statusCode() != 200) {
+                        java.nio.file.Files.deleteIfExists(part);
+                        throw new FormatException("could not download the formatter " + url + ": HTTP " + r.statusCode());
+                    }
+                }
+                java.nio.file.Files.move(part, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            if (spec.version() != null) {
+                String actual = Hashing.sha256(java.nio.file.Files.readAllBytes(target));
+                if (!actual.equals(spec.version())) {
+                    java.nio.file.Files.deleteIfExists(target);
+                    throw new FormatException("the formatter " + url + " has SHA-256 " + actual + ", not the " + spec.version() + " formatter.style names");
+                }
+            }
+            return target;
+        } catch (java.io.IOException | IllegalArgumentException e) {
+            throw new FormatException("could not download the formatter " + url + ": " + e.getMessage(), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new FormatException("interrupted while downloading " + url, e);
+        }
+    }
+
+    private static URL url(Path p) {
+        try {
+            return p.toUri().toURL();
+        } catch (MalformedURLException e) {
+            throw new FormatException("bad jar path " + p, e);
         }
     }
 
@@ -126,19 +264,8 @@ public final class ExternalFormatter {
     }
 
     private static Object eclipse(ClassLoader loader, Spec spec) throws ReflectiveOperationException {
-        if (System.getProperty("slf4j.internal.verbosity") == null) System.setProperty("slf4j.internal.verbosity", "ERROR");
         Class<?> provisionerType = loader.loadClass("com.diffplug.spotless.Provisioner");
-        Object provisioner = Proxy.newProxyInstance(loader, new Class<?>[]{provisionerType}, (proxy, method, args) -> {
-            if (method.getName().equals("provisionWithTransitives")) {
-                boolean transitives = (Boolean) args[0];
-                Collection<?> coordinates = args[1] instanceof Collection<?> c ? c : List.of((Object[]) args[1]);
-                return provision(spec.root(), transitives, coordinates);
-            }
-            if (method.getName().equals("toString")) return "jpm";
-            if (method.getName().equals("hashCode")) return System.identityHashCode(proxy);
-            if (method.getName().equals("equals")) return proxy == args[0];
-            throw new UnsupportedOperationException(method.getName());
-        });
+        Object provisioner = provisioner(loader, spec.root());
         Class<?> p2 = loader.loadClass("com.diffplug.spotless.extra.P2Provisioner");
         Object p2Default = p2.getMethod("createDefault").invoke(null);
         Class<?> step = loader.loadClass("com.diffplug.spotless.extra.java.EclipseJdtFormatterStep");
@@ -148,6 +275,41 @@ public final class ExternalFormatter {
         Method build = builder.getClass().getMethod("build");
         build.setAccessible(true);
         return build.invoke(builder);
+    }
+
+    /**
+     * Spotless's Provisioner, which Spotless's steps ask for the jars of the formatters they run: jpm resolves them.
+     */
+    static Object provisioner(ClassLoader loader, Path root) {
+        if (System.getProperty("slf4j.internal.verbosity") == null) System.setProperty("slf4j.internal.verbosity", "ERROR");
+        Class<?> provisionerType;
+        try {
+            provisionerType = loader.loadClass("com.diffplug.spotless.Provisioner");
+        } catch (ClassNotFoundException e) {
+            throw new FormatException("Spotless has no Provisioner: " + e, e);
+        }
+        return Proxy.newProxyInstance(loader, new Class<?>[]{provisionerType}, (proxy, method, args) -> {
+            if (method.getName().equals("provisionWithTransitives")) {
+                boolean transitives = (Boolean) args[0];
+                Collection<?> coordinates = args[1] instanceof Collection<?> c ? c : List.of((Object[]) args[1]);
+                return provision(root, transitives, coordinates);
+            }
+            if (method.getName().equals("toString")) return "jpm";
+            if (method.getName().equals("hashCode")) return System.identityHashCode(proxy);
+            if (method.getName().equals("equals")) return proxy == args[0];
+            throw new UnsupportedOperationException(method.getName());
+        });
+    }
+
+    private static final Map<Path, ClassLoader> SPOTLESS_LOADERS = new ConcurrentHashMap<>();
+
+    /**
+     * A class loader with Spotless's library ({@code spotless-lib}, the version the Eclipse step uses, and the SLF4J
+     * API it logs with but does not depend on), resolved by jpm once per project.
+     */
+    static ClassLoader spotless(Path root) {
+        return SPOTLESS_LOADERS.computeIfAbsent(root, r -> loader(resolve(r, Map.of("com.diffplug.spotless:spotless-lib", SPOTLESS,
+                "org.slf4j:slf4j-api", "^2.0"))));
     }
 
     private static void call(Object target, String name, Class<?> type, Object arg) throws ReflectiveOperationException {

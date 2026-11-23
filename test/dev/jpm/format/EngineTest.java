@@ -414,6 +414,116 @@ class EngineTest {
     }
 
     @Test
+    void formattersFromAUrlOrGit() throws IOException {
+        Path root = Path.of("/p");
+        assertEquals(new ExternalFormatter.Spec("git", "github:me/fmt", "*", root, null), ExternalFormatter.parse("github:me/fmt", root, null));
+        assertEquals("^1.2", ExternalFormatter.parse("github:me/fmt@^1.2", root, null).version());
+        assertEquals("#main", ExternalFormatter.parse("codeberg:me/fmt#main", root, null).version());
+        assertEquals("github:me/repo/fmt", ExternalFormatter.parse("github:me/repo/fmt#main", root, null).key());
+        ExternalFormatter.Spec jar = ExternalFormatter.parse("https://example.com/f.jar#sha256=" + "a".repeat(64), root, null);
+        assertEquals(new ExternalFormatter.Spec("jar", "https://example.com/f.jar", "a".repeat(64), root, null), jar);
+        assertNull(ExternalFormatter.parse("https://example.com/f.jar", root, null).version());
+        assertThrows(FormatException.class, () -> ExternalFormatter.parse("https://example.com/f.zip", root, null));
+        assertThrows(FormatException.class, () -> ExternalFormatter.parse("https://example.com/f.jar#sha256=xyz", root, null));
+        assertThrows(FormatException.class, () -> ExternalFormatter.parse("github:me/fmt@", root, null));
+        assertThrows(FormatException.class, () -> ExternalFormatter.parse("github:me/fmt", root, root.resolve("e.xml")));
+    }
+
+    @Test
+    void aJarWithARuleSetFormats() throws Exception {
+        Path src = write("fmt/up/Upper.java", """
+                package up;
+
+                import dev.jpm.format.api.Context;
+                import dev.jpm.format.api.Formatter;
+                import dev.jpm.format.api.RuleSet;
+                import dev.jpm.format.api.Rules;
+
+                public class Upper implements RuleSet, Formatter {
+                    public void register(Rules rules) { rules.add(this); }
+                    public String id() { return "Upper"; }
+                    public String format(Context ctx) { return ctx.source().replace("class a", "class A"); }
+                }
+                """);
+        Path classes = dir.resolve("fmt/classes");
+        int code = javax.tools.ToolProvider.getSystemJavaCompiler().run(null, null, null, "-d", classes.toString(), "-cp",
+                System.getProperty("java.class.path"), src.toString());
+        assertEquals(0, code);
+        Path jarFile = dir.resolve("fmt/upper.jar");
+        try (var out = new java.util.jar.JarOutputStream(Files.newOutputStream(jarFile))) {
+            out.putNextEntry(new java.util.jar.JarEntry("up/Upper.class"));
+            out.write(Files.readAllBytes(classes.resolve("up/Upper.class")));
+            out.putNextEntry(new java.util.jar.JarEntry("META-INF/services/dev.jpm.format.api.RuleSet"));
+            out.write("up.Upper\n".getBytes(StandardCharsets.UTF_8));
+        }
+        String sha = Hashing.sha256(Files.readAllBytes(jarFile));
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"style\": \"" + jarFile.toUri() + "#sha256=" + sha + "\" } } } }");
+        Config.Settings s = open().config.settings("A.java");
+        assertFalse(s.intellijStyle());
+        FileContext ctx = new FileContext(new Source("A.java", "class a {}\n"), null, Severity.ERROR, s, null, new java.util.ArrayList<>());
+        assertEquals("class A {}\n", ExternalFormatter.format(s.externalFormatter(), ctx));
+        assertTrue(Files.isDirectory(dir.resolve(".cache/format/formatters")), "the jar is kept in the cache");
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"style\": \"" + jarFile.toUri() + "#sha256=" + "0".repeat(64) + "\" } } } }");
+        Config.Settings wrong = open().config.settings("A.java");
+        FormatException e = assertThrows(FormatException.class, () -> ExternalFormatter.format(wrong.externalFormatter(), ctx));
+        assertTrue(e.getMessage().contains("has SHA-256 " + sha), e.getMessage());
+    }
+
+    @Test
+    void spotlessStepsFormatTheFilesTheyInclude() throws IOException {
+        List<String> made = new java.util.ArrayList<>();
+        var before = SpotlessSteps.factory;
+        SpotlessSteps.factory = (root, step) -> {
+            made.add(step.name() + (step.version() == null ? "" : "@" + step.version()) + step.options());
+            return switch (step.name()) {
+                case "trimTrailingWhitespace" -> (text, file) -> text.replaceAll("[ \t]+\n", "\n");
+                case "endWithNewline" -> (text, file) -> text.endsWith("\n") ? text : text + "\n";
+                default -> (text, file) -> text.toUpperCase(java.util.Locale.ROOT);
+            };
+        };
+        try {
+            write("project.jsonc", "{ \"extensions\": { \"format\": { \"files\": ["
+                    + " { \"include\": [\"**/*.kt\"], \"steps\": [\"ktfmt@0.53\", \"trimTrailingWhitespace\"] },"
+                    + " { \"include\": [\"**/*.kt\", \"**/*.md\"], \"steps\": [\"endWithNewline\"] } ] } } }");
+            write("src/app/Main.kt", "fun main() {}  \r\nval x = 1");
+            write("README.md", "# hi  \n");
+            write("notes.txt", "left alone");
+            Workspace ws = open();
+            assertEquals(List.of("README.md", "src/app/Main.kt"), ws.files(List.of()).stream()
+                    .map(p -> Config.rel(dir, p)).filter(r -> !r.endsWith(".java") && !r.equals("project.jsonc")).toList());
+            Engine.Result check = ws.engine.run("src/app/Main.kt", "fun main() {}  \r\nval x = 1", Engine.Mode.CHECK);
+            assertEquals(1, check.findings().size(), check.findings().toString());
+            assertEquals("Not formatted by ktfmt, trimTrailingWhitespace, endWithNewline", check.findings().get(0).message());
+            assertEquals(2, check.findings().get(0).endLine());
+            assertFalse(check.changed());
+            Engine.Result fmt = ws.engine.run("src/app/Main.kt", "fun main() {}  \r\nval x = 1", Engine.Mode.FORMAT);
+            assertEquals("FUN MAIN() {}\r\nVAL X = 1\r\n", fmt.output(), "steps see \\n and the file keeps its line endings");
+            assertEquals(List.of(), ws.engine.run("README.md", "# hi\n", Engine.Mode.CHECK).findings());
+            assertEquals(List.of("ktfmt@0.53{}", "trimTrailingWhitespace{}", "endWithNewline{}"), made);
+        } finally {
+            SpotlessSteps.factory = before;
+        }
+    }
+
+    @Test
+    void spotlessStepErrors() {
+        assertEquals(new SpotlessSteps.Step("jsonSimple", null, Map.of("indent", 2L)),
+                SpotlessSteps.parse(List.of(Map.of("include", List.of("*.json"), "steps", List.of(Map.of("step", "jsonSimple", "indent", 2L))))).get(0).steps().get(0));
+        for (Object bad : List.of(
+                List.of(Map.of("include", List.of("*.kt"), "steps", List.of("ktfmtt"))),
+                List.of(Map.of("include", List.of("*.kt"), "steps", List.of("trimTrailingWhitespace@1"))),
+                List.of(Map.of("include", List.of("*.kt"), "steps", List.of("ktfmt@"))),
+                List.of(Map.of("include", List.of("*.kt"), "steps", List.of(Map.of("step", "ktfmt", "indent", 2L)))),
+                List.of(Map.of("include", List.of(), "steps", List.of("ktfmt"))),
+                List.of(Map.of("include", List.of("*.kt"), "steps", List.of("ktfmt"), "exclude", List.of())),
+                Map.of())) {
+            assertThrows(FormatException.class, () -> SpotlessSteps.parse(bad), bad.toString());
+        }
+        assertEquals(List.of(), SpotlessSteps.stepsFor(SpotlessSteps.parse(List.of(Map.of("include", List.of("**"), "steps", List.of("ktfmt")))), "A.java"),
+                "Java files are the engine's");
+    }
+
+    @Test
     void configErrors() throws IOException {
         write(
                 "project.jsonc",

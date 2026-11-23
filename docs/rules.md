@@ -38,6 +38,14 @@ downloads it (`dependencies/resolve`, so it needs jpm 0.15.0 or newer), and it r
 with its own defaults: `lineWidth`, the indentation settings, `useTabs` and the IntelliJ rules do not apply. The
 import rules, `LicenseHeader` and the linter still do.
 
+It can also name a formatter that is not on a Maven repository: the URL of a jar (`https://`, or `file:`), with
+`#sha256=<hex>` after it to pin what is downloaded (kept in `.cache/format/formatters/`), or a Git repository
+that jpm builds, `"github:author/formatter[@<version>|#<branch>]"` (also `gitlab:` and `codeberg:`; its newest
+tag without either; needs jpm 0.15.0 or newer, with the project's `dir`). The jar is either a build of Palantir
+Java Format or google-java-format (their `Formatter` class, with their defaults), or a jpm-format rule set: a
+`RuleSet` listed in `META-INF/services/dev.jpm.format.api.RuleSet` whose `Formatter` rules then run in place of
+the layout engine, in the order they register, each on the previous one's output.
+
 ### EmptyBodies
 
 IntelliJ's "Keep when reformatting: simple methods / classes / blocks in one line", off by default: an empty body is

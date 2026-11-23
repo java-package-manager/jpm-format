@@ -128,6 +128,7 @@ public final class Config {
     private final List<PathMatcher> ignores = new ArrayList<>();
     private final Rules rules;
     private final Map<String, Settings> settingsByKey = new ConcurrentHashMap<>();
+    private final List<SpotlessSteps.Entry> files;
     /**
      * A hash of everything that affects results, for the cache.
      */
@@ -146,6 +147,12 @@ public final class Config {
         h.append(extraHash);
         this.hash = Hashing.sha256(h.toString());
         validate(rootConfig, "config");
+        this.files = SpotlessSteps.parse(rootConfig.get("files"));
+        for (Scoped s : modules) {
+            if (s.config().containsKey("files")) {
+                throw new FormatException(s.dir().resolve("project.jsonc") + ": \"files\" goes in the root config, which applies it to the whole project");
+            }
+        }
         for (Scoped s : modules)
             validate(s.config(), s.dir().resolve("project.jsonc").toString());
     }
@@ -267,6 +274,13 @@ public final class Config {
 
     static String rel(Path root, Path p) {
         return root.relativize(p.toAbsolutePath().normalize()).toString().replace('\\', '/');
+    }
+
+    /**
+     * The Spotless steps for a file that is not Java (relative to the root), from {@code "files"}; empty when none apply.
+     */
+    List<SpotlessSteps.Step> steps(String rel) {
+        return SpotlessSteps.stepsFor(files, rel);
     }
 
     /**
@@ -397,7 +411,7 @@ public final class Config {
     }
 
     private static final Set<String> TOP =
-            Set.of("$schema", "extends", "ignore", "formatter", "imports", "linter", "overrides");
+            Set.of("$schema", "extends", "ignore", "formatter", "imports", "linter", "overrides", "files");
     private static final Set<String> FORMATTER = Set.of(
             "enabled",
             "style",
