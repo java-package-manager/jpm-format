@@ -145,6 +145,9 @@ public final class JavadocLayout implements IntelliJRule {
         for (int k = lines.size() - 2; k > firstTag; k--) {
             if (lines.get(k).isBlank() && lines.get(k + 1).startsWith("@")) lines.remove(k);
         }
+        for (int k = firstTag; k < lines.size(); k++) {
+            if (lines.get(k).startsWith("@return ")) lines.set(k, "@return " + lines.get(k).substring(8).stripLeading());
+        }
     }
 
     private static void align(List<String> lines, int firstTag, String group) {

@@ -532,7 +532,7 @@ class IntelliJRulesTest {
                      *
                      * @param a the first
                      *
-                     * @return the sum
+                     * @return   the sum
                      *
                      *
                      * @since 1.0
