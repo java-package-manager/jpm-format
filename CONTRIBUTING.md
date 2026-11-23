@@ -60,7 +60,8 @@ and lowering the baseline in the same commit.
   ```
 
 - On `main`, CI ([changeset-action](https://github.com/java-package-manager/changeset-action)) keeps a
-  "Version packages" pull request with the bumped version and `CHANGELOG.md`. Merging it releases: CI runs
-  `jpm changeset publish`, which tags the commit with the version, and pushes the tag.
+  "Version packages" pull request with the bumped version and `CHANGELOG.md`. Merging it releases: CI tags the
+  commit with the version (`jpm changeset publish`), pushes the tag and creates a GitHub release with the
+  changelog entry. Nothing is published to a Maven repository.
 - Prereleases: `jpm changeset pre enter beta` (committed with its `.changeset/pre.json`) makes the version pull
   request release `0.4.0-beta.0`, `0.4.0-beta.1`, …; `jpm changeset pre exit` makes the next one stable.

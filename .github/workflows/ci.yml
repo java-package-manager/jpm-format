@@ -77,10 +77,9 @@ jobs:
           java checks/Parity.java --idea "$RUNNER_TEMP/idea" --show 5
 
   # jpm-changeset (CONTRIBUTING.md): while changesets are pending, keep a "Version packages" pull request with
-  # the bumped version and CHANGELOG.md; once it is merged, `jpm changeset publish` tags the commit. jpm installs
-  # extensions from their Git source, so the tag is the release: it is what
-  # `jpm add -g github:java-package-manager/jpm-format` resolves (^<version>). Nothing goes to a Maven
-  # repository: "tagOnly" in project.jsonc makes `jpm changeset publish` only tag.
+  # the bumped version and CHANGELOG.md; once it is merged, tag the commit and create a GitHub release with the
+  # changelog entry. jpm installs extensions from their Git source, so the tag is the release: it is what
+  # `jpm add -g github:java-package-manager/jpm-format` resolves (^<version>). Nothing goes to a Maven repository.
   release:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [test, parity]
@@ -98,5 +97,3 @@ jobs:
           java: "21"
 
       - uses: java-package-manager/changeset-action@v1
-        with:
-          publish: true
