@@ -24,7 +24,9 @@ then a language server).
       a jar release, and `github:author/my-java-formatter[@version|#branch]`, any formatter from a Git repository, as a
       jpm-format extension (the rule API) or as a Spotless step.
 - [ ] **No Palantir fork.** Use Palantir Java Format from its own repository instead of the fork in
-      `src/dev/jpm/format/palantir/`. Needs native Spotless support first.
+      `src/dev/jpm/format/palantir/`. `formatter.style: "palantir@<version>"` already runs upstream's releases as
+      they are. The fork stays for the IntelliJ style: 46 changes of its own (`jpm-format:` in the code), most of
+      them the `keepLineBreaks` mode, that upstream would have to take first.
 
 ## Running
 
