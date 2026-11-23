@@ -1,5 +1,5 @@
 // jpm-format: the `jpm format` extension. Install with `jpm add -g github:java-package-manager/jpm-format`.
-// Building it needs jpm 0.7.1 or newer, which compiles without --release so "javacArgs" can open javac.
+// Building it needs jpm 0.14.0 or newer, which builds an extension with its own "java" (21), so "javacArgs" can open javac.
 {
   "name": "jpm-format",
   "group": "dev.jpm",
