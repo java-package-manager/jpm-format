@@ -88,12 +88,18 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      # CHANGESET_TOKEN (a fine-grained personal access token) pushes the version branch and opens its pull
+      # request: GitHub starts no workflows for either when they come from the default token, so CI would not
+      # run on the "Version packages" pull request
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          token: ${{ secrets.CHANGESET_TOKEN }}
 
       - uses: java-package-manager/setup-jpm@v1
         with:
           java: "21"
 
       - uses: java-package-manager/changeset-action@v1
+        with:
+          github-token: ${{ secrets.CHANGESET_TOKEN }}
