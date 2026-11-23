@@ -4,12 +4,6 @@ What jpm-format does not do yet. jpm's own plan is in its
 [ROADMAP.md](https://github.com/java-package-manager/jpm/blob/main/ROADMAP.md) (Milestone 5: IntelliJ parity,
 then a language server).
 
-## Top priority
-
-- [ ] **Drop the other copies of `checks/Comments.java`.** Once a jpm-format release has `NonJavadocComment`,
-      jpm-changeset and jpm turn it on (`"linter": { "rules": { "style": { "NonJavadocComment": "error" } } }`)
-      and remove `checks/Comments.java`, `checks/comments-baseline.txt` and the CI step that runs it.
-
 ## Formatting
 
 - [ ] **IntelliJ parity.** The rest of IntelliJ's default Javadoc formatting, and IntelliJ's code style options,
