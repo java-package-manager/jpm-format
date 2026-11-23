@@ -136,6 +136,7 @@ public final class Main {
                 Files.createDirectories(cds.getParent());
                 cmd.add("-XX:+AutoCreateSharedArchive");
                 cmd.add("-XX:SharedArchiveFile=" + cds);
+                cmd.add("-Xlog:cds*=off");
             } catch (IOException ignored) {
             }
         }

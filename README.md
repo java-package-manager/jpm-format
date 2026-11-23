@@ -272,6 +272,9 @@ Before 1.0, nothing is stable. What is still to come is in [ROADMAP.md](ROADMAP.
 Building jpm-format needs jpm 0.12.0 or newer: the layout engine is built on javac's internal syntax tree, which
 `"javacArgs"` opens with `--add-exports`, and older jpm versions always compile with `--release`, which javac
 refuses together with that. Installing jpm-format (`jpm add -g`) builds it from source, so this applies there too.
+jpm 0.13.0 and older build it with the project's JDK, and they need `--release` when that JDK is not 21: in a
+project whose `"java"` is another version, the build stops with `"javacArgs" has --add-exports ...`. Run
+`jpm jvm exec 21 jpm format` there until a jpm release builds such extensions with a JDK of their target.
 
 ```sh
 jpm test
