@@ -60,12 +60,46 @@ jobs:
         # GitHub annotations are picked automatically in Actions
         run: jpm start -- --check
 
+  # How far the formatter is from IntelliJ's on real projects (checks/Parity.java, CONTRIBUTING.md): the count may only
+  # go down. The IntelliJ build is the one checks/parity/baseline.txt was measured with; it is cached between runs,
+  # and so is its output for the corpus.
+  parity:
+    needs: version
+    runs-on: ubuntu-latest
+    env:
+      IDEA_VERSION: "2026.1.5.1"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: java-package-manager/setup-jpm@v1
+        with:
+          java: "21"
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ${{ runner.temp }}/idea
+            .cache/parity
+          key: parity-idea-${{ env.IDEA_VERSION }}-${{ hashFiles('checks/parity/corpus.txt') }}
+
+      - name: IntelliJ IDEA
+        run: |
+          if [ ! -x "$RUNNER_TEMP/idea/bin/format.sh" ]; then
+            mkdir -p "$RUNNER_TEMP/idea"
+            curl -fsSL "https://download.jetbrains.com/idea/ideaIU-$IDEA_VERSION.tar.gz" | tar xz --strip-components=1 -C "$RUNNER_TEMP/idea"
+          fi
+
+      - name: Parity with IntelliJ
+        run: |
+          jpm build --bundle
+          java checks/Parity.java --idea "$RUNNER_TEMP/idea" --show 5
+
   # jpm installs extensions from their Git source, so a release is just a tag: it is what
   # `jpm add -g github:java-package-manager/jpm-format` resolves (^<version>) instead of the main branch.
   tag:
     name: tag
     if: needs.version.outputs.release == 'true'
-    needs: [version, test]
+    needs: [version, test, parity]
     runs-on: ubuntu-latest
     permissions:
       contents: write
