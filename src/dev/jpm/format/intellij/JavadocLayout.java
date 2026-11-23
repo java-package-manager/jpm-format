@@ -126,6 +126,7 @@ public final class JavadocLayout implements IntelliJRule {
         }
         references(lines);
         join(lines, firstTag);
+        tagBlankLines(lines, firstTag);
         align(lines, firstTag, "param");
         align(lines, firstTag, "throws");
         unindent(lines, firstTag);
@@ -138,6 +139,12 @@ public final class JavadocLayout implements IntelliJRule {
 
     private static String expand(String indent, String inner, String nl) {
         return "/**" + nl + indent + " * " + inner + nl + indent + " */";
+    }
+
+    private static void tagBlankLines(List<String> lines, int firstTag) {
+        for (int k = lines.size() - 2; k > firstTag; k--) {
+            if (lines.get(k).isBlank() && lines.get(k + 1).startsWith("@")) lines.remove(k);
+        }
     }
 
     private static void align(List<String> lines, int firstTag, String group) {
