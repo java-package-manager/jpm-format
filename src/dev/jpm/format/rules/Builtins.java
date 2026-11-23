@@ -24,6 +24,7 @@ public final class Builtins {
         IntelliJ.register(rules);
 
         rules.add(new MissingOverrideAnnotation());
+        rules.add(new NonJavadocComment());
         rules.add(new StringEquality());
         rules.add(new PointlessBooleanExpression());
         rules.add(new EmptyCatchBlock());

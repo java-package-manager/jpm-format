@@ -117,6 +117,7 @@ merging imports into a wildcard can make names ambiguous.
 | `UnusedImport` | style | formatter | Unused, redundant and duplicate imports |
 | `UnnecessaryModifier` | style | formatter | Modifiers the language implies, such as `public` on interface methods |
 | `MissingOverrideAnnotation` | style | lint, needs types | Overriding methods without `@Override` |
+| `NonJavadocComment` | style | lint, off by default | `//` and `/* */` comments |
 | `StringEquality` | correctness | lint, needs types | Strings compared with `==` |
 | `UnusedLocalVariable` | correctness | lint | Unused locals and private-method parameters |
 | `UnusedPrivateMember` | correctness | lint | Unused private fields and methods |

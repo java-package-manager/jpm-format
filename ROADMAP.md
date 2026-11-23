@@ -6,12 +6,9 @@ then a language server).
 
 ## Top priority
 
-- [ ] **Replace `checks/Comments.java` with a rule.** A built-in lint rule, off by default, that reports `//` and
-      `/* */` comments and leaves Javadoc alone. Like the script, it ignores comment markers inside strings,
-      character literals and text blocks. Its fix removes the comment, offered in the editor but never applied
-      automatically. Paths are left out with `ignore` or `overrides` (here: `src/dev/jpm/format/palantir/**`).
-      Then `jpm format --check` (and `jpm check`) is the comment lint, and jpm-format, jpm-changeset and jpm drop
-      their copies of `checks/Comments.java`, `checks/comments-baseline.txt` and the CI step that runs it.
+- [ ] **Drop the other copies of `checks/Comments.java`.** Once a jpm-format release has `NonJavadocComment`,
+      jpm-changeset and jpm turn it on (`"linter": { "rules": { "style": { "NonJavadocComment": "error" } } }`)
+      and remove `checks/Comments.java`, `checks/comments-baseline.txt` and the CI step that runs it.
 
 ## Formatting
 

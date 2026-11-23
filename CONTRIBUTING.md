@@ -11,9 +11,8 @@ It needs jpm 0.7.1 or newer and a JDK 21.
 ```sh
 jpm test
 jpm build
-jpm start -- --check                          # jpm-format checks its own sources, as CI does
+jpm start -- --check                          # jpm-format checks its own sources, as CI does, comments included
 jpm start -- <files>                          # format files with this checkout
-java checks/Comments.java check src test '!src/dev/jpm/format/palantir'   # the comment lint CI runs
 ```
 
 **IntelliJ parity** is measured, not guessed: `checks/Parity.java` formats the sources jars listed in

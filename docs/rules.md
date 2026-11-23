@@ -112,6 +112,15 @@ interface fields, `public static` on types in interfaces, `static` on nested int
 *Needs types.* A method that overrides or implements a supertype's method but has no `@Override`. The fix
 adds it (offered, not applied).
 
+### NonJavadocComment
+
+Off by default. A `//` or `/* */` comment, for projects that keep decisions in documents and explanations in
+Javadoc. Javadoc, suppression comments (`jpm-ignore`, `noinspection`) and comment markers inside strings,
+character literals and text blocks are left alone. The fix removes the comment, a comment on a line of its own
+with its line and a trailing one with the space before it; it is offered, not applied. Turn it on with
+`"linter": { "rules": { "style": { "NonJavadocComment": "error" } } }`, and leave out vendored code with
+`ignore` or `overrides`.
+
 ## correctness
 
 ### StringEquality

@@ -1,11 +1,14 @@
 package dev.jpm.format;
 
+import dev.jpm.format.api.Finding;
+import dev.jpm.format.api.Fix;
 import dev.jpm.format.api.RuleTester;
 import dev.jpm.format.rules.EmptyCatchBlock;
 import dev.jpm.format.rules.ImportOrder;
 import dev.jpm.format.rules.JavaFormat;
 import dev.jpm.format.rules.LicenseHeader;
 import dev.jpm.format.rules.MissingOverrideAnnotation;
+import dev.jpm.format.rules.NonJavadocComment;
 import dev.jpm.format.rules.PointlessBooleanExpression;
 import dev.jpm.format.rules.StringEquality;
 import dev.jpm.format.rules.UnnecessaryModifier;
@@ -247,6 +250,47 @@ class RulesTest {
                         "class A { boolean b; void g(){if (b == true) {} if (false != b) {} if (f() == false) {} if (b && true) {} if (b && false) {} } boolean f(){return b;} }"));
         var fix = t.check("class A { boolean b = (1 > 2) != true; }").get(0).fix();
         assertEquals("class A { boolean b = !(1 > 2); }", fix.apply("class A { boolean b = (1 > 2) != true; }"));
+    }
+
+    @Test
+    void nonJavadocComments() {
+        String source = """
+                /** Kept. */
+                class A {
+                    // gone with its line
+                    int a = 1; // gone with the space before it
+                    String s = "// not a comment" + '/' + \"""
+                        /* not one either */
+                        \""";
+                    /* gone */
+                    void f() {} // jpm-ignore lint/style/NonJavadocComment: kept
+                    //noinspection unused
+                    int b;
+                }
+                """;
+        assertTrue(RuleTester.of(new NonJavadocComment()).check(source).stream().noneMatch(f -> f.rule().equals("NonJavadocComment")));
+        RuleTester t = RuleTester.of(new NonJavadocComment())
+                .config("{\"linter\": {\"rules\": {\"style\": {\"NonJavadocComment\": \"error\"}}}}");
+        List<Finding> found = t.check(source).stream().filter(f -> f.rule().equals("NonJavadocComment")).toList();
+        assertEquals(
+                List.of(
+                        "3:5 style/NonJavadocComment Comment that is not Javadoc",
+                        "4:16 style/NonJavadocComment Comment that is not Javadoc",
+                        "8:5 style/NonJavadocComment Comment that is not Javadoc"),
+                found.stream().map(Finding::brief).toList());
+        List<Fix.Edit> edits = found.stream().flatMap(f -> f.fix().edits().stream()).toList();
+        assertEquals("""
+                /** Kept. */
+                class A {
+                    int a = 1;
+                    String s = "// not a comment" + '/' + \"""
+                        /* not one either */
+                        \""";
+                    void f() {} // jpm-ignore lint/style/NonJavadocComment: kept
+                    //noinspection unused
+                    int b;
+                }
+                """, Fix.apply(source, edits));
     }
 
     @Test

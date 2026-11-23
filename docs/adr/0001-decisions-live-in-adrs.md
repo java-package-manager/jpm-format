@@ -6,9 +6,9 @@ Status: accepted
 
 - jpm-format's own Java sources and tests have no `//` or `/* */` comments, as in jpm (jpm's ADR 0001). A
   non-obvious decision goes into an ADR here; Javadoc is not a comment.
-- The lint rule is `java checks/Comments.java check src test '!src/dev/jpm/format/palantir'`, run in CI,
-  with its baseline in `checks/comments-baseline.txt`, which may only go down. It becomes a jpm-format
-  rule once jpm-format can lint itself for it (jpm roadmap, Milestone 5).
+- The lint is jpm-format's own rule `NonJavadocComment`, turned on as an error in `project.jsonc`, so the
+  self-check (`jpm start -- --check`, in CI) fails on a comment. It replaced `checks/Comments.java` and its
+  baseline.
 - `src/dev/jpm/format/palantir/` is a fork of Palantir Java Format and is left out:
   - every forked file keeps its Apache 2.0 copyright header, as the license requires;
   - upstream fixes are picked up by comparing with the upstream commit

@@ -28,9 +28,6 @@ jobs:
         with:
           java: "21"
 
-      - name: No comments in jpm-format's own sources
-        run: java checks/Comments.java check src test '!src/dev/jpm/format/palantir'
-
       # every check of jpm and its extensions (among them: every change has a changeset), then the tests
       - name: Check
         run: jpm check --frozen
@@ -40,7 +37,8 @@ jobs:
 
       - name: Format check of itself
         # `jpm start` runs main on the runtime classpath, as an installed extension does;
-        # GitHub annotations are picked automatically in Actions
+        # GitHub annotations are picked automatically in Actions. This is also the comment lint
+        # (NonJavadocComment, turned on in project.jsonc).
         run: jpm start -- --check
 
   # How far the formatter is from IntelliJ's on real projects (checks/Parity.java, CONTRIBUTING.md): the count may only
