@@ -141,9 +141,15 @@ public final class Main {
             }
         }
         cmd.add("-Xshare:auto");
-        cmd.add("-cp");
-        cmd.add(classpath);
-        cmd.add(Main.class.getName());
+        if (Main.class.getClassLoader() != ClassLoader.getSystemClassLoader() && classpath.endsWith(".jar")
+                && !classpath.contains(File.pathSeparator)) {
+            cmd.add("-jar");
+            cmd.add(classpath);
+        } else {
+            cmd.add("-cp");
+            cmd.add(classpath);
+            cmd.add(Main.class.getName());
+        }
         cmd.addAll(args);
         ProcessBuilder pb = new ProcessBuilder(cmd).inheritIO();
         pb.environment().put("JPM_FORMAT_CHILD", "1");
