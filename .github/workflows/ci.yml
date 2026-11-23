@@ -1,56 +1,39 @@
 name: CI
 
+# Every commit to main and every pull request runs the full check, once: a pull request's branch is checked as
+# the pull request, not again as a push. Releases come from changesets only (the release job); nothing else
+# creates tags.
 on:
-  # Tags are not pushed by hand: CI creates them when the version changes (see the version job).
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
 
 permissions:
   contents: read
 
-jobs:
-  # Runs first and decides whether this run releases (outputs.release): the main branch has a version in
-  # project.jsonc that has no tag yet, so CI tags this commit once the tests pass.
-  version:
-    name: version
-    runs-on: ubuntu-latest
-    outputs:
-      release: ${{ steps.decide.outputs.release }}
-      version: ${{ steps.decide.outputs.version }}
-    steps:
-      - uses: actions/checkout@v7
-      - name: Decide whether to release
-        id: decide
-        run: |
-          version=$(sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' project.jsonc | head -n 1)
-          release=false
-          if [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = "refs/heads/${{ github.event.repository.default_branch }}" ] && \
-             ! git ls-remote --exit-code --tags origin "refs/tags/$version" >/dev/null; then
-            release=true
-            echo "::notice::$version has no release yet: releasing it"
-          fi
-          echo "release=$release" >> "$GITHUB_OUTPUT"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Release: $release ($version)"
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+jobs:
   test:
-    needs: version
     runs-on: ubuntu-latest
     steps:
+      # the whole history, so `jpm changeset status --check` (part of `jpm check`) can compare with origin/main
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - uses: java-package-manager/setup-jpm@v1
         with:
           java: "21"
 
-
       - name: No comments in jpm-format's own sources
         run: java checks/Comments.java check src test '!src/dev/jpm/format/palantir'
 
-      - name: Test
-        # --frozen once project.lock is committed
-        run: if [ -f project.lock ]; then jpm test --frozen; else jpm test; fi
+      # every check of jpm and its extensions (among them: every change has a changeset), then the tests
+      - name: Check
+        run: jpm check --frozen
 
       - name: Build
         run: jpm build
@@ -64,7 +47,6 @@ jobs:
   # go down. The IntelliJ build is the one checks/parity/baseline.txt was measured with; it is cached between runs,
   # and so is its output for the corpus.
   parity:
-    needs: version
     runs-on: ubuntu-latest
     env:
       IDEA_VERSION: "2026.1.5.1"
@@ -94,26 +76,27 @@ jobs:
           jpm build --bundle
           java checks/Parity.java --idea "$RUNNER_TEMP/idea" --show 5
 
-  # jpm installs extensions from their Git source, so a release is just a tag: it is what
-  # `jpm add -g github:java-package-manager/jpm-format` resolves (^<version>) instead of the main branch.
-  tag:
-    name: tag
-    if: needs.version.outputs.release == 'true'
-    needs: [version, test, parity]
+  # jpm-changeset (CONTRIBUTING.md): while changesets are pending, keep a "Version packages" pull request with
+  # the bumped version and CHANGELOG.md; once it is merged, `jpm changeset publish` tags the commit. jpm installs
+  # extensions from their Git source, so the tag is the release: it is what
+  # `jpm add -g github:java-package-manager/jpm-format` resolves (^<version>). Nothing goes to a Maven
+  # repository: "tagOnly" in project.jsonc makes `jpm changeset publish` only tag.
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, parity]
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    env:
-      VERSION: ${{ needs.version.outputs.version }}
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-      - name: Tag this commit with its version
-        run: |
-          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null; then
-            echo "::notice::$VERSION is already tagged"
-            exit 0
-          fi
-          git tag "$VERSION" "$GITHUB_SHA"
-          git push origin "refs/tags/$VERSION"
-          echo "::notice::tagged $GITHUB_SHA as $VERSION"
+      - uses: java-package-manager/setup-jpm@v1
+        with:
+          java: "21"
+
+      - uses: java-package-manager/changeset-action@v1
+        with:
+          publish: true

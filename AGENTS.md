@@ -12,6 +12,8 @@ Facts for AI agents working on jpm-format. Reasons are in [CONTRIBUTING.md](CONT
 | Self-check (formatting and lint of jpm-format's own code) | `jpm start -- --check` |
 | Format files | `jpm start -- <files>` |
 | Comment lint | `java checks/Comments.java check src test '!src/dev/jpm/format/palantir'` |
+| Changeset (every change has one; `--minor`, `--major` or `--empty` instead of `--patch`) | `jpm changeset add --patch -m "<summary>"` |
+| jpm's checks (among them: every change has a changeset), then the tests | `jpm check` |
 | IntelliJ parity (lines that differ from IntelliJ's formatter; may only go down) | `jpm build --bundle && java checks/Parity.java --idea <IntelliJ home> [--show 10] [--update]` |
 
 ## Where things live
@@ -24,6 +26,7 @@ Facts for AI agents working on jpm-format. Reasons are in [CONTRIBUTING.md](CONT
   IntelliJ's short name; each has a case in `InspectionsTest` and its summary generates `docs/inspections.md`
   (`UPDATE_DOCS=1 jpm test`). `src/dev/jpm/format/api/`: the rule API for custom rules.
 - `test/assets/palantir/testdata`: upstream's formatter tests, kept as a regression suite.
+- `ROADMAP.md`: what is not done yet; remove an item once it is done.
 
 ## Rules that must not be broken
 
@@ -31,8 +34,10 @@ Facts for AI agents working on jpm-format. Reasons are in [CONTRIBUTING.md](CONT
   `jpm-format:` markers inside it.
 - `jpm start -- --check` passes.
 - Do not push, tag, or file issues without being asked.
+- Releases and prereleases are made only by jpm-changeset (CI's release job, `jpm changeset version` and
+  `publish`): never change `"version"` in `project.jsonc`, edit `CHANGELOG.md` or create a tag by hand.
 
 ## Done means
 
-`jpm test`, the self-check and the comment lint pass; `README.md` or `docs/rules.md` describe user-facing
-changes; the commit message says what changed and why.
+`jpm check`, the self-check and the comment lint pass; a changeset in `.changeset/` describes the change;
+`README.md` or `docs/rules.md` describe user-facing changes; the commit message says what changed and why.

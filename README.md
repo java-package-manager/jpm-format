@@ -205,7 +205,7 @@ set is shared across projects like ESLint plugins: list the `RuleSet` class in
 `src/assets/META-INF/services/dev.jpm.format.api.RuleSet`.
 
 **Where rules run.** Custom rules are loaded into the JVM jpm-format runs on. The rule API does not depend
-on where rules run: when jpm-format is a native binary (see [Status](#status)), a command in a project with
+on where rules run: when jpm-format is a native binary (see [ROADMAP.md](ROADMAP.md)), a command in a project with
 custom rules is handed to a JVM, so projects without them never pay that cost.
 
 ### Testing rules
@@ -265,17 +265,7 @@ The common Spotless steps are built in: import order (`ImportOrder`), removing u
 
 ## Status
 
-This is the first version. Not done yet:
-
-- **Native binary.** jpm starts extensions on a JVM today; a GraalVM build (`jpm build --native`) needs
-  testing first, since running javac inside a native image is uncommon.
-- **IntelliJ parity.** Line breaks, indentation, blank lines, empty bodies, Javadoc and comments are done so far,
-  measured against IntelliJ's own formatter on real projects (`checks/Parity.java`, see CONTRIBUTING.md); more of
-  IntelliJ's defaults (the rest of its Javadoc formatting) and its options follow, as rules in
-  `src/dev/jpm/format/intellij/`. IntelliJ's default inspections that need no data-flow analysis are done
-  ([docs/inspections.md](docs/inspections.md)); null checks and data flow come last.
-- **Elsewhere:** `jpm import` translating Spotless config (in jpm), and the IntelliJ plugin running
-  `jpm format` on save (in jpm-intellij).
+Before 1.0, nothing is stable. What is still to come is in [ROADMAP.md](ROADMAP.md).
 
 ## Developing
 
