@@ -30,8 +30,10 @@ With `formatter.style: "palantir"` it chooses the line breaks itself, as Palanti
 `formatter.useTabs`. Text blocks are never re-indented. Turn the whole formatter off with
 `formatter.enabled: false`.
 
-`formatter.style` can also name a formatter release: `"palantir@<version>"` (Palantir Java Format) or
-`"google-java-format[@<version>]"` (its latest release without a version), in any version syntax jpm reads. jpm
+`formatter.style` can also name a formatter release: `"palantir@<version>"` (Palantir Java Format),
+`"google-java-format[@<version>]"` (its latest release without a version), in any version syntax jpm reads, or
+`"eclipse[@<version>]"`: Eclipse's JDT formatter, through Spotless's Eclipse step (Spotless 4.12.0, the Eclipse
+version Spotless picks without one), with the profile exported from Eclipse in `formatter.eclipseConfig`. jpm
 downloads it (`dependencies/resolve`, so it needs jpm 0.15.0 or newer), and it runs in a class loader of its own
 with its own defaults: `lineWidth`, the indentation settings, `useTabs` and the IntelliJ rules do not apply. The
 import rules, `LicenseHeader` and the linter still do.

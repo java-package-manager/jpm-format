@@ -11,14 +11,17 @@ then a language server).
       (`checks/Parity.java`, see [CONTRIBUTING.md](CONTRIBUTING.md)). Of IntelliJ's default inspections, null checks
       and data flow are left. Open in the corpus: IntelliJ leaves some Javadocs with `<pre>` entirely as they are
       (54 of 76: no `<p>`, no alignment) and formats the others; what decides it is not known yet.
-- [ ] **Spotless formatters, natively.** Run Spotless's formatter steps as jpm-format formatters, configured in
+- [ ] **Spotless formatters, natively.** `formatter.style: "eclipse"` runs Spotless's Eclipse JDT step, with jpm
+      providing its jars. Still to come: Spotless's other steps (for files other than Java too), configured in
       `extensions.format`.
 - [ ] **Java formatters from Git.** `"formatter": { "style": "..." }` takes `palantir@<version>` and
       `google-java-format[@<version>]` (released jars, resolved by jpm). Still to come: a `#branch` of them, a URL of
       a jar release, and `github:author/my-java-formatter[@version|#branch]`, any formatter from a Git repository, as a
       jpm-format extension (the rule API) or as a Spotless step.
 - [ ] **No Palantir fork.** Use Palantir Java Format from its own repository instead of the fork in
-      `src/dev/jpm/format/palantir/`. Needs native Spotless support first.
+      `src/dev/jpm/format/palantir/`. `formatter.style: "palantir@<version>"` already runs upstream's releases as
+      they are. The fork stays for the IntelliJ style: 46 changes of its own (`jpm-format:` in the code), most of
+      them the `keepLineBreaks` mode, that upstream would have to take first.
 
 ## Running
 

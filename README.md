@@ -67,7 +67,8 @@ project root (not both). In a workspace, a module's own `project.jsonc` applies 
       "ignore": ["src/generated/**"],              // .cache, dist, build, target, .git … are always ignored
       "formatter": {
         "enabled": true,
-        "style": "intellij",                       // or "palantir", "palantir@<version>", "google-java-format[@<version>]"
+        "style": "intellij",                       // or "palantir", "palantir@<version>", "google-java-format[@<version>]",
+                                                   // "eclipse[@<version>]" (with "eclipseConfig": "<profile>.xml")
         "lineWidth": 120,                          // 20 to 1000; the "palantir" style wraps at it
         "indentWidth": 4,                          // 1 to 16
         "continuationIndentWidth": 8,              // wrapped lines; twice indentWidth by default, as in IntelliJ
