@@ -48,7 +48,9 @@ public final class KeepBlankLines implements IntelliJRule {
         }
     }
 
-    /** The output's gap, with the blank lines of the input's gap put back, up to {@code max}. */
+    /**
+     * The output's gap, with the blank lines of the input's gap put back, up to {@code max}.
+     */
     static String gap(String in, String out, int max, String nl) {
         int lineBreaksOut = count(out), lineBreaksIn = count(in);
         if (lineBreaksOut == 0 || lineBreaksIn <= lineBreaksOut) return out;

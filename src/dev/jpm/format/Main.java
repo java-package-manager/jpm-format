@@ -24,7 +24,9 @@ import java.util.concurrent.ForkJoinPool;
  * {@code jpm-format}).
  */
 public final class Main {
-    /** The version in project.jsonc, from the {@code BuildConfig} class jpm generates ({@code "defineClass"}). */
+    /**
+     * The version in project.jsonc, from the {@code BuildConfig} class jpm generates ({@code "defineClass"}).
+     */
     public static final String VERSION = BuildConfig.VERSION;
 
     static final String HELP = """
@@ -115,7 +117,9 @@ public final class Main {
         };
     }
 
-    /** Runs this command again on the JVM {@code java} (JDK 19 or newer) with javac's internals exported. */
+    /**
+     * Runs this command again on the JVM {@code java} (JDK 19 or newer) with javac's internals exported.
+     */
     static int relaunch(List<String> args, String classpath, String java) {
         List<String> cmd = new ArrayList<>();
         cmd.add(java);

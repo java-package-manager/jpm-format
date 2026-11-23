@@ -3,11 +3,17 @@ package dev.jpm.format;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Finds the comments in Java source, skipping string, text block and char literals. */
+/**
+ * Finds the comments in Java source, skipping string, text block and char literals.
+ */
 public final class Comments {
-    /** A comment at {@code [start, end)}; {@code line} is true for {@code //} comments. */
+    /**
+     * A comment at {@code [start, end)}; {@code line} is true for {@code //} comments.
+     */
     public record Comment(int start, int end, String text, boolean line) {
-        /** The text without its delimiters, trimmed. */
+        /**
+         * The text without its delimiters, trimmed.
+         */
         public String body() {
             String t = line ? text.substring(2) : text.substring(2, Math.max(2, text.length() - 2));
             return t.strip();
@@ -48,7 +54,9 @@ public final class Comments {
         return out;
     }
 
-    /** {@code [start, end)} of every text block ({@code """ ... """}), whose content whitespace is significant. */
+    /**
+     * {@code [start, end)} of every text block ({@code """ ... """}), whose content whitespace is significant.
+     */
     public static List<int[]> textBlocks(String s) {
         List<int[]> out = new ArrayList<>();
         int n = s.length();
@@ -77,7 +85,9 @@ public final class Comments {
         return out;
     }
 
-    /** True if only whitespace lies between {@code from} and {@code to}. */
+    /**
+     * True if only whitespace lies between {@code from} and {@code to}.
+     */
     public static boolean blank(String s, int from, int to) {
         for (int k = from; k < to; k++) if (!Character.isWhitespace(s.charAt(k))) return false;
         return true;

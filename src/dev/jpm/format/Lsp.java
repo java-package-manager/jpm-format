@@ -243,7 +243,9 @@ final class Lsp {
         return Map.of("start", pos(src, s), "end", pos(src, e));
     }
 
-    /** LSP positions count UTF-16 units, as Java strings do. */
+    /**
+     * LSP positions count UTF-16 units, as Java strings do.
+     */
     private static Map<String, Object> pos(Source src, int offset) {
         int line = src.line(offset);
         return Map.of("line", line - 1, "character", offset - src.lineStart(line));

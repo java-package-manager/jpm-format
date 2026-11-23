@@ -34,7 +34,9 @@ public final class ImportOrder implements Formatter {
         }
     }
 
-    /** Alphabetical, with {@code .} before any letter so {@code a.b.C} comes before {@code a.bc}. */
+    /**
+     * Alphabetical, with {@code .} before any letter so {@code a.b.C} comes before {@code a.bc}.
+     */
     static final Comparator<String> ORDER = Comparator.comparing(s -> s.replace('.', '\0'));
 
     @Override
@@ -101,7 +103,9 @@ public final class ImportOrder implements Formatter {
         return String.join(nl + nl, parts);
     }
 
-    /** The group of the most specific matching pattern; the last group if none matches. */
+    /**
+     * The group of the most specific matching pattern; the last group if none matches.
+     */
     static int group(Imp i, List<List<String>> groups) {
         int best = -1, bestLen = -1;
         for (int g = 0; g < groups.size(); g++) {

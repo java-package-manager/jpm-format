@@ -64,7 +64,9 @@ public final class LicenseHeader implements Formatter {
         return want + nl + nl + src.stripLeading();
     }
 
-    /** The header with {@code $YEAR} filled in, keeping the year from {@code existing} when it matches. */
+    /**
+     * The header with {@code $YEAR} filled in, keeping the year from {@code existing} when it matches.
+     */
     static String withYear(String header, String existing) {
         String year = String.valueOf(Year.now().getValue());
         if (!header.contains("$YEAR")) return header;

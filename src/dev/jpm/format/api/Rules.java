@@ -12,31 +12,41 @@ import java.util.List;
 public final class Rules {
     private final List<Lint> rules = new ArrayList<>();
 
-    /** Appends {@code rule} at the very end. */
+    /**
+     * Appends {@code rule} at the very end.
+     */
     public Rules add(Lint rule) {
         rules.add(checkNew(rule));
         return this;
     }
 
-    /** Places {@code rule} right before the rule {@code ruleId}. */
+    /**
+     * Places {@code rule} right before the rule {@code ruleId}.
+     */
     public Rules addBefore(String ruleId, Lint rule) {
         rules.add(indexOf(ruleId), checkNew(rule));
         return this;
     }
 
-    /** Places {@code rule} right after the rule {@code ruleId}. */
+    /**
+     * Places {@code rule} right after the rule {@code ruleId}.
+     */
     public Rules addAfter(String ruleId, Lint rule) {
         rules.add(indexOf(ruleId) + 1, checkNew(rule));
         return this;
     }
 
-    /** The rule with this id, or null. */
+    /**
+     * The rule with this id, or null.
+     */
     public Lint get(String id) {
         for (Lint r : rules) if (r.id().equals(id)) return r;
         return null;
     }
 
-    /** All rules in order. */
+    /**
+     * All rules in order.
+     */
     public List<Lint> all() {
         return Collections.unmodifiableList(rules);
     }

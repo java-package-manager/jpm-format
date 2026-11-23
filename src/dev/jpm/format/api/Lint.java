@@ -10,20 +10,28 @@ import java.util.Set;
  * stable, in PascalCase like IntelliJ's inspection names ({@code StringEquality}).
  */
 public interface Lint {
-    /** The rule's id, such as {@code UnusedImport}. */
+    /**
+     * The rule's id, such as {@code UnusedImport}.
+     */
     String id();
 
-    /** The rule's category, such as {@code correctness} or {@code style}; custom rules default to {@code custom}. */
+    /**
+     * The rule's category, such as {@code correctness} or {@code style}; custom rules default to {@code custom}.
+     */
     default String category() {
         return "custom";
     }
 
-    /** The severity used when the config does not set one. */
+    /**
+     * The severity used when the config does not set one.
+     */
     default Severity severity() {
         return Severity.WARN;
     }
 
-    /** A link to the rule's documentation, or null. */
+    /**
+     * A link to the rule's documentation, or null.
+     */
     default String docs() {
         return null;
     }
@@ -44,6 +52,8 @@ public interface Lint {
         return false;
     }
 
-    /** Reports problems in {@link Context#source()} with {@link Context#report}. */
+    /**
+     * Reports problems in {@link Context#source()} with {@link Context#report}.
+     */
     void check(Context ctx);
 }

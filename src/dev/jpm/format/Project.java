@@ -35,13 +35,19 @@ import javax.tools.StandardJavaFileManager;
  * there is none: type-aware rules are skipped and everything else still runs.
  */
 public final class Project {
-    /** A module: its folder, the folders its sources live in, and its compile classpath. */
+    /**
+     * A module: its folder, the folders its sources live in, and its compile classpath.
+     */
     public record Module(Path dir, List<Path> sourceDirs, List<Path> classpath) {}
 
     public final Path root;
-    /** Modules with a known classpath, deepest folder first; empty when unknown. */
+    /**
+     * Modules with a known classpath, deepest folder first; empty when unknown.
+     */
     public final List<Module> modules;
-    /** Why there is no classpath, or null. */
+    /**
+     * Why there is no classpath, or null.
+     */
     public final String noTypesReason;
 
     public Project(Path root, List<Module> modules, String noTypesReason) {
@@ -53,12 +59,16 @@ public final class Project {
         this.noTypesReason = noTypesReason;
     }
 
-    /** A project without type information. */
+    /**
+     * A project without type information.
+     */
     public static Project untyped(Path root, String reason) {
         return new Project(root, List.of(), reason);
     }
 
-    /** The folder with a project.jsonc at or above {@code from}, the outermost of a workspace; else {@code from}. */
+    /**
+     * The folder with a project.jsonc at or above {@code from}, the outermost of a workspace; else {@code from}.
+     */
     public static Path findRoot(Path from) {
         String env = System.getenv("JPM_PROJECT_DIR");
         if (env != null && !env.isBlank()) return Path.of(env).toAbsolutePath().normalize();
@@ -70,7 +80,9 @@ public final class Project {
         return found != null ? found : from.toAbsolutePath().normalize();
     }
 
-    /** Loads the classpath: {@code JPM_CLASSPATH}, else jpm's {@code project/load} and {@code project/classpaths}. Never throws. */
+    /**
+     * Loads the classpath: {@code JPM_CLASSPATH}, else jpm's {@code project/load} and {@code project/classpaths}. Never throws.
+     */
     public static Project load(Path root) {
         String cp = System.getenv("JPM_CLASSPATH");
         if (cp != null && !cp.isBlank()) {
@@ -99,7 +111,9 @@ public final class Project {
         }
     }
 
-    /** The modules jpm reports, each with its source folders and the classpath its main and test sources compile against. */
+    /**
+     * The modules jpm reports, each with its source folders and the classpath its main and test sources compile against.
+     */
     static Project fromModel(Path root, dev.jpm.api.model.Project p, Map<String, Classpaths> classpaths) {
         List<Module> mods = new ArrayList<>();
         for (dev.jpm.api.model.Module m : p.modules()) {
@@ -120,19 +134,25 @@ public final class Project {
         return new Project(root, mods, null);
     }
 
-    /** The module a file belongs to, or null. */
+    /**
+     * The module a file belongs to, or null.
+     */
     public Module moduleOf(Path file) {
         Path abs = file.toAbsolutePath().normalize();
         for (Module m : modules) if (abs.startsWith(m.dir())) return m;
         return null;
     }
 
-    /** True if type information can be computed for files of this project. */
+    /**
+     * True if type information can be computed for files of this project.
+     */
     public boolean typed() {
         return !modules.isEmpty();
     }
 
-    /** A hash of every classpath, for the cache. */
+    /**
+     * A hash of every classpath, for the cache.
+     */
     public String classpathKey() {
         StringBuilder sb = new StringBuilder();
         for (Module m : modules) {
@@ -179,7 +199,9 @@ public final class Project {
         }
     }
 
-    /** Attributes one file's text against its module's classpath; null if the file has no module. */
+    /**
+     * Attributes one file's text against its module's classpath; null if the file has no module.
+     */
     public TypeInfo attribute(Path file, String text) {
         Module m = moduleOf(file);
         if (m == null) return null;

@@ -67,7 +67,9 @@ class EngineTest {
         assertEquals(Severity.ERROR, new Upper().severity());
     }
 
-    /** Upper-cases "todo" comments; a formatter with the built-in check. */
+    /**
+     * Upper-cases "todo" comments; a formatter with the built-in check.
+     */
     static final class Upper implements Formatter {
         @Override
         public String id() {
@@ -80,7 +82,9 @@ class EngineTest {
         }
     }
 
-    /** Runs after JavaFormat and undoes one of its choices on purpose. */
+    /**
+     * Runs after JavaFormat and undoes one of its choices on purpose.
+     */
     static final class NoSpaceAfterIf implements Formatter {
         @Override
         public String id() {

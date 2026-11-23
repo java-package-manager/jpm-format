@@ -38,7 +38,9 @@ final class CustomRules {
     private CustomRules() {
     }
 
-    /** The rule sources in {@code rules/}, sorted. */
+    /**
+     * The rule sources in {@code rules/}, sorted.
+     */
     static List<Path> sources(Path root) {
         Path dir = root.resolve("rules");
         if (!Files.isDirectory(dir)) return List.of();
@@ -53,7 +55,9 @@ final class CustomRules {
         }
     }
 
-    /** Jars on the project's classpath that ship rule sets. */
+    /**
+     * Jars on the project's classpath that ship rule sets.
+     */
     static List<Path> ruleSetJars(Project project) {
         List<Path> out = new ArrayList<>();
         for (Project.Module m : project.modules) {
@@ -72,12 +76,16 @@ final class CustomRules {
         return out;
     }
 
-    /** True if this project has custom rules of either kind. */
+    /**
+     * True if this project has custom rules of either kind.
+     */
     static boolean present(Path root, Project project) {
         return !sources(root).isEmpty() || !ruleSetJars(project).isEmpty();
     }
 
-    /** Loads every custom rule into {@code registry}; returns a hash of their sources for the cache. */
+    /**
+     * Loads every custom rule into {@code registry}; returns a hash of their sources for the cache.
+     */
     static String load(Path root, Project project, Registry registry) {
         StringBuilder hash = new StringBuilder();
         List<Path> jars = ruleSetJars(project);
@@ -192,7 +200,9 @@ final class CustomRules {
         }
     }
 
-    /** The classpath rules compile against: jpm-format itself (wherever it was loaded from) and the JVM's. */
+    /**
+     * The classpath rules compile against: jpm-format itself (wherever it was loaded from) and the JVM's.
+     */
     static String apiClasspath() {
         List<String> cp = new ArrayList<>();
         try {

@@ -13,28 +13,44 @@ import java.util.Optional;
  * {@link com.sun.source.util.TreeScanner} or {@link com.sun.source.util.TreePathScanner}.
  */
 public interface Context {
-    /** The file's path relative to the project root, with {@code /} separators. */
+    /**
+     * The file's path relative to the project root, with {@code /} separators.
+     */
     String path();
 
-    /** The file's current source; for a formatter, the previous formatter's output. */
+    /**
+     * The file's current source; for a formatter, the previous formatter's output.
+     */
     String source();
 
-    /** The parsed source. Rules never see a file that does not parse. */
+    /**
+     * The parsed source. Rules never see a file that does not parse.
+     */
     CompilationUnitTree tree();
 
-    /** Start offset of {@code node} in {@link #source()}. */
+    /**
+     * Start offset of {@code node} in {@link #source()}.
+     */
     int start(Tree node);
 
-    /** End offset (exclusive) of {@code node} in {@link #source()}. */
+    /**
+     * End offset (exclusive) of {@code node} in {@link #source()}.
+     */
     int end(Tree node);
 
-    /** 1-based line of an offset. */
+    /**
+     * 1-based line of an offset.
+     */
     int line(int offset);
 
-    /** 1-based column of an offset. */
+    /**
+     * 1-based column of an offset.
+     */
     int column(int offset);
 
-    /** Offset of the start of a 1-based line. */
+    /**
+     * Offset of the start of a 1-based line.
+     */
     int lineStart(int line);
 
     /**
@@ -43,19 +59,27 @@ public interface Context {
      */
     Optional<TypeInfo> types();
 
-    /** The rule's options from the config: {@code "Rule": {"level": "warn", "options": {...}}}. */
+    /**
+     * The rule's options from the config: {@code "Rule": {"level": "warn", "options": {...}}}.
+     */
     Map<String, Object> options();
 
-    /** Reports a problem at {@code node}. */
+    /**
+     * Reports a problem at {@code node}.
+     */
     default void report(Tree node, String message) {
         report(start(node), end(node), message, null);
     }
 
-    /** Reports a problem at {@code node} with a fix. */
+    /**
+     * Reports a problem at {@code node} with a fix.
+     */
     default void report(Tree node, String message, Fix fix) {
         report(start(node), end(node), message, fix);
     }
 
-    /** Reports a problem at {@code [start, end)}, with an optional fix. */
+    /**
+     * Reports a problem at {@code [start, end)}, with an optional fix.
+     */
     void report(int start, int end, String message, Fix fix);
 }

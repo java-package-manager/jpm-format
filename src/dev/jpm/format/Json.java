@@ -19,7 +19,9 @@ public final class Json {
         this.where = where;
     }
 
-    /** Parses JSON or JSONC; {@code where} names the source in errors. */
+    /**
+     * Parses JSON or JSONC; {@code where} names the source in errors.
+     */
     public static Object parse(String text, String where) {
         Json p = new Json(text, where);
         p.ws();
@@ -178,14 +180,18 @@ public final class Json {
         }
     }
 
-    /** Writes compact JSON. */
+    /**
+     * Writes compact JSON.
+     */
     public static String write(Object v) {
         StringBuilder sb = new StringBuilder();
         write(sb, v, -1, 0);
         return sb.toString();
     }
 
-    /** Writes JSON indented by two spaces. */
+    /**
+     * Writes JSON indented by two spaces.
+     */
     public static String pretty(Object v) {
         StringBuilder sb = new StringBuilder();
         write(sb, v, 2, 0);

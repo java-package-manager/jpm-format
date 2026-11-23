@@ -19,7 +19,9 @@ public record Finding(
         String message,
         Fix fix) {
 
-    /** {@code lint/<category>/<rule>}, the name used in suppression comments and reports. */
+    /**
+     * {@code lint/<category>/<rule>}, the name used in suppression comments and reports.
+     */
     public String qualifiedRule() {
         return "lint/" + category + "/" + rule;
     }
@@ -28,7 +30,9 @@ public record Finding(
         return new Finding(rule, category, s, path, start, end, line, column, endLine, endColumn, message, fix);
     }
 
-    /** {@code 3:5 style/UnusedImport Unused import 'java.util.List'}, as in {@code .findings} files. */
+    /**
+     * {@code 3:5 style/UnusedImport Unused import 'java.util.List'}, as in {@code .findings} files.
+     */
     public String brief() {
         return line + ":" + column + " " + category + "/" + rule + " " + message;
     }

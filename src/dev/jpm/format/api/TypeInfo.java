@@ -16,7 +16,9 @@ import javax.lang.model.util.Types;
  * Positions in {@link #tree()} are the same as in {@link Context#source()}.
  */
 public record TypeInfo(CompilationUnitTree tree, Trees trees, Types types, Elements elements) {
-    /** The type of {@code node} (a node of {@link #tree()}), or null if javac could not resolve it. */
+    /**
+     * The type of {@code node} (a node of {@link #tree()}), or null if javac could not resolve it.
+     */
     public TypeMirror typeOf(Tree node) {
         TreePath path = TreePath.getPath(tree, node);
         if (path == null) return null;
@@ -24,13 +26,17 @@ public record TypeInfo(CompilationUnitTree tree, Trees trees, Types types, Eleme
         return t == null || t.getKind() == TypeKind.ERROR ? null : t;
     }
 
-    /** The symbol {@code node} declares or refers to, or null. */
+    /**
+     * The symbol {@code node} declares or refers to, or null.
+     */
     public Element elementOf(Tree node) {
         TreePath path = TreePath.getPath(tree, node);
         return path == null ? null : trees.getElement(path);
     }
 
-    /** True if {@code t} is exactly the class {@code qualifiedName}. */
+    /**
+     * True if {@code t} is exactly the class {@code qualifiedName}.
+     */
     public boolean is(TypeMirror t, String qualifiedName) {
         if (t == null || t.getKind() != TypeKind.DECLARED) return false;
         var e = elements.getTypeElement(qualifiedName);

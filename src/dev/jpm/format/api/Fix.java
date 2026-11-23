@@ -9,7 +9,9 @@ import java.util.List;
  * offered (in the language server and the JSON and SARIF reports), never applied by {@code jpm format}.
  */
 public record Fix(String description, List<Edit> edits) {
-    /** Replaces {@code [start, end)} with {@code replacement}. */
+    /**
+     * Replaces {@code [start, end)} with {@code replacement}.
+     */
     public record Edit(int start, int end, String replacement) {
         public Edit {
             if (start < 0 || end < start) throw new IllegalArgumentException("bad edit range " + start + ".." + end);
@@ -32,12 +34,16 @@ public record Fix(String description, List<Edit> edits) {
         return replace(description, start, end, "");
     }
 
-    /** Applies the edits to {@code source}. Edits must not overlap. */
+    /**
+     * Applies the edits to {@code source}. Edits must not overlap.
+     */
     public String apply(String source) {
         return apply(source, edits);
     }
 
-    /** Applies non-overlapping edits to {@code source}; overlapping ones after the first are skipped. */
+    /**
+     * Applies non-overlapping edits to {@code source}; overlapping ones after the first are skipped.
+     */
     public static String apply(String source, List<Edit> edits) {
         List<Edit> sorted = new ArrayList<>(edits);
         sorted.sort(Comparator.comparingInt(Edit::start).thenComparingInt(Edit::end));

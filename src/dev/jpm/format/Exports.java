@@ -22,7 +22,9 @@ public final class Exports {
     private Exports() {
     }
 
-    /** True if javac's internals are exported to unnamed modules. */
+    /**
+     * True if javac's internals are exported to unnamed modules.
+     */
     public static boolean exported() {
         if (open) return true;
         Module javac = ModuleLayer.boot().findModule("jdk.compiler").orElse(null);
@@ -32,7 +34,9 @@ public final class Exports {
         return open = true;
     }
 
-    /** Exports javac's internals if needed and possible; true if they are exported afterwards. */
+    /**
+     * Exports javac's internals if needed and possible; true if they are exported afterwards.
+     */
     public static synchronized boolean open() {
         if (exported()) return true;
         if (Runtime.version().feature() >= 24 || System.getenv("JPM_FORMAT_RELAUNCH") != null) return false;
@@ -57,7 +61,9 @@ public final class Exports {
         }
     }
 
-    /** The JVM flags that export them. */
+    /**
+     * The JVM flags that export them.
+     */
     public static List<String> flags() {
         return PACKAGES.stream()
                 .map(p -> "--add-exports=jdk.compiler/" + p + "=ALL-UNNAMED")

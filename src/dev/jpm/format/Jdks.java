@@ -13,7 +13,9 @@ import java.util.concurrent.TimeUnit;
  * formatter supports, which jpm installs if needed.
  */
 public final class Jdks {
-    /** The JDK asked from jpm when the running one is not supported. */
+    /**
+     * The JDK asked from jpm when the running one is not supported.
+     */
     static final String SUPPORTED = "21";
 
     private static volatile Boolean supported;
@@ -21,7 +23,9 @@ public final class Jdks {
     private Jdks() {
     }
 
-    /** True if the running JDK's javac has what the formatter needs. */
+    /**
+     * True if the running JDK's javac has what the formatter needs.
+     */
     public static boolean formatterSupported() {
         Boolean s = supported;
         if (s == null) {
@@ -38,7 +42,9 @@ public final class Jdks {
         return s;
     }
 
-    /** Why the formatter cannot run here, for error messages. */
+    /**
+     * Why the formatter cannot run here, for error messages.
+     */
     public static String unsupportedMessage() {
         return "the formatter (Palantir Java Format) does not support the javac of Java "
                 + Runtime.version().feature() + " yet; run jpm-format on JDK " + SUPPORTED

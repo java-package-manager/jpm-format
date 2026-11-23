@@ -30,7 +30,9 @@ public final class Engine {
         CHECK
     }
 
-    /** What happened to one file. */
+    /**
+     * What happened to one file.
+     */
     public record Result(String path, String original, String output, List<Finding> findings, boolean syntaxError) {
         public boolean changed() {
             return !original.equals(output);
@@ -52,7 +54,9 @@ public final class Engine {
         this.warn = warn;
     }
 
-    /** The rules that run on a file at their levels, formatters in order. */
+    /**
+     * The rules that run on a file at their levels, formatters in order.
+     */
     private record Active(Lint rule, Severity level) {}
 
     private List<Active> active(Config.Settings s) {
@@ -121,7 +125,9 @@ public final class Engine {
         return new Result(rel, text, cur.text, result, false);
     }
 
-    /** The result of running every formatter in order, and the last one that changed the text. */
+    /**
+     * The result of running every formatter in order, and the last one that changed the text.
+     */
     private record Pipeline(Source out, Formatter lastChange) {}
 
     private Pipeline pipeline(Source src, Config.Settings settings, List<Active> rules, List<Finding> findings) {
@@ -203,7 +209,9 @@ public final class Engine {
         return out;
     }
 
-    /** True if no two edits overlap, so applying them together is well defined. */
+    /**
+     * True if no two edits overlap, so applying them together is well defined.
+     */
     private static boolean disjoint(List<Fix.Edit> edits) {
         List<Fix.Edit> sorted = new ArrayList<>(edits);
         sorted.sort(Comparator.comparingInt(Fix.Edit::start).thenComparingInt(Fix.Edit::end));
@@ -212,13 +220,17 @@ public final class Engine {
         return true;
     }
 
-    /** True if two findings touch; an insertion (empty range) touches what is right next to it. */
+    /**
+     * True if two findings touch; an insertion (empty range) touches what is right next to it.
+     */
     private static boolean overlaps(Finding a, Finding b) {
         if (a.start() == a.end() || b.start() == b.end()) return a.start() <= b.end() && b.start() <= a.end();
         return a.start() < b.end() && b.start() < a.end();
     }
 
-    /** Formats only {@code [start, end)} with the core formatter, for editors. */
+    /**
+     * Formats only {@code [start, end)} with the core formatter, for editors.
+     */
     public String formatRange(String rel, String text, int start, int end) {
         Source src = new Source(rel, text);
         if (!src.errors().isEmpty()) return text;
@@ -229,12 +241,16 @@ public final class Engine {
         return Regions.restore(src, f.formatRange(ctx, start, end));
     }
 
-    /** Runs one formatter on {@code cur}, keeping protected regions; in debug mode, checks idempotence. */
+    /**
+     * Runs one formatter on {@code cur}, keeping protected regions; in debug mode, checks idempotence.
+     */
     private String apply(Formatter f, Source cur, Config.Settings settings, List<Finding> findings) {
         return apply(f, cur, null, settings, findings);
     }
 
-    /** {@code layoutInput}: what the layout engine received, once it has run in this pipeline (else null). */
+    /**
+     * {@code layoutInput}: what the layout engine received, once it has run in this pipeline (else null).
+     */
     private String apply(
             Formatter f, Source cur, Source layoutInput, Config.Settings settings, List<Finding> findings) {
         FileContext ctx =

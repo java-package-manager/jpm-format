@@ -19,7 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * type-aware rules run, the classpath. Any change to those starts afresh.
  */
 final class Cache {
-    /** A file's findings for a content hash; {@code formatted} if formatting would not change it. */
+    /**
+     * A file's findings for a content hash; {@code formatted} if formatting would not change it.
+     */
     record Entry(String hash, boolean formatted, List<Finding> findings) {}
 
     private final Path file;
@@ -59,7 +61,9 @@ final class Cache {
         return Hashing.sha256(text);
     }
 
-    /** The cached entry for this content, or null. */
+    /**
+     * The cached entry for this content, or null.
+     */
     Entry get(String rel, String text) {
         Entry e = entries.get(rel);
         return e != null && e.hash().equals(hash(text)) ? e : null;
