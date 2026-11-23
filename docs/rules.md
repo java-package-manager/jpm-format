@@ -18,8 +18,11 @@ line it continues, not from every expression it is in (`foo(bar(a,` then `b))` p
 block from the line it starts on, and a closing `)` on its own line under the line with its `(`. Method
 parameters, the parts of a `for` header and try resources line up ("Align when multiline"), array initializers are
 one continuation in and written `new int[]{1}`, and an `if` on its own line after an `else` and a comment is that
-`else`'s statement. Comments stay as written: line comments are not wrapped and keep the text after their
-`//`, and comments at the first column stay there ("Line comment at first column").
+`else`'s statement. Modifiers keep the order they are written in, and the annotations and modifiers of a local
+variable or parameter join the line of its type. A wrapped `throws` list is one continuation in from the method.
+Comments stay as written: line comments are not wrapped and keep the text after their `//`, comments at the first
+column stay there ("Line comment at first column"), a comment after the statements of a `case` stays indented with
+them, and the other lines of a block comment move as far as its first.
 
 With `formatter.style: "palantir"` it chooses the line breaks itself, as Palantir Java Format does, wrapping at
 `formatter.lineWidth` (20 to 1000). Configure with `formatter.indentWidth` (1 to 16),
@@ -40,7 +43,8 @@ Lambdas, anonymous classes, `switch` cases and array initializers keep `{}`. Run
 
 IntelliJ's "Minimum blank lines": one blank line around methods, nested classes and initializer blocks; none
 required between fields, after the class header or before its end. The blank line goes before the member's
-comments (its Javadoc, a line comment), which Palantir Java Format leaves out. Runs after `JavaFormat`; off with
+comments (its Javadoc, a line comment), which Palantir Java Format leaves out; when it has a Javadoc, right before
+the Javadoc, as IntelliJ does not count other comments before it as the member's. Runs after `JavaFormat`; off with
 `formatter.style: "palantir"`.
 
 ### KeepBlankLines

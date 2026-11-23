@@ -134,6 +134,12 @@ public final class Level extends Doc {
     public static final String ALIGNED = "aligned";
 
     /**
+     * jpm-format: the debug name of a level whose extra indent counts from the line its statement or declaration
+     * starts on, with kept line breaks.
+     */
+    public static final String FROM_STATEMENT = "fromStatement";
+
+    /**
      * jpm-format: lays out this level with the breaks that {@link KeptBreaks} keeps. A level without any is one line.
      * Otherwise a level with an extra indent counts it from the indent of the line it starts on, unless the levels
      * around it are indented less; a level without one keeps the indent around it; an {@link #ALIGNED} level lines
@@ -152,6 +158,8 @@ public final class Level extends Doc {
         int entryLine = keep.lineIndent;
         State inner = getDebugName().filter(ALIGNED::equals).isPresent()
                 ? state.withIndentFrom(keep.alignment(state.numLines()), Indent.Const.ZERO)
+                : getDebugName().filter(FROM_STATEMENT::equals).isPresent()
+                ? state.withIndentFrom(keep.statementLine, getPlusIndent())
                 : plus <= 0
                         ? state.withIndentIncrementedBy(getPlusIndent())
                         : state.withIndentFrom(Math.min(state.indent(), entryLine), getPlusIndent());
@@ -163,6 +171,8 @@ public final class Level extends Doc {
                 if (keep.startsLine(doc)) {
                     int indent = keep.firstColumn(doc)
                             ? 0
+                            : keep.deeper(doc)
+                                    ? inner.indent() + keep.indent
                             : keep.closesEmptyBody(doc)
                                     ? keep.statementLine
                                     : closes(doc)
@@ -200,6 +210,7 @@ public final class Level extends Doc {
         if (!keep.taken(b)) return b.computeBreaks(inner, false);
         int deferred = keep.takeDeferred();
         if (deferred >= 0) column = Math.max(column, deferred);
+        if (keep.deeper(b)) column += keep.indent;
         if (keep.firstColumn(b)) column = 0;
         int before = inner.indent();
         State out = b.computeBreaks(inner.withIndentFrom(column - b.evalPlusIndent(inner), Indent.Const.ZERO), true)

@@ -66,6 +66,77 @@ class IntelliJRulesTest {
                 intellij().config("{\"formatter\": {\"maxBlankLines\": 3}}").format(in));
     }
 
+    /**
+     * Modifiers keep their order; the annotations and modifiers of a local variable join its type's line; the
+     * blank line before a method goes after a comment that is not its Javadoc; a wrapped throws list is indented from
+     * the method; a comment after the statements of a case stays with them; a block comment's lines move with its
+     * first. IntelliJ IDEA's own output.
+     */
+    @Test
+    void declarationsAndCommentsLikeIntelliJ() {
+        intellij().assertFormats("""
+                class G {
+                    private final static int A = 1;
+                    private int b;
+
+                    // Constructor
+                    /**
+                     * Docs.
+                     */
+                    G() {
+                    }
+
+                    void m(Object in, int c) throws java.io.IOException,
+                            IllegalStateException {
+                        @SuppressWarnings("unchecked")
+                        final String s = (String) in;
+                        switch (c) {
+                            case 1:
+                                s.length();
+                                // falls through
+                            case 2:
+                                break;
+                        }
+                                /*
+                                 * A block comment
+                                 *   indented
+                                 */
+                        s.length();
+                    }
+                }
+                """, """
+                class G {
+                    private final static int A = 1;
+                    private int b;
+
+                    // Constructor
+
+                    /**
+                     * Docs.
+                     */
+                    G() {
+                    }
+
+                    void m(Object in, int c) throws java.io.IOException,
+                            IllegalStateException {
+                        @SuppressWarnings("unchecked") final String s = (String) in;
+                        switch (c) {
+                            case 1:
+                                s.length();
+                                // falls through
+                            case 2:
+                                break;
+                        }
+                        /*
+                         * A block comment
+                         *   indented
+                         */
+                        s.length();
+                    }
+                }
+                """);
+    }
+
     @Test
     void blankLinesInsideAnExpressionAreKept() {
         intellij().assertFormats(

@@ -26,10 +26,24 @@ import dev.jpm.format.palantir.Output;
 /** A Leaf node in a {@link Doc} for a non-breaking space. */
 @Immutable
 public final class NonBreakingSpace extends Doc implements Op {
-    private NonBreakingSpace() {}
+    // jpm-format: a space that also joins lines the input broke there, with kept line breaks
+    private final boolean joins;
+
+    private NonBreakingSpace(boolean joins) {
+        this.joins = joins;
+    }
 
     public static NonBreakingSpace make() {
-        return new NonBreakingSpace();
+        return new NonBreakingSpace(false);
+    }
+
+    /** jpm-format: a space where a newline in the input is not kept (see {@link KeptBreaks}). */
+    public static NonBreakingSpace joining() {
+        return new NonBreakingSpace(true);
+    }
+
+    boolean joins() {
+        return joins;
     }
 
     @Override

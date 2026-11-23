@@ -1530,7 +1530,12 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             }
             if (!node.getThrows().isEmpty()) {
                 builder.breakToFill(" ");
-                builder.open(plusFour);
+                // jpm-format: with kept line breaks, a wrapped throws list is one continuation in from the method
+                if (keepLineBreaks) {
+                    builder.open(OpenOp.builder().plusIndent(plusFour).debugName(Level.FROM_STATEMENT).build());
+                } else {
+                    builder.open(plusFour);
+                }
                 {
                     visitThrowsClause(node.getThrows());
                 }
@@ -2302,7 +2307,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
                 builder.addAll(
                         annotationsDirection.isVertical()
                                 ? forceBreakList(declarationAnnotationBreak)
-                                : breakList(declarationAnnotationBreak));
+                                : joined(annotationsDirection) ? spaceList() : breakList(declarationAnnotationBreak));
             }
             scan(annotations.removeFirst(), null);
             first = false;
@@ -2321,7 +2326,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
                         .build())
                 : annotationsDirection.isVertical()
                         ? forceBreakList(declarationAnnotationBreak)
-                        : breakList(declarationAnnotationBreak);
+                        : joined(annotationsDirection) ? spaceList() : breakList(declarationAnnotationBreak);
         if (annotations.isEmpty() && !nextIsModifier()) {
             return trailingBreak;
         }
@@ -2333,7 +2338,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         first = true;
         while (nextIsModifier() || !annotations.isEmpty()) {
             if (!first) {
-                builder.addAll(breakFillList(Optional.empty()));
+                builder.addAll(joined(annotationsDirection) ? spaceList() : breakFillList(Optional.empty()));
             }
             if (nextIsModifier()) {
                 String currentToken = builder.peekToken().get();
@@ -2349,7 +2354,19 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             first = false;
         }
         builder.close();
-        return breakFillList(Optional.empty());
+        return joined(annotationsDirection) ? spaceList() : breakFillList(Optional.empty());
+    }
+
+    /**
+     * jpm-format: with kept line breaks, IntelliJ joins the annotations and modifiers of local variables and
+     * parameters onto the line of their type.
+     */
+    private boolean joined(Direction annotationsDirection) {
+        return keepLineBreaks && !annotationsDirection.isVertical();
+    }
+
+    private static ImmutableList<Op> spaceList() {
+        return ImmutableList.of(dev.jpm.format.palantir.doc.NonBreakingSpace.joining());
     }
 
     boolean nextIsModifier() {

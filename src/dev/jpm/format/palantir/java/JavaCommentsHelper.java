@@ -59,9 +59,28 @@ public final class JavaCommentsHelper implements CommentsHelper {
             return indentLineComments(lines, column0);
         } else if (javadocShaped(lines)) {
             return indentJavadoc(lines, column0);
+        } else if (options.keepLineBreaks()) {
+            return shift(lines, column0 - tok.getColumn());
         } else {
             return preserveIndentation(lines, column0);
         }
+    }
+
+    // jpm-format: with kept line breaks, a block comment's other lines move as far as its first line, as in IntelliJ
+    private String shift(List<String> lines, int by) {
+        StringBuilder builder = new StringBuilder(lines.get(0));
+        for (int i = 1; i < lines.size(); ++i) {
+            String line = lines.get(i);
+            builder.append(lineSeparator);
+            if (by >= 0) {
+                builder.append(" ".repeat(line.isEmpty() ? 0 : by)).append(line);
+            } else {
+                int lead = 0;
+                while (lead < line.length() && lead < -by && line.charAt(lead) == ' ') lead++;
+                builder.append(line.substring(lead));
+            }
+        }
+        return builder.toString();
     }
 
     // For non-javadoc-shaped block comments, shift the entire block to the correct

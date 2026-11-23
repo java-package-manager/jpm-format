@@ -533,8 +533,7 @@ class EngineTest {
         ByteArrayOutputStream json = new ByteArrayOutputStream();
         Reporter.named("json").report(rs, sum, ws.registry, new PrintStream(json, true, StandardCharsets.UTF_8));
         Map<String, Object> parsed = Json.object(json.toString(StandardCharsets.UTF_8), "json");
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> fs = (List<Map<String, Object>>) parsed.get("findings");
+        @SuppressWarnings("unchecked") List<Map<String, Object>> fs = (List<Map<String, Object>>) parsed.get("findings");
         assertEquals(r.findings(), fs.stream().map(Reporter::fromJson).toList());
 
         ByteArrayOutputStream sarif = new ByteArrayOutputStream();

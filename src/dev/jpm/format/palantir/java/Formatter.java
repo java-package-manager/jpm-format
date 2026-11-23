@@ -155,7 +155,7 @@ public final class Formatter {
         Obs.ExplorationNode observationNode = Obs.createRoot(sink);
         // jpm-format: with keepLineBreaks, the input's line breaks decide instead of the search
         KeptBreaks kept = options.keepLineBreaks()
-                ? KeptBreaks.of(doc, javaInput.getText(), options.continuationIndent())
+                ? KeptBreaks.of(doc, javaInput.getText(), options.continuationIndent(), options.indent())
                 : null;
         State finalState = kept != null
                 ? kept.apply(() -> doc.computeBreaks(
@@ -329,7 +329,10 @@ public final class Formatter {
         // TODO(cushon): this is only safe because the modifier ordering doesn't affect whitespace,
         // and doesn't change the replacements that are output. This is not true in general for
         // 'de-linting' changes (e.g. import ordering).
-        javaInput = ModifierOrderer.reorderModifiers(javaInput, characterRanges);
+        // jpm-format: IntelliJ's formatter leaves the order of modifiers as written
+        if (!options.keepLineBreaks()) {
+            javaInput = ModifierOrderer.reorderModifiers(javaInput, characterRanges);
+        }
 
         JavaCommentsHelper commentsHelper = new JavaCommentsHelper(javaInput.getLineSeparator(), options);
         JavaOutput javaOutput;

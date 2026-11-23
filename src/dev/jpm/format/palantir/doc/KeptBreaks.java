@@ -67,11 +67,24 @@ public final class KeptBreaks {
     /** The column after the last {@code (}, and the number of lines before it, for {@link Level#ALIGNED}. */
     private int afterParen, afterParenLines;
 
+    /** Whether a joining space ({@link NonBreakingSpace#joining()}) came since the last leaf, during {@link #walk}. */
+    private boolean joining;
+
     /** The column a replaced break would have started its line at, or -1. */
     private int deferred = -1;
 
-    private KeptBreaks(int continuation) {
+    /** The indent of blocks. */
+    final int indent;
+
+    /** Breaks before, and leaves that are, comments that IntelliJ indents one block in from where they would go. */
+    private final Set<Doc> deeper = identitySet();
+
+    /** The comments since the last token, with the break before each (or the comment), during {@link #walk}. */
+    private final List<Doc[]> recentComments = new ArrayList<>();
+
+    private KeptBreaks(int continuation, int indent) {
         this.continuation = continuation;
+        this.indent = indent;
     }
 
     private static <T> Set<T> identitySet() {
@@ -80,10 +93,10 @@ public final class KeptBreaks {
 
     /**
      * The decisions for {@code root}, laid out from {@code text}; a line that starts where no break stands is
-     * indented {@code continuation} past the line its statement starts on.
+     * indented {@code continuation} past the line its statement starts on, and blocks are {@code indent} in.
      */
-    public static KeptBreaks of(Level root, String text, int continuation) {
-        KeptBreaks k = new KeptBreaks(continuation);
+    public static KeptBreaks of(Level root, String text, int continuation, int indent) {
+        KeptBreaks k = new KeptBreaks(continuation, indent);
         k.walk(root, text, new ArrayList<>(), new int[] {-1});
         return k;
     }
@@ -98,6 +111,10 @@ public final class KeptBreaks {
             pending.add(b);
             return;
         }
+        if (doc instanceof NonBreakingSpace n && n.joins()) {
+            joining = true;
+            return;
+        }
         int start, length;
         if (doc instanceof Token t) {
             start = t.getToken().getTok().getPosition();
@@ -110,9 +127,19 @@ public final class KeptBreaks {
             return;
         }
         if (start < 0) return;
+        if (doc instanceof Token t) {
+            String word = t.getToken().getTok().getOriginalText();
+            if (word.equals("case") || word.equals("default")) {
+                int column = t.getToken().getTok().getColumn();
+                for (Doc[] c : recentComments) {
+                    if (((Comment) c[1]).tok().getColumn() > column) deeper.add(c[0]);
+                }
+            }
+            recentComments.clear();
+        }
         if (end[0] >= 0 && start >= end[0] && text.substring(end[0], start).indexOf('\n') >= 0) {
             if (pending.isEmpty()) {
-                if (!joined(text, end[0], start)) newlineBefore.add(doc);
+                if (!joining && !joined(text, end[0], start)) newlineBefore.add(doc);
                 if (text.charAt(end[0] - 1) == '{' && text.charAt(start) == '}') emptyBody.add(doc);
             } else {
                 Break last = pending.get(pending.size() - 1);
@@ -124,7 +151,12 @@ public final class KeptBreaks {
                 if (pending.isEmpty()) firstColumn.add(doc);
             }
         }
+        if (doc instanceof Comment) {
+            Doc before = pending.isEmpty() ? doc : pending.get(pending.size() - 1);
+            recentComments.add(new Doc[] {before, doc});
+        }
         pending.clear();
+        joining = false;
         end[0] = start + length;
     }
 
@@ -185,6 +217,14 @@ public final class KeptBreaks {
     /** Whether {@code leaf} is the {@code }} of an empty body written on two lines. */
     boolean closesEmptyBody(Doc leaf) {
         return emptyBody.contains(leaf);
+    }
+
+    /**
+     * Whether {@code doc}, a break or a leaf, starts a comment after the statements of a {@code switch} case that
+     * IntelliJ indents with them, not with the next {@code case}.
+     */
+    boolean deeper(Doc doc) {
+        return deeper.contains(doc);
     }
 
     /** Whether {@code doc}, a break or a leaf, puts what follows it at the first column. */
