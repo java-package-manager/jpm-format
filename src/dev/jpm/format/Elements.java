@@ -19,7 +19,7 @@ final class Elements {
      * {@code [start, end)} of the outermost element starting at or after {@code offset}, or null.
      */
     static int[] next(Source src, int offset) {
-        int[] best = new int[] {Integer.MAX_VALUE, -1};
+        int[] best = new int[]{Integer.MAX_VALUE, -1};
         new TreeScanner<Void, Void>() {
             @Override
             public Void scan(Tree t, Void v) {

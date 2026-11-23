@@ -66,13 +66,30 @@ public final class JavaFormatterOptions {
 
     private final int continuationIndent;
 
+    // jpm-format: keep the input's line breaks instead of choosing them
+    private final boolean keepLineBreaks;
+
     private JavaFormatterOptions(
-            Style style, boolean formatJavadoc, int maxLineLength, int indent, int continuationIndent) {
+            Style style,
+            boolean formatJavadoc,
+            int maxLineLength,
+            int indent,
+            int continuationIndent,
+            boolean keepLineBreaks) {
         this.style = style;
         this.formatJavadoc = formatJavadoc;
         this.maxLineLength = maxLineLength;
         this.indent = indent;
         this.continuationIndent = continuationIndent;
+        this.keepLineBreaks = keepLineBreaks;
+    }
+
+    /**
+     * jpm-format: whether optional line breaks follow the input (taken where the input had a newline, never added),
+     * with wrapped lines indented from the start of the line they continue, as IntelliJ IDEA does.
+     */
+    public boolean keepLineBreaks() {
+        return keepLineBreaks;
     }
 
     /** Returns the multiplier for the unit of indent. */
@@ -126,6 +143,8 @@ public final class JavaFormatterOptions {
 
         private int continuationIndent;
 
+        private boolean keepLineBreaks;
+
         private Builder() {}
 
         public Builder style(Style style) {
@@ -156,13 +175,20 @@ public final class JavaFormatterOptions {
             return this;
         }
 
+        /** jpm-format: keep the input's line breaks. */
+        public Builder keepLineBreaks(boolean keepLineBreaks) {
+            this.keepLineBreaks = keepLineBreaks;
+            return this;
+        }
+
         private static int positive(int n, String what) {
             if (n <= 0) throw new IllegalArgumentException(what + " must be positive, not " + n);
             return n;
         }
 
         public JavaFormatterOptions build() {
-            return new JavaFormatterOptions(style, formatJavadoc, maxLineLength, indent, continuationIndent);
+            return new JavaFormatterOptions(
+                    style, formatJavadoc, maxLineLength, indent, continuationIndent, keepLineBreaks);
         }
     }
 }

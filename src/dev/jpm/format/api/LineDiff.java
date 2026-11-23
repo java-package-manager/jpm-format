@@ -81,11 +81,11 @@ final class LineDiff {
         int start = 0;
         for (int i = 0; i < s.length(); i++) {
             if (s.charAt(i) == '\n') {
-                out.add(new int[] {start, i + 1});
+                out.add(new int[]{start, i + 1});
                 start = i + 1;
             }
         }
-        if (start < s.length()) out.add(new int[] {start, s.length()});
+        if (start < s.length()) out.add(new int[]{start, s.length()});
         return out;
     }
 

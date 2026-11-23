@@ -58,6 +58,7 @@ public final class Main {
     private Main() {
     }
 
+    @SuppressWarnings("ThrowablePrintStackTrace")
     public static void main(String[] argv) {
         int code;
         try {
@@ -246,8 +247,8 @@ public final class Main {
         ForkJoinPool pool = new ForkJoinPool(o.threads());
         try {
             results = pool.submit(() -> files.parallelStream()
-                            .map(f -> process(ws, cache, f, mode))
-                            .toList())
+                    .map(f -> process(ws, cache, f, mode))
+                    .toList())
                     .get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

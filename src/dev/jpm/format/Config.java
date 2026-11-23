@@ -95,13 +95,13 @@ public final class Config {
             boolean formatting = rule instanceof Formatter;
             boolean on = switch (rule.id()) {
                 case "JavaFormat" -> formatterEnabled;
+                case "LicenseHeader" -> formatterEnabled && licenseHeader != null;
+                case "ImportOrder" -> sortImports;
+                case "UnusedImport" -> removeUnusedImports;
                 default ->
                     rule instanceof IntelliJRule
                             ? formatterEnabled && intellijStyle
                             : formatting || (linterEnabled && (recommended || !builtin));
-                case "LicenseHeader" -> formatterEnabled && licenseHeader != null;
-                case "ImportOrder" -> sortImports;
-                case "UnusedImport" -> removeUnusedImports;
             };
             if (s != null) {
                 if (s.level() == Severity.OFF) return Severity.OFF;

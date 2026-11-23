@@ -45,6 +45,11 @@ public final class Comment extends Doc implements Op {
         return new Comment(tok);
     }
 
+    /** jpm-format: the comment or other non-token. */
+    Input.Tok tok() {
+        return tok;
+    }
+
     @Override
     public void add(DocBuilder builder) {
         builder.add(this);
@@ -96,6 +101,7 @@ public final class Comment extends Doc implements Op {
 
     @Override
     public void write(State state, Output output) {
+        KeptBreaks.writeNewlineBefore(this, state, output);
         output.append(state, state.getTokText(this), range());
     }
 

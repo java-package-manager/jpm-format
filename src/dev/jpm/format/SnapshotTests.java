@@ -44,7 +44,7 @@ final class SnapshotTests {
         List<Path> inputs;
         try (Stream<Path> s = Files.walk(dir)) {
             inputs = s.filter(
-                            p -> p.toString().endsWith(".java") && !p.toString().endsWith(".expected.java"))
+                    p -> p.toString().endsWith(".java") && !p.toString().endsWith(".expected.java"))
                     .sorted()
                     .toList();
         } catch (IOException e) {

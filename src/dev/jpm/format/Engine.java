@@ -249,8 +249,10 @@ public final class Engine {
     }
 
     /**
-     * {@code layoutInput}: what the layout engine received, once it has run in this pipeline (else null).
+     * {@code layoutInput}: what the layout engine received, once it has run in this pipeline (else null). Formatters
+     * run in parallel, so {@code findings} is shared and locked.
      */
+    @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "ThrowablePrintStackTrace"})
     private String apply(
             Formatter f, Source cur, Source layoutInput, Config.Settings settings, List<Finding> findings) {
         FileContext ctx =
@@ -260,6 +262,7 @@ public final class Engine {
             out = f.format(ctx);
         } catch (RuntimeException | StackOverflowError e) {
             synchronized (findings) {
+                if (System.getenv("JPM_VERBOSE") != null) e.printStackTrace();
                 findings.add(internal(cur, Registry.RULE_CRASH, f.id() + " failed: " + e));
             }
             return cur.text;

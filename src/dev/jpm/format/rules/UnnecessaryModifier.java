@@ -149,7 +149,7 @@ public final class UnnecessaryModifier implements Formatter {
         if (s < 0 || e <= s) return;
         String src = ctx.source();
         List<int[]> skip = new ArrayList<>();
-        for (AnnotationTree a : mods.getAnnotations()) skip.add(new int[] {ctx.start(a), ctx.end(a)});
+        for (AnnotationTree a : mods.getAnnotations()) skip.add(new int[]{ctx.start(a), ctx.end(a)});
         int i = s;
         while (i < e) {
             int at = i;

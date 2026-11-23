@@ -118,7 +118,7 @@ final class CustomRules {
         String h = Hashing.sha256(hash.toString());
         Path out = root.resolve(".cache").resolve("format").resolve("rules").resolve(h.substring(0, 16));
         if (!Files.isDirectory(out)) compile(srcs, out);
-        ClassLoader cl = new URLClassLoader(new URL[] {url(out)}, CustomRules.class.getClassLoader());
+        ClassLoader cl = new URLClassLoader(new URL[]{url(out)}, CustomRules.class.getClassLoader());
         for (Path p : srcs) {
             String name = className(p);
             Class<?> c;

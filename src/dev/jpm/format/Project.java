@@ -89,7 +89,7 @@ public final class Project {
             List<Path> entries = new ArrayList<>();
             for (String e : cp.split(File.pathSeparator)) if (!e.isBlank()) entries.add(Path.of(e));
             List<Path> srcs = new ArrayList<>();
-            for (String d : new String[] {"src", "test", "src/main/java", "src/test/java"}) {
+            for (String d : new String[]{"src", "test", "src/main/java", "src/test/java"}) {
                 if (Files.isDirectory(root.resolve(d))) srcs.add(root.resolve(d));
             }
             return new Project(root, List.of(new Module(root, srcs, entries)), null);

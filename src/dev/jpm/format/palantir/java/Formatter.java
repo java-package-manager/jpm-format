@@ -32,6 +32,7 @@ import dev.jpm.format.palantir.OpsBuilder.OpsOutput;
 import dev.jpm.format.palantir.Utils;
 import dev.jpm.format.palantir.doc.Doc;
 import dev.jpm.format.palantir.doc.DocBuilder;
+import dev.jpm.format.palantir.doc.KeptBreaks;
 import dev.jpm.format.palantir.doc.Level;
 import dev.jpm.format.palantir.doc.NoopSink;
 import dev.jpm.format.palantir.doc.Obs;
@@ -140,6 +141,7 @@ public final class Formatter {
             visitor = new JavaInputAstVisitor(opsBuilder, options.indent(), options.continuationIndent());
         }
 
+        visitor.keepLineBreaks(options.keepLineBreaks());
         visitor.scan(unit, null);
         opsBuilder.sync(javaInput.getText().length());
         opsBuilder.drain();
@@ -151,11 +153,24 @@ public final class Formatter {
         Sink sink = debugMode ? new JsonSink() : new NoopSink();
 
         Obs.ExplorationNode observationNode = Obs.createRoot(sink);
-        State finalState =
-                doc.computeBreaks(commentsHelper, options.maxLineLength(), State.startingState(), observationNode);
+        // jpm-format: with keepLineBreaks, the input's line breaks decide instead of the search
+        KeptBreaks kept = options.keepLineBreaks()
+                ? KeptBreaks.of(doc, javaInput.getText(), options.continuationIndent(), options.indent())
+                : null;
+        State finalState = kept != null
+                ? kept.apply(() -> doc.computeBreaks(
+                        commentsHelper, options.maxLineLength(), State.startingState(), observationNode))
+                : doc.computeBreaks(commentsHelper, options.maxLineLength(), State.startingState(), observationNode);
 
         JavaOutput javaOutput = new JavaOutput(javaInput, opsOutput.inputMetadata());
-        doc.write(finalState, javaOutput);
+        if (kept != null) {
+            kept.apply(() -> {
+                doc.write(finalState, javaOutput);
+                return null;
+            });
+        } else {
+            doc.write(finalState, javaOutput);
+        }
         javaOutput.flush();
 
         if (debugMode) {
@@ -314,7 +329,10 @@ public final class Formatter {
         // TODO(cushon): this is only safe because the modifier ordering doesn't affect whitespace,
         // and doesn't change the replacements that are output. This is not true in general for
         // 'de-linting' changes (e.g. import ordering).
-        javaInput = ModifierOrderer.reorderModifiers(javaInput, characterRanges);
+        // jpm-format: IntelliJ's formatter leaves the order of modifiers as written
+        if (!options.keepLineBreaks()) {
+            javaInput = ModifierOrderer.reorderModifiers(javaInput, characterRanges);
+        }
 
         JavaCommentsHelper commentsHelper = new JavaCommentsHelper(javaInput.getLineSeparator(), options);
         JavaOutput javaOutput;

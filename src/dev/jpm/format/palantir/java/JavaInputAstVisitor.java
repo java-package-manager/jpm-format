@@ -57,6 +57,7 @@ import dev.jpm.format.palantir.Input;
 import dev.jpm.format.palantir.LastLevelBreakability;
 import dev.jpm.format.palantir.Op;
 import dev.jpm.format.palantir.OpenOp;
+import dev.jpm.format.palantir.doc.Level;
 import dev.jpm.format.palantir.OpsBuilder;
 import dev.jpm.format.palantir.OpsBuilder.BlankLineWanted;
 import dev.jpm.format.palantir.PartialInlineability;
@@ -285,6 +286,14 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     protected final Indent.Const plusTwo;
     protected final Indent.Const plusFour;
 
+    // jpm-format: the input's line breaks are kept (JavaFormatterOptions.keepLineBreaks)
+    protected boolean keepLineBreaks;
+
+    /** jpm-format: lay out for kept line breaks: argument lists indent from their own line, no forced tables. */
+    public void keepLineBreaks(boolean keep) {
+        this.keepLineBreaks = keep;
+    }
+
     private static ImmutableList<Op> breakList(Optional<BreakTag> breakTag) {
         return ImmutableList.of(Break.make(FillMode.UNIFIED, " ", ZERO, breakTag));
     }
@@ -483,7 +492,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             builder.close();
         }
         if (node.getInitializers() != null) {
-            if (node.getType() != null) {
+            // jpm-format: IntelliJ writes new int[]{1, 2}, without a space
+            if (node.getType() != null && !keepLineBreaks) {
                 builder.space();
             }
             visitArrayInitializer(node.getInitializers());
@@ -493,13 +503,15 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
     public boolean visitArrayInitializer(List<? extends ExpressionTree> expressions) {
         int cols;
+        // jpm-format: with kept line breaks, elements are one continuation in, as IntelliJ indents them
+        Indent.Const plusTwo = keepLineBreaks ? plusFour : this.plusTwo;
         if (expressions.isEmpty()) {
             tokenBreakTrailingComment("{", plusTwo);
             if (builder.peekToken().equals(Optional.of(","))) {
                 token(",");
             }
             token("}", plusTwo);
-        } else if ((cols = argumentsAreTabular(expressions)) != -1) {
+        } else if (!keepLineBreaks && (cols = argumentsAreTabular(expressions)) != -1) {
             builder.open(ZERO, BreakBehaviours.breakThisLevel(), LastLevelBreakability.ACCEPT_INLINE_CHAIN);
             builder.open(plusTwo, BreakBehaviours.breakThisLevel(), LastLevelBreakability.ACCEPT_INLINE_CHAIN);
             token("{");
@@ -550,7 +562,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             builder.open(plusTwo, BreakBehaviours.breakThisLevel(), LastLevelBreakability.ACCEPT_INLINE_CHAIN);
             tokenBreakTrailingComment("{", plusTwo);
             boolean hasTrailingComma = hasTrailingToken(builder.getInput(), expressions, ",");
-            builder.breakOp(hasTrailingComma ? FillMode.FORCED : FillMode.UNIFIED, "", ZERO);
+            builder.breakOp(hasTrailingComma && !keepLineBreaks ? FillMode.FORCED : FillMode.UNIFIED, "", ZERO);
             if (allowFilledElementsOnOwnLine) {
                 builder.open(ZERO);
             }
@@ -896,7 +908,9 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             for (VariableTree enumConstant : enumConstants) {
                 if (!first) {
                     token(",");
-                    builder.forcedBreak();
+                    // jpm-format: with kept line breaks, constants stay on the lines they were written on
+                    if (keepLineBreaks) builder.breakOp(" ");
+                    else builder.forcedBreak();
                     builder.blankLineWanted(BlankLineWanted.PRESERVE);
                 }
                 markForPartialFormat();
@@ -905,7 +919,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             }
             if (builder.peekToken().orElse("").equals(",")) {
                 token(",");
-                builder.forcedBreak(); // The ";" goes on its own line.
+                if (keepLineBreaks) builder.breakOp();
+                else builder.forcedBreak(); // The ";" goes on its own line.
             }
             builder.close();
             builder.close();
@@ -1012,7 +1027,9 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         token("for");
         builder.space();
         token("(");
-        builder.open(plusFour);
+        // jpm-format: with kept line breaks, the parts of a for line up, as in IntelliJ
+        if (keepLineBreaks) builder.open(OpenOp.builder().plusIndent(ZERO).debugName(Level.ALIGNED).build());
+        else builder.open(plusFour);
         builder.open(
                 node.getInitializer().size() > 1 && node.getInitializer().get(0) instanceof ExpressionStatementTree
                         ? plusFour
@@ -1069,6 +1086,17 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         return null;
     }
 
+    /**
+     * jpm-format: whether the {@code if} of an {@code else if} starts its own line in the input (after a comment),
+     * which IntelliJ indents as the statement of the {@code else}.
+     */
+    private boolean ifOnItsOwnLine(StatementTree elseIf) {
+        String text = builder.getInput().getText();
+        int start = getStartPosition(elseIf);
+        int keyword = text.lastIndexOf("else", start);
+        return keyword >= 0 && text.substring(keyword, start).indexOf('\n') >= 0;
+    }
+
     @Override
     public Void visitIf(IfTree node, Void unused) {
         sync(node);
@@ -1078,7 +1106,9 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         while (true) {
             expressions.add(node.getCondition());
             statements.add(node.getThenStatement());
-            if (node.getElseStatement() != null && node.getElseStatement() instanceof IfTree) {
+            if (node.getElseStatement() != null
+                    && node.getElseStatement() instanceof IfTree
+                    && !(keepLineBreaks && ifOnItsOwnLine(node.getElseStatement()))) {
                 node = (IfTree) node.getElseStatement();
             } else {
                 break;
@@ -1122,11 +1152,19 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
                 builder.forcedBreak();
             }
             token("else");
-            visitStatement(
-                    node.getElseStatement(),
-                    CollapseEmptyOrNot.NO,
-                    AllowLeadingBlankLine.YES,
-                    AllowTrailingBlankLine.NO);
+            if (keepLineBreaks && node.getElseStatement() instanceof IfTree) {
+                // jpm-format: an if on its own line after the else (and a comment) is the else's statement
+                builder.open(plusTwo);
+                builder.breakOp();
+                scan(node.getElseStatement(), null);
+                builder.close();
+            } else {
+                visitStatement(
+                        node.getElseStatement(),
+                        CollapseEmptyOrNot.NO,
+                        AllowLeadingBlankLine.YES,
+                        AllowTrailingBlankLine.NO);
+            }
         }
         builder.close();
         return null;
@@ -1492,7 +1530,12 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             }
             if (!node.getThrows().isEmpty()) {
                 builder.breakToFill(" ");
-                builder.open(plusFour);
+                // jpm-format: with kept line breaks, a wrapped throws list is one continuation in from the method
+                if (keepLineBreaks) {
+                    builder.open(OpenOp.builder().plusIndent(plusFour).debugName(Level.FROM_STATEMENT).build());
+                } else {
+                    builder.open(plusFour);
+                }
                 {
                     visitThrowsClause(node.getThrows());
                 }
@@ -1930,11 +1973,14 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         builder.space();
         if (!node.getResources().isEmpty()) {
             token("(");
-            builder.open(node.getResources().size() > 1 ? plusFour : ZERO);
+            // jpm-format: with kept line breaks, resources line up and stay on the lines they were written on
+            if (keepLineBreaks) builder.open(OpenOp.builder().plusIndent(ZERO).debugName(Level.ALIGNED).build());
+            else builder.open(node.getResources().size() > 1 ? plusFour : ZERO);
             boolean first = true;
             for (Tree resource : node.getResources()) {
                 if (!first) {
-                    builder.forcedBreak();
+                    if (keepLineBreaks) builder.breakOp();
+                    else builder.forcedBreak();
                 }
                 if (resource instanceof VariableTree) {
                     VariableTree variableTree = (VariableTree) resource;
@@ -2261,7 +2307,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
                 builder.addAll(
                         annotationsDirection.isVertical()
                                 ? forceBreakList(declarationAnnotationBreak)
-                                : breakList(declarationAnnotationBreak));
+                                : joined(annotationsDirection) ? spaceList() : breakList(declarationAnnotationBreak));
             }
             scan(annotations.removeFirst(), null);
             first = false;
@@ -2280,7 +2326,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
                         .build())
                 : annotationsDirection.isVertical()
                         ? forceBreakList(declarationAnnotationBreak)
-                        : breakList(declarationAnnotationBreak);
+                        : joined(annotationsDirection) ? spaceList() : breakList(declarationAnnotationBreak);
         if (annotations.isEmpty() && !nextIsModifier()) {
             return trailingBreak;
         }
@@ -2292,7 +2338,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         first = true;
         while (nextIsModifier() || !annotations.isEmpty()) {
             if (!first) {
-                builder.addAll(breakFillList(Optional.empty()));
+                builder.addAll(joined(annotationsDirection) ? spaceList() : breakFillList(Optional.empty()));
             }
             if (nextIsModifier()) {
                 String currentToken = builder.peekToken().get();
@@ -2308,7 +2354,19 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             first = false;
         }
         builder.close();
-        return breakFillList(Optional.empty());
+        return joined(annotationsDirection) ? spaceList() : breakFillList(Optional.empty());
+    }
+
+    /**
+     * jpm-format: with kept line breaks, IntelliJ joins the annotations and modifiers of local variables and
+     * parameters onto the line of their type.
+     */
+    private boolean joined(Direction annotationsDirection) {
+        return keepLineBreaks && !annotationsDirection.isVertical();
+    }
+
+    private static ImmutableList<Op> spaceList() {
+        return ImmutableList.of(dev.jpm.format.palantir.doc.NonBreakingSpace.joining());
     }
 
     boolean nextIsModifier() {
@@ -2429,7 +2487,12 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             isRecordParams = isInRecord(((JCTree.JCVariableDecl) parameters.get(0)).mods);
         }
 
-        builder.open(ZERO);
+        // jpm-format: with kept line breaks, wrapped parameters line up with the first, as in IntelliJ
+        if (keepLineBreaks) {
+            builder.open(OpenOp.builder().plusIndent(ZERO).debugName(Level.ALIGNED).build());
+        } else {
+            builder.open(ZERO);
+        }
         boolean first = true;
         if (receiver.isPresent()) {
             // TODO(jdd): Use builders.
@@ -3167,6 +3230,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
      * @param plusIndent the extra indent for the arguments
      */
     void addArguments(List<? extends ExpressionTree> arguments, Indent plusIndent) {
+        // jpm-format: with kept line breaks, wrapped arguments are one continuation in from the line they start on
+        if (keepLineBreaks) plusIndent = plusFour;
         /*
          `preferBreakingLastInnerLevel` here in order to avoid immediately breaking a long
          invocation that can be one-lined:
@@ -3192,7 +3257,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
                 .build());
         token("(");
         if (!arguments.isEmpty()) {
-            if (arguments.size() % 2 == 0 && argumentsAreTabular(arguments) == 2) {
+            if (!keepLineBreaks && arguments.size() % 2 == 0 && argumentsAreTabular(arguments) == 2) {
                 builder.forcedBreak();
                 builder.open(ZERO);
                 boolean first = true;
@@ -3523,7 +3588,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         // line, fall back to one-per-line.
         boolean isField = kind == DeclarationKind.FIELD;
 
-        if (isField) {
+        // jpm-format: IntelliJ adds no blank lines around fields whose annotations are on their own lines
+        if (isField && !keepLineBreaks) {
             builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak));
         }
 
@@ -3623,7 +3689,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         }
         builder.close();
 
-        if (isField) {
+        if (isField && !keepLineBreaks) {
             builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak));
         }
 
@@ -3886,6 +3952,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
      * @return whether the local can be declared with horizontal annotations
      */
     private Direction canLocalHaveHorizontalAnnotations(ModifiersTree modifiers) {
+        // jpm-format: IntelliJ does not wrap the annotations of local variables, so they follow the input
+        if (keepLineBreaks) return Direction.HORIZONTAL;
         int markerAnnotations = 0;
         for (AnnotationTree annotation : modifiers.getAnnotations()) {
             if (annotation.getArguments().isEmpty()) {
@@ -3903,6 +3971,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
      * all annotations are marker annotations.
      */
     private Direction inlineAnnotationDirection(ModifiersTree modifiers) {
+        // jpm-format: IntelliJ does not wrap the annotations of local variables and parameters
+        if (keepLineBreaks) return Direction.HORIZONTAL;
         for (AnnotationTree annotation : modifiers.getAnnotations()) {
             if (!annotation.getArguments().isEmpty()) {
                 return Direction.VERTICAL;

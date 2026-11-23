@@ -23,7 +23,8 @@ import java.util.List;
 
 /**
  * IntelliJ's "Keep when reformatting: simple methods / classes / blocks in one line", all off by default: an empty
- * body is written {@code {}} on two lines, the closing brace under the line that opens it. Palantir Java Format keeps
+ * body is written {@code {}} on two lines, the closing brace under the first line of the declaration or statement
+ * (the line of the brace for {@code else}, {@code catch}, {@code finally} and {@code do}). Palantir Java Format keeps
  * {@code void f() {}}, {@code class A {}} and {@code if (x) {}} on one line.
  *
  * <p>Method and constructor bodies, named classes, initializer blocks and the blocks of {@code if}, {@code else},
@@ -42,15 +43,20 @@ public final class EmptyBodies implements IntelliJRule {
     public String format(Context ctx) {
         String src = ctx.source();
         String nl = Source.newline(src);
-        List<Integer> braces = new ArrayList<>();
+        List<int[]> braces = new ArrayList<>();
         new TreeScanner<Void, Void>() {
             private void block(Tree t) {
-                if (t instanceof BlockTree b && b.getStatements().isEmpty()) braces.add(ctx.start(b));
+                block(t, t);
+            }
+
+            private void block(Tree t, Tree owner) {
+                if (t instanceof BlockTree b && b.getStatements().isEmpty())
+                    braces.add(new int[]{ctx.start(b), ctx.start(owner)});
             }
 
             @Override
             public Void visitMethod(MethodTree m, Void v) {
-                block(m.getBody());
+                block(m.getBody(), m);
                 return super.visitMethod(m, v);
             }
 
@@ -58,7 +64,7 @@ public final class EmptyBodies implements IntelliJRule {
             public Void visitClass(ClassTree c, Void v) {
                 if (c.getMembers().stream().allMatch(m -> ctx.start(m) < 0)) {
                     int end = ctx.end(c);
-                    if (end >= 2 && src.charAt(end - 1) == '}') braces.add(end - 2);
+                    if (end >= 2 && src.charAt(end - 1) == '}') braces.add(new int[]{end - 2, ctx.start(c)});
                 }
                 for (Tree m : c.getMembers()) if (m instanceof BlockTree) block(m);
                 return super.visitClass(c, v);
@@ -76,26 +82,26 @@ public final class EmptyBodies implements IntelliJRule {
 
             @Override
             public Void visitIf(IfTree t, Void v) {
-                block(t.getThenStatement());
+                block(t.getThenStatement(), t);
                 block(t.getElseStatement());
                 return super.visitIf(t, v);
             }
 
             @Override
             public Void visitForLoop(ForLoopTree t, Void v) {
-                block(t.getStatement());
+                block(t.getStatement(), t);
                 return super.visitForLoop(t, v);
             }
 
             @Override
             public Void visitEnhancedForLoop(EnhancedForLoopTree t, Void v) {
-                block(t.getStatement());
+                block(t.getStatement(), t);
                 return super.visitEnhancedForLoop(t, v);
             }
 
             @Override
             public Void visitWhileLoop(WhileLoopTree t, Void v) {
-                block(t.getStatement());
+                block(t.getStatement(), t);
                 return super.visitWhileLoop(t, v);
             }
 
@@ -107,7 +113,7 @@ public final class EmptyBodies implements IntelliJRule {
 
             @Override
             public Void visitTry(TryTree t, Void v) {
-                block(t.getBlock());
+                block(t.getBlock(), t);
                 block(t.getFinallyBlock());
                 return super.visitTry(t, v);
             }
@@ -120,14 +126,15 @@ public final class EmptyBodies implements IntelliJRule {
 
             @Override
             public Void visitSynchronized(SynchronizedTree t, Void v) {
-                block(t.getBlock());
+                block(t.getBlock(), t);
                 return super.visitSynchronized(t, v);
             }
         }.scan(ctx.tree(), null);
         List<Fix.Edit> edits = new ArrayList<>();
-        for (int at : braces) {
+        for (int[] b : braces) {
+            int at = b[0];
             if (at < 0 || !src.startsWith("{}", at)) continue;
-            edits.add(new Fix.Edit(at + 1, at + 1, nl + indentOf(src, at)));
+            edits.add(new Fix.Edit(at + 1, at + 1, nl + indentOf(src, b[1] < 0 ? at : b[1])));
         }
         return edits.isEmpty() ? src : Fix.apply(src, edits);
     }

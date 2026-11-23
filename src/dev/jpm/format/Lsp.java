@@ -87,14 +87,11 @@ final class Lsp {
                 return Map.of(
                         "capabilities", caps, "serverInfo", Map.of("name", "jpm-format", "version", Main.VERSION));
             }
-            case "initialized", "$/cancelRequest", "$/setTrace", "workspace/didChangeConfiguration" -> {
+            case "initialized", "$/cancelRequest", "$/setTrace", "workspace/didChangeConfiguration", "exit" -> {
                 return null;
             }
             case "shutdown" -> {
                 shutdown = true;
-                return null;
-            }
-            case "exit" -> {
                 return null;
             }
             case "textDocument/didOpen" -> {

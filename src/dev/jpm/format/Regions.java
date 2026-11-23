@@ -36,14 +36,14 @@ final class Regions {
             if (offAt < 0 && b.startsWith("@formatter:off")) {
                 offAt = c.end();
             } else if (offAt >= 0 && b.startsWith("@formatter:on")) {
-                out.add(new int[] {offAt, c.start()});
+                out.add(new int[]{offAt, c.start()});
                 offAt = -1;
             } else if (offAt < 0 && isIgnoreFormat(b) && parsed) {
                 int[] el = Elements.next(src, c.end());
-                if (el != null) out.add(new int[] {c.end(), el[1]});
+                if (el != null) out.add(new int[]{c.end(), el[1]});
             }
         }
-        if (offAt >= 0) out.add(new int[] {offAt, src.text.length()});
+        if (offAt >= 0) out.add(new int[]{offAt, src.text.length()});
         return out;
     }
 
