@@ -323,7 +323,9 @@ public final class Config {
         if (!(st instanceof String style)) {
             throw new FormatException("formatter.style must be a string, not " + Json.write(st));
         }
-        ExternalFormatter.Spec external = ExternalFormatter.parse(style, root);
+        Object ec = f.get("eclipseConfig");
+        if (ec != null && !(ec instanceof String)) throw new FormatException("formatter.eclipseConfig must be a path");
+        ExternalFormatter.Spec external = ExternalFormatter.parse(style, root, ec == null ? null : root.resolve((String) ec));
         int maxBlank = range(f.getOrDefault("maxBlankLines", 2L), "formatter.maxBlankLines", 1, 10);
         String header = null;
         Object h = f.get("licenseHeader");
@@ -399,6 +401,7 @@ public final class Config {
     private static final Set<String> FORMATTER = Set.of(
             "enabled",
             "style",
+            "eclipseConfig",
             "lineWidth",
             "indentWidth",
             "continuationIndentWidth",

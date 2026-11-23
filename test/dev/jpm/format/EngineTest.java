@@ -391,19 +391,22 @@ class EngineTest {
     @Test
     void formattersByName() throws IOException {
         Path root = Path.of("/p");
-        assertNull(ExternalFormatter.parse("intellij", root));
-        assertNull(ExternalFormatter.parse("palantir", root));
+        assertNull(ExternalFormatter.parse("intellij", root, null));
+        assertNull(ExternalFormatter.parse("palantir", root, null));
         assertEquals(
-                new ExternalFormatter.Spec("palantir", "com.palantir.javaformat:palantir-java-format", "2.50.0", root),
-                ExternalFormatter.parse("palantir@2.50.0", root));
+                new ExternalFormatter.Spec("palantir", "com.palantir.javaformat:palantir-java-format", "2.50.0", root, null),
+                ExternalFormatter.parse("palantir@2.50.0", root, null));
         assertEquals(
-                new ExternalFormatter.Spec("google-java-format", "com.google.googlejavaformat:google-java-format", "latest", root),
-                ExternalFormatter.parse("google-java-format", root));
-        assertEquals("^1.24", ExternalFormatter.parse("google-java-format@^1.24", root).version());
-        assertTrue(assertThrows(FormatException.class, () -> ExternalFormatter.parse("eclipse", root))
+                new ExternalFormatter.Spec("google-java-format", "com.google.googlejavaformat:google-java-format", "latest", root, null),
+                ExternalFormatter.parse("google-java-format", root, null));
+        assertEquals("^1.24", ExternalFormatter.parse("google-java-format@^1.24", root, null).version());
+        assertTrue(assertThrows(FormatException.class, () -> ExternalFormatter.parse("eclipse-x", root, null))
                 .getMessage()
                 .contains("\"google-java-format[@<version>]\""));
-        assertThrows(FormatException.class, () -> ExternalFormatter.parse("palantir@", root));
+        assertThrows(FormatException.class, () -> ExternalFormatter.parse("palantir@", root, null));
+        assertEquals("4.32", ExternalFormatter.parse("eclipse@4.32", root, root.resolve("e.xml")).version());
+        assertThrows(FormatException.class, () -> ExternalFormatter.parse("intellij", root, root.resolve("e.xml")));
+        assertThrows(FormatException.class, () -> ExternalFormatter.parse("google-java-format", root, root.resolve("e.xml")));
         write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"style\": \"google-java-format@1.24.0\" } } } }");
         Config.Settings s = open().config.settings("A.java");
         assertEquals("1.24.0", s.externalFormatter().version());
