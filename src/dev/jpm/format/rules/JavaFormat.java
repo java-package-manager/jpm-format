@@ -3,6 +3,7 @@ package dev.jpm.format.rules;
 import com.google.common.collect.Range;
 import dev.jpm.format.Comments;
 import dev.jpm.format.Exports;
+import dev.jpm.format.ExternalFormatter;
 import dev.jpm.format.FileContext;
 import dev.jpm.format.FormatException;
 import dev.jpm.format.Jdks;
@@ -45,6 +46,8 @@ public final class JavaFormat implements Formatter {
     @Override
     public String format(Context ctx) {
         FileContext fc = (FileContext) ctx;
+        var external = fc.settings().externalFormatter();
+        if (external != null) return ExternalFormatter.format(external, ctx.source());
         try {
             return tabs(fc, palantir(fc).formatSource(ctx.source()));
         } catch (FormatterException e) {
@@ -56,6 +59,7 @@ public final class JavaFormat implements Formatter {
      * Formats only the lines touching {@code [start, end)}.
      */
     public String formatRange(FileContext ctx, int start, int end) {
+        if (ctx.settings().externalFormatter() != null) return format(ctx);
         try {
             return tabs(
                     ctx,

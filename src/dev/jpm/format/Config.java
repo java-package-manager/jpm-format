@@ -85,7 +85,8 @@ public final class Config {
             boolean linterEnabled,
             boolean recommended,
             Map<String, RuleSetting> rules,
-            String key) {
+            String key,
+            ExternalFormatter.Spec externalFormatter) {
 
         /**
          * The level a rule runs at for this file; OFF if it does not run.
@@ -319,10 +320,10 @@ public final class Config {
                 1,
                 32);
         Object st = f.getOrDefault("style", "intellij");
-        if (!"intellij".equals(st) && !"palantir".equals(st)) {
-            throw new FormatException(
-                    "formatter.style must be \"intellij\" (the default) or \"palantir\", not " + Json.write(st));
+        if (!(st instanceof String style)) {
+            throw new FormatException("formatter.style must be a string, not " + Json.write(st));
         }
+        ExternalFormatter.Spec external = ExternalFormatter.parse(style, root);
         int maxBlank = range(f.getOrDefault("maxBlankLines", 2L), "formatter.maxBlankLines", 1, 10);
         String header = null;
         Object h = f.get("licenseHeader");
@@ -389,7 +390,8 @@ public final class Config {
                 bool(li.getOrDefault("enabled", true), "linter.enabled"),
                 bool(li.getOrDefault("recommended", true), "linter.recommended"),
                 rs,
-                Hashing.sha256(key));
+                Hashing.sha256(key),
+                external);
     }
 
     private static final Set<String> TOP =

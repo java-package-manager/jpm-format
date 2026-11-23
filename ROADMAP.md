@@ -18,14 +18,10 @@ then a language server).
       and data flow are left.
 - [ ] **Spotless formatters, natively.** Run Spotless's formatter steps as jpm-format formatters, configured in
       `extensions.format`.
-- [ ] **Well-known Java formatters by name.** `"formatter": { "style": "<name or URL>" }` picks the formatter; a URL
-      is a jar release of it:
-  - `palantir[@version|#branch]`: Palantir Java Format, without having to give its URL;
-  - `google-java-format[@version|#branch]`: the same for google-java-format;
-  - `github:author/my-java-formatter[@version|#branch]`: any formatter from a Git repository, as a jpm-format
-    extension (the rule API) or as a Spotless step.
-
-  `palantir` and `google-java-format` are only shorthands, so that choosing a style is easy.
+- [ ] **Java formatters from Git.** `"formatter": { "style": "..." }` takes `palantir@<version>` and
+      `google-java-format[@<version>]` (released jars, resolved by jpm). Still to come: a `#branch` of them, a URL of
+      a jar release, and `github:author/my-java-formatter[@version|#branch]`, any formatter from a Git repository, as a
+      jpm-format extension (the rule API) or as a Spotless step.
 - [ ] **No Palantir fork.** Use Palantir Java Format from its own repository instead of the fork in
       `src/dev/jpm/format/palantir/`. Needs native Spotless support first.
 
