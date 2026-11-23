@@ -15,7 +15,8 @@ then a language server).
 - [ ] **IntelliJ parity.** The rest of IntelliJ's default Javadoc formatting, and IntelliJ's code style options,
       as rules in `src/dev/jpm/format/intellij/`, measured against IntelliJ's own formatter on real projects
       (`checks/Parity.java`, see [CONTRIBUTING.md](CONTRIBUTING.md)). Of IntelliJ's default inspections, null checks
-      and data flow are left.
+      and data flow are left. Open in the corpus: IntelliJ leaves some Javadocs with `<pre>` entirely as they are
+      (54 of 76: no `<p>`, no alignment) and formats the others; what decides it is not known yet.
 - [ ] **Spotless formatters, natively.** Run Spotless's formatter steps as jpm-format formatters, configured in
       `extensions.format`.
 - [ ] **Well-known Java formatters by name.** `"formatter": { "style": "<name or URL>" }` picks the formatter; a URL
