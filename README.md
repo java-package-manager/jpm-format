@@ -274,7 +274,7 @@ Building jpm-format needs jpm 0.12.0 or newer: the layout engine is built on jav
 refuses together with that. Installing jpm-format (`jpm add -g`) builds it from source, so this applies there too.
 jpm 0.13.0 and older build it with the project's JDK, and they need `--release` when that JDK is not 21: in a
 project whose `"java"` is another version, the build stops with `"javacArgs" has --add-exports ...`. Run
-`jpm jvm exec 21 jpm format` there until a jpm release builds such extensions with a JDK of their target.
+`jpm jvm exec 21 jpm format` there until a jpm release builds extensions with the JDK their own `"java"` names.
 
 ```sh
 jpm test
