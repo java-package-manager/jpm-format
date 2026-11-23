@@ -47,7 +47,8 @@ public final class Workspace {
     }
 
     /**
-     * The Java files to process: those under {@code paths} (default: the root) that are not ignored.
+     * The files to process: the Java files under {@code paths} (default: the root) that are not ignored, and those
+     * that {@code "files"} gives Spotless steps.
      */
     public List<Path> files(List<Path> paths) {
         TreeSet<Path> out = new TreeSet<>();
@@ -71,9 +72,10 @@ public final class Workspace {
 
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                        if (file.toString().endsWith(".java")
+                        String rel = Config.rel(root, file);
+                        if ((file.toString().endsWith(".java") || !config.steps(rel).isEmpty())
                                 && attrs.isRegularFile()
-                                && !config.ignored(Config.rel(root, file))) {
+                                && !config.ignored(rel)) {
                             out.add(file);
                         }
                         return FileVisitResult.CONTINUE;

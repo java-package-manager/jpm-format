@@ -250,6 +250,35 @@ classpath, so unchanged files are skipped; restore that folder between CI runs t
 The common Spotless steps are built in: import order (`ImportOrder`), removing unused imports
 (`UnusedImport`) and license headers (`LicenseHeader`, with `$YEAR`).
 
+Files other than Java get Spotless's own steps, listed in `"files"` (in the root config only): each entry
+names the files it applies to and the steps that format them, in order. jpm provides Spotless's jars and the
+formatters the steps download (needs jpm 0.15.0 or newer), and `jpm format --check` reports a file the steps
+would change.
+
+```jsonc
+"files": [
+  { "include": ["**/*.kt", "**/*.kts"], "steps": ["ktfmt", "trimTrailingWhitespace", "endWithNewline"] },
+  { "include": ["**/*.scala"], "steps": [{ "step": "scalafmt", "version": "3.8.3", "config": ".scalafmt.conf" }] },
+  { "include": ["**/*.json"], "steps": [{ "step": "jsonSimple", "indent": 2 }] },
+  { "include": ["**/*.md"], "steps": ["trimTrailingWhitespace", "endWithNewline"] }
+]
+```
+
+| Step | Formats | Options |
+|---|---|---|
+| `ktfmt[@<version>]` | Kotlin, with ktfmt | |
+| `ktlint[@<version>]` | Kotlin, with ktlint | |
+| `scalafmt[@<version>]` | Scala, with scalafmt | `config`: a `.scalafmt.conf` |
+| `jacksonJson`, `jsonSimple` | JSON | `jsonSimple`: `indent` (default 4) |
+| `jacksonYaml` | YAML | |
+| `dbeaverSql` | SQL, with DBeaver's formatter | `config`: a DBeaver properties file |
+| `trimTrailingWhitespace`, `endWithNewline` | any text | |
+| `indent` | any text | `type`: `"space"` (default) or `"tab"`, `width` (default 4) |
+| `removeSemicolons` | Groovy | |
+
+A step takes its formatter's version after `@` (or as `"version"`), else Spotless's default. Globs starting with
+`**/` match at the project root too. Java files are always formatted by jpm-format itself.
+
 ## How it works
 
 - One parser for everything: javac's, as Palantir uses, with Palantir's token stream for comments and

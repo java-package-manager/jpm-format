@@ -470,6 +470,60 @@ class EngineTest {
     }
 
     @Test
+    void spotlessStepsFormatTheFilesTheyInclude() throws IOException {
+        List<String> made = new java.util.ArrayList<>();
+        var before = SpotlessSteps.factory;
+        SpotlessSteps.factory = (root, step) -> {
+            made.add(step.name() + (step.version() == null ? "" : "@" + step.version()) + step.options());
+            return switch (step.name()) {
+                case "trimTrailingWhitespace" -> (text, file) -> text.replaceAll("[ \t]+\n", "\n");
+                case "endWithNewline" -> (text, file) -> text.endsWith("\n") ? text : text + "\n";
+                default -> (text, file) -> text.toUpperCase(java.util.Locale.ROOT);
+            };
+        };
+        try {
+            write("project.jsonc", "{ \"extensions\": { \"format\": { \"files\": ["
+                    + " { \"include\": [\"**/*.kt\"], \"steps\": [\"ktfmt@0.53\", \"trimTrailingWhitespace\"] },"
+                    + " { \"include\": [\"**/*.kt\", \"**/*.md\"], \"steps\": [\"endWithNewline\"] } ] } } }");
+            write("src/app/Main.kt", "fun main() {}  \r\nval x = 1");
+            write("README.md", "# hi  \n");
+            write("notes.txt", "left alone");
+            Workspace ws = open();
+            assertEquals(List.of("README.md", "src/app/Main.kt"), ws.files(List.of()).stream()
+                    .map(p -> Config.rel(dir, p)).filter(r -> !r.endsWith(".java") && !r.equals("project.jsonc")).toList());
+            Engine.Result check = ws.engine.run("src/app/Main.kt", "fun main() {}  \r\nval x = 1", Engine.Mode.CHECK);
+            assertEquals(1, check.findings().size(), check.findings().toString());
+            assertEquals("Not formatted by ktfmt, trimTrailingWhitespace, endWithNewline", check.findings().get(0).message());
+            assertEquals(2, check.findings().get(0).endLine());
+            assertFalse(check.changed());
+            Engine.Result fmt = ws.engine.run("src/app/Main.kt", "fun main() {}  \r\nval x = 1", Engine.Mode.FORMAT);
+            assertEquals("FUN MAIN() {}\r\nVAL X = 1\r\n", fmt.output(), "steps see \\n and the file keeps its line endings");
+            assertEquals(List.of(), ws.engine.run("README.md", "# hi\n", Engine.Mode.CHECK).findings());
+            assertEquals(List.of("ktfmt@0.53{}", "trimTrailingWhitespace{}", "endWithNewline{}"), made);
+        } finally {
+            SpotlessSteps.factory = before;
+        }
+    }
+
+    @Test
+    void spotlessStepErrors() {
+        assertEquals(new SpotlessSteps.Step("jsonSimple", null, Map.of("indent", 2L)),
+                SpotlessSteps.parse(List.of(Map.of("include", List.of("*.json"), "steps", List.of(Map.of("step", "jsonSimple", "indent", 2L))))).get(0).steps().get(0));
+        for (Object bad : List.of(
+                List.of(Map.of("include", List.of("*.kt"), "steps", List.of("ktfmtt"))),
+                List.of(Map.of("include", List.of("*.kt"), "steps", List.of("trimTrailingWhitespace@1"))),
+                List.of(Map.of("include", List.of("*.kt"), "steps", List.of("ktfmt@"))),
+                List.of(Map.of("include", List.of("*.kt"), "steps", List.of(Map.of("step", "ktfmt", "indent", 2L)))),
+                List.of(Map.of("include", List.of(), "steps", List.of("ktfmt"))),
+                List.of(Map.of("include", List.of("*.kt"), "steps", List.of("ktfmt"), "exclude", List.of())),
+                Map.of())) {
+            assertThrows(FormatException.class, () -> SpotlessSteps.parse(bad), bad.toString());
+        }
+        assertEquals(List.of(), SpotlessSteps.stepsFor(SpotlessSteps.parse(List.of(Map.of("include", List.of("**"), "steps", List.of("ktfmt")))), "A.java"),
+                "Java files are the engine's");
+    }
+
+    @Test
     void configErrors() throws IOException {
         write(
                 "project.jsonc",

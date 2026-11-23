@@ -16,9 +16,11 @@ then a language server).
       as rules in `src/dev/jpm/format/intellij/`, measured against IntelliJ's own formatter on real projects
       (`checks/Parity.java`, see [CONTRIBUTING.md](CONTRIBUTING.md)). Of IntelliJ's default inspections, null checks
       and data flow are left.
-- [ ] **Spotless formatters, natively.** `formatter.style: "eclipse"` runs Spotless's Eclipse JDT step, with jpm
-      providing its jars. Still to come: Spotless's other steps (for files other than Java too), configured in
-      `extensions.format`.
+- [ ] **Spotless formatters, natively.** `formatter.style: "eclipse"` runs Spotless's Eclipse JDT step, and
+      `"files"` runs Spotless's steps on files other than Java (ktfmt, ktlint, scalafmt, JSON, YAML, SQL and the
+      generic text steps), with jpm providing the jars. Still to come: the steps that need npm or a native binary
+      (Prettier, ESLint, Biome, clang-format, gofmt, shfmt, buf, black), and Flexmark, SortPom and Gherkin, whose
+      configs have many options.
 - [ ] **Java formatters from Git.** `"formatter": { "style": "..." }` takes `palantir@<version>`,
       `google-java-format[@<version>]`, the URL of a jar and `github:author/my-java-formatter[@version|#branch]` (a
       jpm project jpm builds, with Palantir's or google-java-format's `Formatter`, or a jpm-format rule set). Still to

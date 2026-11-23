@@ -79,6 +79,8 @@ public final class Engine {
     }
 
     public Result run(String rel, String text, Mode mode) {
+        List<SpotlessSteps.Step> steps = config.steps(rel);
+        if (!steps.isEmpty()) return SpotlessSteps.run(config.root, steps, rel, text, mode);
         Source src = new Source(rel, text);
         Config.Settings settings = config.settings(rel);
         List<Finding> findings = new ArrayList<>();

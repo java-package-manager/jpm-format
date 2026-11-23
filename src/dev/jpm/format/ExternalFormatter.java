@@ -264,19 +264,8 @@ public final class ExternalFormatter {
     }
 
     private static Object eclipse(ClassLoader loader, Spec spec) throws ReflectiveOperationException {
-        if (System.getProperty("slf4j.internal.verbosity") == null) System.setProperty("slf4j.internal.verbosity", "ERROR");
         Class<?> provisionerType = loader.loadClass("com.diffplug.spotless.Provisioner");
-        Object provisioner = Proxy.newProxyInstance(loader, new Class<?>[]{provisionerType}, (proxy, method, args) -> {
-            if (method.getName().equals("provisionWithTransitives")) {
-                boolean transitives = (Boolean) args[0];
-                Collection<?> coordinates = args[1] instanceof Collection<?> c ? c : List.of((Object[]) args[1]);
-                return provision(spec.root(), transitives, coordinates);
-            }
-            if (method.getName().equals("toString")) return "jpm";
-            if (method.getName().equals("hashCode")) return System.identityHashCode(proxy);
-            if (method.getName().equals("equals")) return proxy == args[0];
-            throw new UnsupportedOperationException(method.getName());
-        });
+        Object provisioner = provisioner(loader, spec.root());
         Class<?> p2 = loader.loadClass("com.diffplug.spotless.extra.P2Provisioner");
         Object p2Default = p2.getMethod("createDefault").invoke(null);
         Class<?> step = loader.loadClass("com.diffplug.spotless.extra.java.EclipseJdtFormatterStep");
@@ -286,6 +275,41 @@ public final class ExternalFormatter {
         Method build = builder.getClass().getMethod("build");
         build.setAccessible(true);
         return build.invoke(builder);
+    }
+
+    /**
+     * Spotless's Provisioner, which Spotless's steps ask for the jars of the formatters they run: jpm resolves them.
+     */
+    static Object provisioner(ClassLoader loader, Path root) {
+        if (System.getProperty("slf4j.internal.verbosity") == null) System.setProperty("slf4j.internal.verbosity", "ERROR");
+        Class<?> provisionerType;
+        try {
+            provisionerType = loader.loadClass("com.diffplug.spotless.Provisioner");
+        } catch (ClassNotFoundException e) {
+            throw new FormatException("Spotless has no Provisioner: " + e, e);
+        }
+        return Proxy.newProxyInstance(loader, new Class<?>[]{provisionerType}, (proxy, method, args) -> {
+            if (method.getName().equals("provisionWithTransitives")) {
+                boolean transitives = (Boolean) args[0];
+                Collection<?> coordinates = args[1] instanceof Collection<?> c ? c : List.of((Object[]) args[1]);
+                return provision(root, transitives, coordinates);
+            }
+            if (method.getName().equals("toString")) return "jpm";
+            if (method.getName().equals("hashCode")) return System.identityHashCode(proxy);
+            if (method.getName().equals("equals")) return proxy == args[0];
+            throw new UnsupportedOperationException(method.getName());
+        });
+    }
+
+    private static final Map<Path, ClassLoader> SPOTLESS_LOADERS = new ConcurrentHashMap<>();
+
+    /**
+     * A class loader with Spotless's library ({@code spotless-lib}, the version the Eclipse step uses, and the SLF4J
+     * API it logs with but does not depend on), resolved by jpm once per project.
+     */
+    static ClassLoader spotless(Path root) {
+        return SPOTLESS_LOADERS.computeIfAbsent(root, r -> loader(resolve(r, Map.of("com.diffplug.spotless:spotless-lib", SPOTLESS,
+                "org.slf4j:slf4j-api", "^2.0"))));
     }
 
     private static void call(Object target, String name, Class<?> type, Object arg) throws ReflectiveOperationException {
