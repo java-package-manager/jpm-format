@@ -14,5 +14,6 @@ public final class IntelliJ {
         rules.addAfter("JavaFormat", new EmptyBodies());
         rules.addAfter(EmptyBodies.ID, new MemberBlankLines());
         rules.addAfter(MemberBlankLines.ID, new KeepBlankLines());
+        rules.addAfter(KeepBlankLines.ID, new JavadocLayout());
     }
 }

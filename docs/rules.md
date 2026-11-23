@@ -37,6 +37,22 @@ stay, up to `formatter.maxBlankLines` (2 by default, 1 to 10). Palantir Java For
 closing brace. Lines the layout engine joins stay joined. Runs after `JavaFormat`; off with
 `formatter.style: "palantir"`.
 
+### JavadocLayout
+
+IntelliJ's default Javadoc formatting, which Palantir Java Format does not do:
+
+- "Align parameter descriptions" and "Align thrown exception descriptions": the descriptions of the `@param`
+  tags start in one column, after the longest name, and so do those of the `@throws` and `@exception` tags; their
+  continuation lines start under the description
+- "Blank lines: after description": a blank line between the description and the first block tag
+- "Do not wrap one line comments", off: `/** Text. */` becomes three lines
+- "Indent continuation lines", off: continuation lines of the other block tags start under the tag
+- "Generate `<p>` on empty lines": an empty line of the description that more text follows gets a `<p>`
+- a description written on the line after its `@param` or `@throws` name moves up to the tag
+
+Text is not re-wrapped. Comments without a `*` at the start of every line, and comments with `<pre>` in their
+tags, are left as they are. Runs after `KeepBlankLines`; off with `formatter.style: "palantir"`.
+
 ### ImportOrder
 
 Sorts imports into `imports.groups` (default: all other imports, then `java.*` and `javax.*`, then static

@@ -27,7 +27,7 @@ import java.util.zip.ZipInputStream;
  * <pre>
  * java checks/Parity.java --idea &lt;IntelliJ home&gt; [--jpm-format &lt;command&gt;] [--update] [--show N]
  * </pre>
- *
+ * <p>
  * IntelliJ's home is the folder with bin/format.sh (or IDEA_HOME). jpm-format runs from dist/*-bundle.jar
  * (`jpm build --bundle`) in the corpus folder, unless --jpm-format names another command. --update writes a lower count to the baseline; --show
  * prints the N files that differ most, with their first differences.
@@ -70,7 +70,9 @@ public final class Parity {
 
         Path sources = CACHE.resolve("sources");
         List<String> corpus = Files.readAllLines(ROOT.resolve("checks/parity/corpus.txt")).stream()
-                .map(String::strip).filter(l -> !l.isEmpty() && !l.startsWith("#")).toList();
+                .map(String::strip)
+                .filter(l -> !l.isEmpty() && !l.startsWith("#"))
+                .toList();
         for (String line : corpus) unpack(line, sources);
 
         Path reference = CACHE.resolve("reference-" + build + "-" + hash("utf-8 only\n" + String.join("\n", corpus)));
@@ -87,9 +89,11 @@ public final class Parity {
         Files.writeString(ours.resolve("project.jsonc"), CONFIG);
         if (jpmFormat == null) {
             try (Stream<Path> d = Files.list(ROOT.resolve("dist"))) {
-                Path bundle = d.filter(f -> f.getFileName().toString().endsWith("-bundle.jar")).findFirst()
+                Path bundle = d.filter(f -> f.getFileName().toString().endsWith("-bundle.jar"))
+                        .findFirst()
                         .orElseThrow(() -> new IOException("no dist/*-bundle.jar: run `jpm build --bundle` first"));
-                jpmFormat = List.of(Path.of(System.getProperty("java.home"), "bin", "java").toString(), "-jar", bundle.toString());
+                jpmFormat = List.of(
+                        Path.of(System.getProperty("java.home"), "bin", "java").toString(), "-jar", bundle.toString());
             }
         }
         List<String> cmd = new ArrayList<>(jpmFormat);
@@ -101,7 +105,8 @@ public final class Parity {
         Map<String, List<String>> samples = new TreeMap<>();
         int total = 0, files = 0;
         try (Stream<Path> s = Files.walk(reference)) {
-            for (Path ref : s.filter(p -> p.toString().endsWith(".java")).sorted().toList()) {
+            for (Path ref :
+                    s.filter(p -> p.toString().endsWith(".java")).sorted().toList()) {
                 String rel = reference.relativize(ref).toString();
                 List<String> a = Files.readAllLines(ref), b = Files.readAllLines(ours.resolve(rel));
                 List<String> sample = new ArrayList<>();
@@ -114,14 +119,20 @@ public final class Parity {
                 }
             }
         }
-        System.out.printf("%d of %d files differ from IntelliJ %s; %d lines in all%n", diffs.size(), files, build, total);
+        System.out.printf(
+                "%d of %d files differ from IntelliJ %s; %d lines in all%n", diffs.size(), files, build, total);
         if (show > 0) {
-            diffs.entrySet().stream().sorted((x, y) -> y.getValue() - x.getValue()).limit(show).forEach(e -> {
-                System.out.println("\n" + e.getKey() + ": " + e.getValue() + " lines");
-                samples.get(e.getKey()).stream().limit(12).forEach(l -> System.out.println("  " + l));
-            });
+            diffs.entrySet().stream()
+                    .sorted((x, y) -> y.getValue() - x.getValue())
+                    .limit(show)
+                    .forEach(e -> {
+                        System.out.println("\n" + e.getKey() + ": " + e.getValue() + " lines");
+                        samples.get(e.getKey()).stream().limit(12).forEach(l -> System.out.println("  " + l));
+                    });
         }
-        int baseline = Files.exists(BASELINE) ? Integer.parseInt(Files.readString(BASELINE).strip()) : Integer.MAX_VALUE;
+        int baseline = Files.exists(BASELINE)
+                ? Integer.parseInt(Files.readString(BASELINE).strip())
+                : Integer.MAX_VALUE;
         if (update && total < baseline) {
             Files.createDirectories(BASELINE.getParent());
             Files.writeString(BASELINE, total + "\n");
@@ -139,13 +150,18 @@ public final class Parity {
         String[] gav = parts[0].split(":");
         Path marker = into.resolve(gav[1] + "-" + gav[2] + ".done");
         if (Files.exists(marker)) return;
-        String url = "https://repo.maven.apache.org/maven2/" + gav[0].replace('.', '/') + "/" + gav[1] + "/" + gav[2] + "/"
-                + gav[1] + "-" + gav[2] + "-sources.jar";
-        HttpClient http = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
-        HttpResponse<byte[]> r = http.send(HttpRequest.newBuilder(URI.create(url)).build(), HttpResponse.BodyHandlers.ofByteArray());
+        String url = "https://repo.maven.apache.org/maven2/" + gav[0].replace('.', '/') + "/" + gav[1] + "/" + gav[2]
+                + "/" + gav[1] + "-" + gav[2] + "-sources.jar";
+        HttpClient http = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .build();
+        HttpResponse<byte[]> r =
+                http.send(HttpRequest.newBuilder(URI.create(url)).build(), HttpResponse.BodyHandlers.ofByteArray());
         if (r.statusCode() != 200) throw new IOException(url + " answered HTTP " + r.statusCode());
-        String sha = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(r.body()));
-        if (parts.length > 1 && !parts[1].equals(sha)) throw new IOException(url + " has SHA-256 " + sha + ", not " + parts[1]);
+        String sha =
+                HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(r.body()));
+        if (parts.length > 1 && !parts[1].equals(sha))
+            throw new IOException(url + " has SHA-256 " + sha + ", not " + parts[1]);
         Path dir = into.resolve(gav[1] + "-" + gav[2]);
         try (ZipInputStream zip = new ZipInputStream(new java.io.ByteArrayInputStream(r.body()))) {
             for (ZipEntry e; (e = zip.getNextEntry()) != null; ) {
@@ -167,7 +183,10 @@ public final class Parity {
     }
 
     private static void run(List<String> cmd, Path dir) throws Exception {
-        Process p = new ProcessBuilder(cmd).directory(dir.toFile()).redirectErrorStream(true).start();
+        Process p = new ProcessBuilder(cmd)
+                .directory(dir.toFile())
+                .redirectErrorStream(true)
+                .start();
         byte[] out;
         try (InputStream in = p.getInputStream()) {
             out = in.readAllBytes();
@@ -218,7 +237,9 @@ public final class Parity {
     }
 
     private static String hash(String s) throws Exception {
-        return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(s.getBytes(StandardCharsets.UTF_8))).substring(0, 12);
+        return HexFormat.of()
+                .formatHex(MessageDigest.getInstance("SHA-256").digest(s.getBytes(StandardCharsets.UTF_8)))
+                .substring(0, 12);
     }
 
     private static void copy(Path from, Path to) throws IOException {
