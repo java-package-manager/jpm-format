@@ -371,6 +371,46 @@ class EngineTest {
     }
 
     @Test
+    void aFormatterThatFailsIsReportedInCheckMode() {
+        Formatter broken = new Formatter() {
+            @Override
+            public String id() {
+                return "Broken";
+            }
+
+            @Override
+            public String format(Context ctx) {
+                throw new IllegalStateException("no jars");
+            }
+        };
+        List<String> found = RuleTester.of(broken).findings("class A {}\n");
+        assertEquals(1, found.size(), found.toString());
+        assertTrue(found.get(0).contains("internal/RuleCrash Broken failed: java.lang.IllegalStateException: no jars"), found.get(0));
+    }
+
+    @Test
+    void formattersByName() throws IOException {
+        Path root = Path.of("/p");
+        assertNull(ExternalFormatter.parse("intellij", root));
+        assertNull(ExternalFormatter.parse("palantir", root));
+        assertEquals(
+                new ExternalFormatter.Spec("palantir", "com.palantir.javaformat:palantir-java-format", "2.50.0", root),
+                ExternalFormatter.parse("palantir@2.50.0", root));
+        assertEquals(
+                new ExternalFormatter.Spec("google-java-format", "com.google.googlejavaformat:google-java-format", "latest", root),
+                ExternalFormatter.parse("google-java-format", root));
+        assertEquals("^1.24", ExternalFormatter.parse("google-java-format@^1.24", root).version());
+        assertTrue(assertThrows(FormatException.class, () -> ExternalFormatter.parse("eclipse", root))
+                .getMessage()
+                .contains("\"google-java-format[@<version>]\""));
+        assertThrows(FormatException.class, () -> ExternalFormatter.parse("palantir@", root));
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"style\": \"google-java-format@1.24.0\" } } } }");
+        Config.Settings s = open().config.settings("A.java");
+        assertEquals("1.24.0", s.externalFormatter().version());
+        assertFalse(s.intellijStyle());
+    }
+
+    @Test
     void configErrors() throws IOException {
         write(
                 "project.jsonc",

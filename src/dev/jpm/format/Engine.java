@@ -91,9 +91,11 @@ public final class Engine {
         }
         List<Active> rules = active(settings);
         Source cur = src;
-        Pipeline formatted = pipeline(src, settings, rules, mode == Mode.FORMAT ? findings : new ArrayList<>());
+        List<Finding> piped = new ArrayList<>();
+        Pipeline formatted = pipeline(src, settings, rules, mode == Mode.FORMAT ? findings : piped);
         if (mode == Mode.FORMAT) cur = formatted.out();
         boolean clean = formatted.out().text.equals(src.text);
+        if (clean) findings.addAll(piped);
         Supplier<TypeInfo> types = typesFor(cur);
         List<int[]> protectedRegions = null;
         List<Finding> formatting = new ArrayList<>();
