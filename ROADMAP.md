@@ -31,8 +31,13 @@ then a language server).
 
 ## Running
 
-- [ ] **Native binary.** jpm starts extensions on a JVM today; a GraalVM build (`jpm build --native`) needs testing
-      first, since running javac inside a native image is uncommon.
+- [ ] **Native binary.** jpm starts extensions on a JVM today. `jpm build --native` builds `dist/jpm-format` (42 MB,
+      26 s with GraalVM 21.0.2), but it fails on the first file, inside javac:
+  - javac's file manager reads `java.home`, which a native image does not set (NullPointerException in
+    `BaseFileManager.createLocations`); `-Djava.home=<a JDK>` gets past it, so the binary would need a JDK anyway;
+  - javac's message bundles and classes such as `Log$DeferredDiagnosticHandler` are missing from the image. The
+    configuration `jpm start --trace -- --check` records is not enough; javac's classes probably need to be
+    initialized at run time (`--initialize-at-run-time=com.sun.tools.javac`) and its resources listed by hand.
 
 ## Elsewhere
 
