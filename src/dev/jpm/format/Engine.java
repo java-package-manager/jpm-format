@@ -260,6 +260,7 @@ public final class Engine {
             out = f.format(ctx);
         } catch (RuntimeException | StackOverflowError e) {
             synchronized (findings) {
+                if (System.getenv("JPM_VERBOSE") != null) e.printStackTrace();
                 findings.add(internal(cur, Registry.RULE_CRASH, f.id() + " failed: " + e));
             }
             return cur.text;
