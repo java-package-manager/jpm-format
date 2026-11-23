@@ -19,12 +19,16 @@ import dev.jpm.format.api.Context;
 import java.util.HashSet;
 import java.util.Set;
 
-/** Small helpers on javac trees shared by the built-in rules. */
+/**
+ * Small helpers on javac trees shared by the built-in rules.
+ */
 final class Trees2 {
     private Trees2() {
     }
 
-    /** Every simple name referred to under {@code root} (identifiers, member selects, method references). */
+    /**
+     * Every simple name referred to under {@code root} (identifiers, member selects, method references).
+     */
     static Set<String> names(Tree root) {
         Set<String> out = new HashSet<>();
         new TreeScanner<Void, Void>() {
@@ -54,7 +58,9 @@ final class Trees2 {
         return out;
     }
 
-    /** True if an identifier named {@code name} appears under {@code root}. */
+    /**
+     * True if an identifier named {@code name} appears under {@code root}.
+     */
     static boolean usesIdentifier(Tree root, String name) {
         Boolean found = new TreeScanner<Boolean, Void>() {
             @Override
@@ -79,7 +85,9 @@ final class Trees2 {
         return false;
     }
 
-    /** True if the expression can be used as a receiver or after {@code !} without parentheses. */
+    /**
+     * True if the expression can be used as a receiver or after {@code !} without parentheses.
+     */
     static boolean primary(ExpressionTree e) {
         return e instanceof IdentifierTree
                 || e instanceof MemberSelectTree
@@ -99,14 +107,18 @@ final class Trees2 {
         return primary(e) ? s : "(" + s + ")";
     }
 
-    /** The whitespace before {@code offset} on its line, or null if code precedes it there. */
+    /**
+     * The whitespace before {@code offset} on its line, or null if code precedes it there.
+     */
     static String indentAt(String src, int offset) {
         int ls = src.lastIndexOf('\n', offset - 1) + 1;
         String before = src.substring(ls, offset);
         return before.isBlank() ? before : null;
     }
 
-    /** Extends {@code [start, end)} to whole lines when nothing else is on them. */
+    /**
+     * Extends {@code [start, end)} to whole lines when nothing else is on them.
+     */
     static int[] wholeLines(String src, int start, int end) {
         int ls = src.lastIndexOf('\n', start - 1) + 1;
         int le = src.indexOf('\n', end);

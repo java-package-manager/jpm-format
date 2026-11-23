@@ -51,7 +51,9 @@ public final class JavaFormat implements Formatter {
         }
     }
 
-    /** Formats only the lines touching {@code [start, end)}. */
+    /**
+     * Formats only the lines touching {@code [start, end)}.
+     */
     public String formatRange(FileContext ctx, int start, int end) {
         try {
             return tabs(
@@ -81,7 +83,9 @@ public final class JavaFormat implements Formatter {
                         .build()));
     }
 
-    /** With {@code useTabs}, turns leading indentation into tabs, except inside text blocks. */
+    /**
+     * With {@code useTabs}, turns leading indentation into tabs, except inside text blocks.
+     */
     private static String tabs(FileContext ctx, String text) {
         if (!ctx.settings().useTabs()) return text;
         int width = ctx.settings().indentWidth();

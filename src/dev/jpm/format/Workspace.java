@@ -13,7 +13,9 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 
-/** Everything a run needs for one project: its rules, config and classpath, and the engine. */
+/**
+ * Everything a run needs for one project: its rules, config and classpath, and the engine.
+ */
 public final class Workspace {
     public final Path root;
     public final Project project;
@@ -44,7 +46,9 @@ public final class Workspace {
         return new Workspace(root, project, registry, config, new Engine(project, config, registry, debug, warn));
     }
 
-    /** The Java files to process: those under {@code paths} (default: the root) that are not ignored. */
+    /**
+     * The Java files to process: those under {@code paths} (default: the root) that are not ignored.
+     */
     public List<Path> files(List<Path> paths) {
         TreeSet<Path> out = new TreeSet<>();
         List<Path> starts = paths.isEmpty() ? List.of(root) : paths;

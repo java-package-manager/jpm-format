@@ -26,7 +26,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Palantir Java Format 2.103.0; when jpm-format changes the layout on purpose, the outputs change with it.
  */
 class PalantirTestdataTest {
-    /** Cases that need a newer Java to parse, as upstream's FileBasedTests lists them. */
+    /**
+     * Cases that need a newer Java to parse, as upstream's FileBasedTests lists them.
+     */
     private static final Map<String, Integer> MIN_JAVA = Map.ofEntries(
             Map.entry("Records", 14),
             Map.entry("RSL", 14),

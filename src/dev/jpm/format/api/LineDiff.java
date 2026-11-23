@@ -3,15 +3,21 @@ package dev.jpm.format.api;
 import java.util.ArrayList;
 import java.util.List;
 
-/** A line diff, for the built-in {@link Formatter#check}. */
+/**
+ * A line diff, for the built-in {@link Formatter#check}.
+ */
 final class LineDiff {
-    /** {@code [start, end)} of the old text, made of whole lines, becomes {@code replacement}. */
+    /**
+     * {@code [start, end)} of the old text, made of whole lines, becomes {@code replacement}.
+     */
     record Hunk(int start, int end, String replacement) {}
 
     private LineDiff() {
     }
 
-    /** Above this many changed lines (old times new) the middle is reported as one hunk. */
+    /**
+     * Above this many changed lines (old times new) the middle is reported as one hunk.
+     */
     private static final long MAX_CELLS = 4_000_000;
 
     static List<Hunk> hunks(String a, String b) {
@@ -67,7 +73,9 @@ final class LineDiff {
         return new Hunk(start, end, b.substring(bs, be));
     }
 
-    /** Lines as [start, end) including their line break. */
+    /**
+     * Lines as [start, end) including their line break.
+     */
     private static List<int[]> lines(String s) {
         List<int[]> out = new ArrayList<>();
         int start = 0;

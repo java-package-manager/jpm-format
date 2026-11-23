@@ -8,12 +8,16 @@ import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreeScanner;
 
-/** Finds the element (declaration, import or statement) that follows an offset, for suppression comments. */
+/**
+ * Finds the element (declaration, import or statement) that follows an offset, for suppression comments.
+ */
 final class Elements {
     private Elements() {
     }
 
-    /** {@code [start, end)} of the outermost element starting at or after {@code offset}, or null. */
+    /**
+     * {@code [start, end)} of the outermost element starting at or after {@code offset}, or null.
+     */
     static int[] next(Source src, int offset) {
         int[] best = new int[] {Integer.MAX_VALUE, -1};
         new TreeScanner<Void, Void>() {

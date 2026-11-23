@@ -92,7 +92,9 @@ public final class UnusedLocalVariable implements Lint {
         }.scan(ctx.tree(), null);
     }
 
-    /** Reports at the variable's name. */
+    /**
+     * Reports at the variable's name.
+     */
     static void report(Context ctx, VariableTree var, String message) {
         String src = ctx.source();
         String name = var.getName().toString();

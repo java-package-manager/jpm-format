@@ -9,10 +9,18 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** The IntelliJ rules, each right after the layout engine as jpm format runs them. */
+/**
+ * The IntelliJ rules, each right after the layout engine as jpm format runs them.
+ */
 class IntelliJRulesTest {
     private static RuleTester intellij() {
-        return RuleTester.of(new JavaFormat(), new EmptyBodies(), new MemberBlankLines(), new KeepBlankLines());
+        return RuleTester.of(
+                new JavaFormat(),
+                new EmptyBodies(),
+                new MemberBlankLines(),
+                new KeepBlankLines(),
+                new JavadocLayout(),
+                new LineCommentSpacing());
     }
 
     @Test
@@ -89,7 +97,9 @@ class IntelliJRulesTest {
                     void f() {
                     }
 
-                    /** Docs. */
+                    /**
+                     * Docs.
+                     */
                     @Deprecated
                     void g() {
                     }
@@ -186,5 +196,125 @@ class IntelliJRulesTest {
         RuleTester all = RuleTester.withBuiltins();
         String formatted = all.format("class A { void f() {}\n\n\n    /** D. */ void g() {} }");
         assertEquals(List.of(), all.findings(formatted));
+    }
+
+    @Test
+    void javadocTagDescriptionsAlignAndATagListFollowsABlankLine() {
+        intellij().assertFormats("""
+                class A {
+                    /**
+                     * Adds.
+                     * @param a  the first
+                     * @param total the sum, which goes on
+                     *   to the next line
+                     * @return the result, also
+                     *     continued
+                     * @throws IllegalArgumentException if a is negative
+                     * @throws NullPointerException
+                     *     if total is null
+                     */
+                    int add(int a, Integer total) {
+                        return a + total;
+                    }
+                }
+                """, """
+                class A {
+                    /**
+                     * Adds.
+                     *
+                     * @param a     the first
+                     * @param total the sum, which goes on
+                     *              to the next line
+                     * @return the result, also
+                     * continued
+                     * @throws IllegalArgumentException if a is negative
+                     * @throws NullPointerException     if total is null
+                     */
+                    int add(int a, Integer total) {
+                        return a + total;
+                    }
+                }
+                """);
+    }
+
+    @Test
+    void oneLineJavadocTakesThreeLinesAndParagraphsGetP() {
+        intellij().assertFormats("""
+                class A {
+                    /** The count. */
+                    int count;
+
+                    /**
+                     * First paragraph.
+                     *
+                     * Second paragraph.
+                     *
+                     * <ul><li>a list stays</li></ul>
+                     */
+                    void f() {
+                    }
+                }
+                """, """
+                class A {
+                    /**
+                     * The count.
+                     */
+                    int count;
+
+                    /**
+                     * First paragraph.
+                     * <p>
+                     * Second paragraph.
+                     *
+                     * <ul><li>a list stays</li></ul>
+                     */
+                    void f() {
+                    }
+                }
+                """);
+    }
+
+    @Test
+    void referencesGetASpaceAfterEachComma() {
+        intellij().assertFormats("""
+                class A {
+                    /**
+                     * Like {@link String#format(String,Object...)} and {@linkplain #f(int,int) f}.
+                     *
+                     * @see #f(int,int)
+                     */
+                    void f(int a, int b) {
+                    }
+                }
+                """, """
+                class A {
+                    /**
+                     * Like {@link String#format(String, Object...)} and {@linkplain #f(int, int) f}.
+                     *
+                     * @see #f(int, int)
+                     */
+                    void f(int a, int b) {
+                    }
+                }
+                """);
+    }
+
+    @Test
+    void lineCommentsKeepTheirTextRightAfterTheSlashes() {
+        intellij().assertFormats("""
+                class A {
+                    //TODO later
+                    int a = 1; //$NON-NLS-1$
+                    // already spaced
+                    int b;
+                }
+                """, """
+                class A {
+                    //TODO later
+                    int a = 1; //$NON-NLS-1$
+                    // already spaced
+                    int b;
+                }
+                """);
     }
 }

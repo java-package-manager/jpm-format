@@ -12,9 +12,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-/** Prints findings: {@code pretty} (default), {@code json}, {@code sarif}, or {@code github} annotations. */
+/**
+ * Prints findings: {@code pretty} (default), {@code json}, {@code sarif}, or {@code github} annotations.
+ */
 public interface Reporter {
-    /** Totals of a run. */
+    /**
+     * Totals of a run.
+     */
     record Summary(int files, int changed, boolean check, long millis) {}
 
     void report(List<Engine.Result> results, Summary summary, Registry registry, PrintStream out);
@@ -96,7 +100,9 @@ public interface Reporter {
         return ((Number) o).intValue();
     }
 
-    /** Human-readable output with a code frame, and the expected text for formatting findings. */
+    /**
+     * Human-readable output with a code frame, and the expected text for formatting findings.
+     */
     final class Pretty implements Reporter {
         private final boolean color = System.console() != null && System.getenv("NO_COLOR") == null;
 
@@ -184,7 +190,9 @@ public interface Reporter {
         }
     }
 
-    /** SARIF 2.1.0, for GitHub code scanning and other tools. */
+    /**
+     * SARIF 2.1.0, for GitHub code scanning and other tools.
+     */
     final class Sarif implements Reporter {
         @Override
         public void report(List<Engine.Result> results, Summary summary, Registry registry, PrintStream out) {
@@ -236,7 +244,9 @@ public interface Reporter {
         }
     }
 
-    /** GitHub Actions workflow commands, shown as annotations on the pull request. */
+    /**
+     * GitHub Actions workflow commands, shown as annotations on the pull request.
+     */
     final class Github implements Reporter {
         @Override
         public void report(List<Engine.Result> results, Summary summary, Registry registry, PrintStream out) {

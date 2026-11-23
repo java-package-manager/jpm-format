@@ -56,7 +56,9 @@ public final class MemberBlankLines implements IntelliJRule {
         return edits.isEmpty() ? src : Fix.apply(src, edits);
     }
 
-    /** Members that want a blank line around them. */
+    /**
+     * Members that want a blank line around them.
+     */
     static boolean spaced(Tree m) {
         return m instanceof MethodTree || m instanceof ClassTree || m instanceof BlockTree;
     }

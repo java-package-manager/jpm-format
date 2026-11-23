@@ -55,14 +55,20 @@ public final class Config {
             ".gradle/**",
             "rules/test/**");
 
-    /** IntelliJ's default layout: all other imports, then java.* and javax.*, then static imports. */
+    /**
+     * IntelliJ's default layout: all other imports, then java.* and javax.*, then static imports.
+     */
     static final List<List<String>> DEFAULT_GROUPS =
             List.of(List.of("*"), List.of("java.*", "javax.*"), List.of("static *"));
 
-    /** A rule's level and options. */
+    /**
+     * A rule's level and options.
+     */
     public record RuleSetting(Severity level, Map<String, Object> options) {}
 
-    /** The settings for one file. */
+    /**
+     * The settings for one file.
+     */
     public record Settings(
             boolean formatterEnabled,
             int lineWidth,
@@ -81,7 +87,9 @@ public final class Config {
             Map<String, RuleSetting> rules,
             String key) {
 
-        /** The level a rule runs at for this file; OFF if it does not run. */
+        /**
+         * The level a rule runs at for this file; OFF if it does not run.
+         */
         public Severity level(Lint rule, boolean builtin) {
             RuleSetting s = rules.get(rule.id());
             boolean formatting = rule instanceof Formatter;
@@ -119,7 +127,9 @@ public final class Config {
     private final List<PathMatcher> ignores = new ArrayList<>();
     private final Rules rules;
     private final Map<String, Settings> settingsByKey = new ConcurrentHashMap<>();
-    /** A hash of everything that affects results, for the cache. */
+    /**
+     * A hash of everything that affects results, for the cache.
+     */
     public final String hash;
 
     private Config(Path root, Map<String, Object> rootConfig, List<Scoped> modules, Rules rules, String extraHash) {
@@ -139,7 +149,9 @@ public final class Config {
             validate(s.config(), s.dir().resolve("project.jsonc").toString());
     }
 
-    /** Loads the config of the project at {@code root}, checking rule names against {@code rules}. */
+    /**
+     * Loads the config of the project at {@code root}, checking rule names against {@code rules}.
+     */
     public static Config load(Path root, Rules rules, String extraHash) {
         Map<String, Object> rootCfg = rootConfig(root);
         List<Scoped> mods = new ArrayList<>();
@@ -163,7 +175,9 @@ public final class Config {
         return new Config(root, rootCfg, mods, rules, extraHash);
     }
 
-    /** A config from JSON, for tests and the test kit. */
+    /**
+     * A config from JSON, for tests and the test kit.
+     */
     public static Config of(Path root, Map<String, Object> config, Rules rules) {
         return new Config(root, resolveExtends(config, root, new LinkedHashSet<>()), List.of(), rules, "");
     }
@@ -233,7 +247,9 @@ public final class Config {
         }
     }
 
-    /** Deep merge: objects merge key by key, anything else is replaced. */
+    /**
+     * Deep merge: objects merge key by key, anything else is replaced.
+     */
     @SuppressWarnings("unchecked")
     static Map<String, Object> merge(Map<String, Object> base, Map<String, Object> over) {
         Map<String, Object> out = new LinkedHashMap<>(base);
@@ -252,14 +268,18 @@ public final class Config {
         return root.relativize(p.toAbsolutePath().normalize()).toString().replace('\\', '/');
     }
 
-    /** True if the file (relative to the root) is ignored. */
+    /**
+     * True if the file (relative to the root) is ignored.
+     */
     public boolean ignored(String rel) {
         Path p = Path.of(rel);
         for (PathMatcher m : ignores) if (m.matches(p)) return true;
         return false;
     }
 
-    /** The settings for a file, relative to the root. */
+    /**
+     * The settings for a file, relative to the root.
+     */
     @SuppressWarnings("unchecked")
     public Settings settings(String rel) {
         Map<String, Object> cfg = rootConfig;

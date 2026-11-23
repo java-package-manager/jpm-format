@@ -15,12 +15,16 @@ final class Regions {
     private Regions() {
     }
 
-    /** Quick test before looking for regions. */
+    /**
+     * Quick test before looking for regions.
+     */
     static boolean mayHave(String text) {
         return text.contains("@formatter:off") || text.contains("jpm-ignore format");
     }
 
-    /** Protected {@code [start, end)} ranges, in order; empty if none or the source does not parse. */
+    /**
+     * Protected {@code [start, end)} ranges, in order; empty if none or the source does not parse.
+     */
     static List<int[]> find(Source src) {
         List<int[]> out = new ArrayList<>();
         if (!mayHave(src.text)) return out;

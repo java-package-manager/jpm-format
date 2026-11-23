@@ -26,7 +26,9 @@ import javax.tools.ToolProvider;
  * javac's own, so it accepts every Java version exactly as the compiler does.
  */
 public final class Source {
-    /** A syntax error at an offset. */
+    /**
+     * A syntax error at an offset.
+     */
     public record SyntaxError(int start, int end, String message) {}
 
     static final JavaCompiler JAVAC = ToolProvider.getSystemJavaCompiler();
@@ -44,18 +46,26 @@ public final class Source {
         this.text = text;
     }
 
-    /** An in-memory file for javac. */
-    /** Where javac writes its own messages, such as its crash banner; we report through diagnostics instead. */
+    /**
+     * An in-memory file for javac.
+     */
+    /**
+     * Where javac writes its own messages, such as its crash banner; we report through diagnostics instead.
+     */
     static PrintWriter quiet() {
         return new PrintWriter(Writer.nullWriter());
     }
 
-    /** An in-memory file for javac at its real path, so javac can tell which source folder it is in. */
+    /**
+     * An in-memory file for javac at its real path, so javac can tell which source folder it is in.
+     */
     static JavaFileObject fileObject(Path file, String text) {
         return new InMemory(file.toAbsolutePath().normalize().toUri(), text);
     }
 
-    /** Source text javac reads from memory, at a real file's address. */
+    /**
+     * Source text javac reads from memory, at a real file's address.
+     */
     static final class InMemory extends SimpleJavaFileObject {
         private final String text;
 
@@ -108,7 +118,9 @@ public final class Source {
         }
     }
 
-    /** Syntax errors; empty if the file parses. */
+    /**
+     * Syntax errors; empty if the file parses.
+     */
     public List<SyntaxError> errors() {
         parse();
         return errors;
@@ -150,25 +162,33 @@ public final class Source {
         return lineStarts;
     }
 
-    /** The file's line separator: CRLF if its first line ends with one, else LF. */
+    /**
+     * The file's line separator: CRLF if its first line ends with one, else LF.
+     */
     public static String newline(String text) {
         int i = text.indexOf('\n');
         return i > 0 && text.charAt(i - 1) == '\r' ? "\r\n" : "\n";
     }
 
-    /** 1-based line of an offset. */
+    /**
+     * 1-based line of an offset.
+     */
     public int line(int offset) {
         int[] ls = lineStarts();
         int k = Arrays.binarySearch(ls, offset);
         return (k >= 0 ? k : -k - 2) + 1;
     }
 
-    /** 1-based column of an offset. */
+    /**
+     * 1-based column of an offset.
+     */
     public int column(int offset) {
         return offset - lineStart(line(offset)) + 1;
     }
 
-    /** Offset where a 1-based line starts (the end of the text past the last line). */
+    /**
+     * Offset where a 1-based line starts (the end of the text past the last line).
+     */
     public int lineStart(int line) {
         int[] ls = lineStarts();
         if (line < 1) return 0;

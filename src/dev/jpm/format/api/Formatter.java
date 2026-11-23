@@ -13,10 +13,14 @@ package dev.jpm.format.api;
  * {@code jpm format --debug} checks this for every formatter.
  */
 public interface Formatter extends Lint {
-    /** Returns the formatted source; returning {@code ctx.source()} means nothing to change. */
+    /**
+     * Returns the formatted source; returning {@code ctx.source()} means nothing to change.
+     */
     String format(Context ctx);
 
-    /** Unformatted code is an error unless the config says otherwise. */
+    /**
+     * Unformatted code is an error unless the config says otherwise.
+     */
     @Override
     default Severity severity() {
         return Severity.ERROR;
@@ -36,7 +40,9 @@ public interface Formatter extends Lint {
         }
     }
 
-    /** Names differences that cannot be seen in a listing: line endings, trailing spaces, the last newline. */
+    /**
+     * Names differences that cannot be seen in a listing: line endings, trailing spaces, the last newline.
+     */
     private static String message(String old, LineDiff.Hunk h, int length) {
         String neu = h.replacement();
         if (h.end() == length && (neu.equals(old + "\n") || neu.equals(old + "\r\n"))) {

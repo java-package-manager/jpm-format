@@ -31,7 +31,7 @@ import java.util.function.Predicate;
  *       RuleName} before a statement or declaration, as in IntelliJ. A rule's aliases (such as {@code unused})
  *       and {@code all} work too.
  * </ul>
- *
+ * <p>
  * Unused {@code jpm-ignore} comments are reported. {@code @SuppressWarnings} and {@code //noinspection} are not,
  * because javac and IntelliJ read them too.
  */
@@ -39,11 +39,17 @@ final class Suppressions {
     static final String UNUSED = "UnusedSuppression";
     static final String INVALID = "InvalidSuppression";
 
-    /** One suppression: what it targets and the offsets it covers. */
+    /**
+     * One suppression: what it targets and the offsets it covers.
+     */
     private static final class Entry {
-        /** The suppressing comment; null for annotations and noinspection. */
+        /**
+         * The suppressing comment; null for annotations and noinspection.
+         */
         final Comments.Comment comment;
-        /** {@code lint}, {@code lint/cat} or {@code lint/cat/Rule}; or a bare name for annotations. */
+        /**
+         * {@code lint}, {@code lint/cat} or {@code lint/cat/Rule}; or a bare name for annotations.
+         */
         final String target;
 
         final int from, to;
@@ -59,7 +65,9 @@ final class Suppressions {
         }
     }
 
-    /** A problem with a suppression comment itself. */
+    /**
+     * A problem with a suppression comment itself.
+     */
     record Problem(int start, int end, String rule, String message) {}
 
     private final List<Entry> entries = new ArrayList<>();
@@ -157,7 +165,9 @@ final class Suppressions {
         }
     }
 
-    /** True if a line holds only whitespace and comments. */
+    /**
+     * True if a line holds only whitespace and comments.
+     */
     private static boolean codeless(Source src, int line) {
         int from = src.lineStart(line), to = src.lineStart(line + 1);
         int k = from;
@@ -228,7 +238,9 @@ final class Suppressions {
         }.scan(src.tree(), null);
     }
 
-    /** True if the finding is suppressed; marks the suppressions that matched as used. */
+    /**
+     * True if the finding is suppressed; marks the suppressions that matched as used.
+     */
     boolean suppressed(Finding f, Lint rule) {
         boolean hit = false;
         for (Entry e : entries) {
@@ -254,7 +266,9 @@ final class Suppressions {
         return aliases.contains(t);
     }
 
-    /** Unused jpm-ignore comments whose target rules all ran (so "unused" is certain). */
+    /**
+     * Unused jpm-ignore comments whose target rules all ran (so "unused" is certain).
+     */
     List<Problem> unused(Predicate<String> ran) {
         List<Problem> out = new ArrayList<>();
         for (Entry e : entries) {

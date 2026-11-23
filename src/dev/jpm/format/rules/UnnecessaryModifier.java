@@ -139,7 +139,9 @@ public final class UnnecessaryModifier implements Formatter {
         };
     }
 
-    /** Adds a problem for each of {@code redundant} that appears among the modifiers' keywords. */
+    /**
+     * Adds a problem for each of {@code redundant} that appears among the modifiers' keywords.
+     */
     private static void flag(
             Context ctx, ModifiersTree mods, Set<Modifier> redundant, String where, List<Problem> out) {
         if (mods == null || mods.getFlags().stream().noneMatch(redundant::contains)) return;

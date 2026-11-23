@@ -132,7 +132,9 @@ public final class EmptyBodies implements IntelliJRule {
         return edits.isEmpty() ? src : Fix.apply(src, edits);
     }
 
-    /** The leading whitespace of the line {@code offset} is on. */
+    /**
+     * The leading whitespace of the line {@code offset} is on.
+     */
     static String indentOf(String src, int offset) {
         int ls = src.lastIndexOf('\n', offset - 1) + 1;
         int k = ls;

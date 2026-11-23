@@ -2,13 +2,17 @@ package dev.jpm.format.api;
 
 import java.util.Locale;
 
-/** How a finding is reported; {@code off} turns a rule off. Config values are lower case. */
+/**
+ * How a finding is reported; {@code off} turns a rule off. Config values are lower case.
+ */
 public enum Severity {
     OFF,
     WARN,
     ERROR;
 
-    /** Parses {@code off}, {@code warn} or {@code error}; null for anything else. */
+    /**
+     * Parses {@code off}, {@code warn} or {@code error}; null for anything else.
+     */
     public static Severity parse(String s) {
         return switch (s.toLowerCase(Locale.ROOT)) {
             case "off" -> OFF;

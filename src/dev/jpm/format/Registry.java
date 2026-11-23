@@ -12,12 +12,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-/** Every rule of a run: the built-in ones, then the project's custom rules. */
+/**
+ * Every rule of a run: the built-in ones, then the project's custom rules.
+ */
 public final class Registry {
     public final Rules rules = new Rules();
     private final Set<String> builtin = new LinkedHashSet<>();
 
-    /** A rule the engine itself reports for; its {@link #check} does nothing. */
+    /**
+     * A rule the engine itself reports for; its {@link #check} does nothing.
+     */
     record Internal(String id, String category, Severity severity) implements Lint {
         @Override
         public void check(Context ctx) {
@@ -31,7 +35,9 @@ public final class Registry {
     private Registry() {
     }
 
-    /** The built-in rules only. */
+    /**
+     * The built-in rules only.
+     */
     public static Registry builtins() {
         Registry r = new Registry();
         Builtins.register(r.rules);
@@ -40,14 +46,18 @@ public final class Registry {
         return r;
     }
 
-    /** The built-in rules, then {@code extra}, for tests. */
+    /**
+     * The built-in rules, then {@code extra}, for tests.
+     */
     public static Registry builtinsAnd(List<Lint> extra) {
         Registry r = builtins();
         for (Lint l : extra) r.rules.add(l);
         return r;
     }
 
-    /** Exactly {@code rules} (and the engine's own), for tests; all of them count as custom, so they are on. */
+    /**
+     * Exactly {@code rules} (and the engine's own), for tests; all of them count as custom, so they are on.
+     */
     public static Registry of(List<Lint> rules) {
         Registry r = new Registry();
         for (Lint l : rules) r.rules.add(l);

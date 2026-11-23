@@ -14,7 +14,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-/** The {@link Context} of one rule on one version of a file. */
+/**
+ * The {@link Context} of one rule on one version of a file.
+ */
 public final class FileContext implements Context {
     private final Source src;
     private final Lint rule;
@@ -51,7 +53,9 @@ public final class FileContext implements Context {
         this.layoutInput = layoutInput;
     }
 
-    /** The file's settings, for built-in rules. */
+    /**
+     * The file's settings, for built-in rules.
+     */
     public Config.Settings settings() {
         return settings;
     }
@@ -65,7 +69,9 @@ public final class FileContext implements Context {
         return layoutInput != null ? layoutInput : src;
     }
 
-    /** The parsed source, for built-in rules. */
+    /**
+     * The parsed source, for built-in rules.
+     */
     public Source parsed() {
         return src;
     }

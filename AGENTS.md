@@ -12,6 +12,7 @@ Facts for AI agents working on jpm-format. Reasons are in [CONTRIBUTING.md](CONT
 | Self-check (formatting and lint of jpm-format's own code) | `jpm start -- --check` |
 | Format files | `jpm start -- <files>` |
 | Comment lint | `java checks/Comments.java check src test '!src/dev/jpm/format/palantir'` |
+| IntelliJ parity (lines that differ from IntelliJ's formatter; may only go down) | `jpm build --bundle && java checks/Parity.java --idea <IntelliJ home> [--show 10] [--update]` |
 
 ## Where things live
 
