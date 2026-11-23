@@ -1,8 +1,8 @@
 # Contributing to jpm-format
 
 jpm-format is the `jpm format` extension: a formatter and linter. [AGENTS.md](AGENTS.md) has the same facts
-for AI agents; the plan is jpm's [ROADMAP.md](https://github.com/java-package-manager/jpm/blob/main/ROADMAP.md)
-(Milestone 5: IntelliJ parity, then a language server).
+for AI agents; what is still to come is in [ROADMAP.md](ROADMAP.md), and jpm's own plan in its
+[ROADMAP.md](https://github.com/java-package-manager/jpm/blob/main/ROADMAP.md).
 
 ## Build, test, run
 
@@ -45,5 +45,22 @@ and lowering the baseline in the same commit.
 
 - One local branch per change; tests and the self-check pass before it is merged into `main`; `main` is
   pushed once.
-- Change `"version"` in `project.jsonc` and push to `main`: CI tags that commit with the version once the
-  tests pass, and the tag is the release.
+- CI runs the full check on every commit to `main` and on every pull request (a pull request's branch is not
+  checked a second time as a push).
+- Releases are made with [jpm-changeset](https://github.com/java-package-manager/jpm-changeset), and only with
+  it: never change `"version"` in `project.jsonc` by hand, and never create a tag. A release is a tag, which
+  `jpm add -g github:java-package-manager/jpm-format` resolves.
+- Every change comes with a changeset in `.changeset/`, committed with it; `jpm check` (CI) fails without one.
+
+  ```sh
+  jpm changeset add --patch -m "Keep blank lines in switch blocks."   # a fix; --minor for a feature
+  jpm changeset add --minor -m "..."                                  # below 1.0.0, --major raises the minor version
+  jpm changeset add --empty -m "..."                                  # a change that needs no release (CI, docs)
+  jpm changeset status                                                # what is pending, and the version it gives
+  ```
+
+- On `main`, CI ([changeset-action](https://github.com/java-package-manager/changeset-action)) keeps a
+  "Version packages" pull request with the bumped version and `CHANGELOG.md`. Merging it releases: CI runs
+  `jpm changeset publish`, which tags the commit with the version, and pushes the tag.
+- Prereleases: `jpm changeset pre enter beta` (committed with its `.changeset/pre.json`) makes the version pull
+  request release `0.4.0-beta.0`, `0.4.0-beta.1`, …; `jpm changeset pre exit` makes the next one stable.

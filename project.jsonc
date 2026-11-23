@@ -65,9 +65,12 @@
     "org.junit.jupiter:junit-jupiter": "5.11.4"
   },
   "extensions": {
+    // a release is a tag, which `jpm add` installs from: `jpm changeset publish` only tags
+    "changeset": { "tagOnly": true },
     "format": {
       // vendored code keeps upstream's layout, so it stays easy to compare with upstream
       "ignore": ["src/dev/jpm/format/palantir/**"]
-    }
+    },
+    "github:java-package-manager/jpm-changeset": "^0.3.0"
   }
 }
