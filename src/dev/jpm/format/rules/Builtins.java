@@ -1,6 +1,8 @@
 package dev.jpm.format.rules;
 
 import dev.jpm.format.api.Rules;
+import dev.jpm.format.inspections.Inspection;
+import dev.jpm.format.inspections.Inspections;
 import dev.jpm.format.intellij.IntelliJ;
 
 /**
@@ -27,6 +29,7 @@ public final class Builtins {
         rules.add(new EmptyCatchBlock());
         rules.add(new UnusedLocalVariable());
         rules.add(new UnusedPrivateMember());
+        for (Inspection i : Inspections.all()) rules.add(i);
     }
 
     static String docs(String id) {

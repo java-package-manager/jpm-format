@@ -20,7 +20,9 @@ Facts for AI agents working on jpm-format. Reasons are in [CONTRIBUTING.md](CONT
   language server.
 - `src/dev/jpm/format/palantir/`: the layout engine, a fork of Palantir Java Format.
 - `src/dev/jpm/format/intellij/`: adjustments toward IntelliJ's code style. `src/dev/jpm/format/rules/`:
-  lint rules. `src/dev/jpm/format/api/`: the rule API for custom rules.
+  lint rules. `src/dev/jpm/format/inspections/`: IntelliJ's default inspections, one nested class each, named by
+  IntelliJ's short name; each has a case in `InspectionsTest` and its summary generates `docs/inspections.md`
+  (`UPDATE_DOCS=1 jpm test`). `src/dev/jpm/format/api/`: the rule API for custom rules.
 - `test/assets/palantir/testdata`: upstream's formatter tests, kept as a regression suite.
 
 ## Rules that must not be broken

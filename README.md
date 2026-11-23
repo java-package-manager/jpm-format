@@ -122,6 +122,7 @@ merging imports into a wildcard can make names ambiguous.
 | `UnusedPrivateMember` | correctness | lint | Unused private fields and methods |
 | `PointlessBooleanExpression` | complexity | lint | `x == true`, `x && true` … |
 | `EmptyCatchBlock` | suspicious | lint | Catch blocks that hide the exception |
+| 149 IntelliJ inspections | all | lint | IntelliJ's default Java inspections, by their IntelliJ names: [docs/inspections.md](docs/inspections.md) |
 
 Details are in [docs/rules.md](docs/rules.md). Rule names match IntelliJ's inspection names, so existing
 `@SuppressWarnings` and `//noinspection` suppressions carry over.
@@ -271,7 +272,8 @@ This is the first version. Not done yet:
 - **IntelliJ parity.** Line breaks, indentation, blank lines, empty bodies, Javadoc and comments are done so far,
   measured against IntelliJ's own formatter on real projects (`checks/Parity.java`, see CONTRIBUTING.md); more of
   IntelliJ's defaults (the rest of its Javadoc formatting) and its options follow, as rules in
-  `src/dev/jpm/format/intellij/`. More inspections follow too, with null checks and data flow last.
+  `src/dev/jpm/format/intellij/`. IntelliJ's default inspections that need no data-flow analysis are done
+  ([docs/inspections.md](docs/inspections.md)); null checks and data flow come last.
 - **Elsewhere:** `jpm import` translating Spotless config (in jpm), and the IntelliJ plugin running
   `jpm format` on save (in jpm-intellij).
 
