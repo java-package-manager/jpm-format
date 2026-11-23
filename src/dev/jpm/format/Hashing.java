@@ -10,9 +10,12 @@ final class Hashing {
     }
 
     static String sha256(String s) {
+        return sha256(s.getBytes(StandardCharsets.UTF_8));
+    }
+
+    static String sha256(byte[] bytes) {
         try {
-            return HexFormat.of()
-                    .formatHex(MessageDigest.getInstance("SHA-256").digest(s.getBytes(StandardCharsets.UTF_8)));
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }

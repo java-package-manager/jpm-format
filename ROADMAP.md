@@ -19,10 +19,10 @@ then a language server).
 - [ ] **Spotless formatters, natively.** `formatter.style: "eclipse"` runs Spotless's Eclipse JDT step, with jpm
       providing its jars. Still to come: Spotless's other steps (for files other than Java too), configured in
       `extensions.format`.
-- [ ] **Java formatters from Git.** `"formatter": { "style": "..." }` takes `palantir@<version>` and
-      `google-java-format[@<version>]` (released jars, resolved by jpm). Still to come: a `#branch` of them, a URL of
-      a jar release, and `github:author/my-java-formatter[@version|#branch]`, any formatter from a Git repository, as a
-      jpm-format extension (the rule API) or as a Spotless step.
+- [ ] **Java formatters from Git.** `"formatter": { "style": "..." }` takes `palantir@<version>`,
+      `google-java-format[@<version>]`, the URL of a jar and `github:author/my-java-formatter[@version|#branch]` (a
+      jpm project jpm builds, with Palantir's or google-java-format's `Formatter`, or a jpm-format rule set). Still to
+      come: a `#branch` of Palantir or google-java-format themselves, which build with Gradle and Maven, not jpm.
 - [ ] **No Palantir fork.** Use Palantir Java Format from its own repository instead of the fork in
       `src/dev/jpm/format/palantir/`. `formatter.style: "palantir@<version>"` already runs upstream's releases as
       they are. The fork stays for the IntelliJ style: 46 changes of its own (`jpm-format:` in the code), most of

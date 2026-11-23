@@ -47,7 +47,7 @@ public final class JavaFormat implements Formatter {
     public String format(Context ctx) {
         FileContext fc = (FileContext) ctx;
         var external = fc.settings().externalFormatter();
-        if (external != null) return ExternalFormatter.format(external, ctx.source(), ctx.path());
+        if (external != null) return ExternalFormatter.format(external, fc);
         try {
             return tabs(fc, palantir(fc).formatSource(ctx.source()));
         } catch (FormatterException e) {

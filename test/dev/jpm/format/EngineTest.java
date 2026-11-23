@@ -414,6 +414,62 @@ class EngineTest {
     }
 
     @Test
+    void formattersFromAUrlOrGit() throws IOException {
+        Path root = Path.of("/p");
+        assertEquals(new ExternalFormatter.Spec("git", "github:me/fmt", "*", root, null), ExternalFormatter.parse("github:me/fmt", root, null));
+        assertEquals("^1.2", ExternalFormatter.parse("github:me/fmt@^1.2", root, null).version());
+        assertEquals("#main", ExternalFormatter.parse("codeberg:me/fmt#main", root, null).version());
+        assertEquals("github:me/repo/fmt", ExternalFormatter.parse("github:me/repo/fmt#main", root, null).key());
+        ExternalFormatter.Spec jar = ExternalFormatter.parse("https://example.com/f.jar#sha256=" + "a".repeat(64), root, null);
+        assertEquals(new ExternalFormatter.Spec("jar", "https://example.com/f.jar", "a".repeat(64), root, null), jar);
+        assertNull(ExternalFormatter.parse("https://example.com/f.jar", root, null).version());
+        assertThrows(FormatException.class, () -> ExternalFormatter.parse("https://example.com/f.zip", root, null));
+        assertThrows(FormatException.class, () -> ExternalFormatter.parse("https://example.com/f.jar#sha256=xyz", root, null));
+        assertThrows(FormatException.class, () -> ExternalFormatter.parse("github:me/fmt@", root, null));
+        assertThrows(FormatException.class, () -> ExternalFormatter.parse("github:me/fmt", root, root.resolve("e.xml")));
+    }
+
+    @Test
+    void aJarWithARuleSetFormats() throws Exception {
+        Path src = write("fmt/up/Upper.java", """
+                package up;
+
+                import dev.jpm.format.api.Context;
+                import dev.jpm.format.api.Formatter;
+                import dev.jpm.format.api.RuleSet;
+                import dev.jpm.format.api.Rules;
+
+                public class Upper implements RuleSet, Formatter {
+                    public void register(Rules rules) { rules.add(this); }
+                    public String id() { return "Upper"; }
+                    public String format(Context ctx) { return ctx.source().replace("class a", "class A"); }
+                }
+                """);
+        Path classes = dir.resolve("fmt/classes");
+        int code = javax.tools.ToolProvider.getSystemJavaCompiler().run(null, null, null, "-d", classes.toString(), "-cp",
+                System.getProperty("java.class.path"), src.toString());
+        assertEquals(0, code);
+        Path jarFile = dir.resolve("fmt/upper.jar");
+        try (var out = new java.util.jar.JarOutputStream(Files.newOutputStream(jarFile))) {
+            out.putNextEntry(new java.util.jar.JarEntry("up/Upper.class"));
+            out.write(Files.readAllBytes(classes.resolve("up/Upper.class")));
+            out.putNextEntry(new java.util.jar.JarEntry("META-INF/services/dev.jpm.format.api.RuleSet"));
+            out.write("up.Upper\n".getBytes(StandardCharsets.UTF_8));
+        }
+        String sha = Hashing.sha256(Files.readAllBytes(jarFile));
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"style\": \"" + jarFile.toUri() + "#sha256=" + sha + "\" } } } }");
+        Config.Settings s = open().config.settings("A.java");
+        assertFalse(s.intellijStyle());
+        FileContext ctx = new FileContext(new Source("A.java", "class a {}\n"), null, Severity.ERROR, s, null, new java.util.ArrayList<>());
+        assertEquals("class A {}\n", ExternalFormatter.format(s.externalFormatter(), ctx));
+        assertTrue(Files.isDirectory(dir.resolve(".cache/format/formatters")), "the jar is kept in the cache");
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"style\": \"" + jarFile.toUri() + "#sha256=" + "0".repeat(64) + "\" } } } }");
+        Config.Settings wrong = open().config.settings("A.java");
+        FormatException e = assertThrows(FormatException.class, () -> ExternalFormatter.format(wrong.externalFormatter(), ctx));
+        assertTrue(e.getMessage().contains("has SHA-256 " + sha), e.getMessage());
+    }
+
+    @Test
     void configErrors() throws IOException {
         write(
                 "project.jsonc",
