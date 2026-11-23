@@ -123,6 +123,10 @@ public final class JavaCommentsHelper implements CommentsHelper {
 
     private List<String> wrapLineComments(List<String> lines, int column0) {
         List<String> result = new ArrayList<>();
+        // jpm-format: with kept line breaks, line comments stay as written, as IntelliJ leaves them
+        if (options.keepLineBreaks()) {
+            return lines;
+        }
         for (String line : lines) {
             // Add missing leading spaces to line comments: `//foo` -> `// foo`.
             Matcher matcher = LINE_COMMENT_MISSING_SPACE_PREFIX.matcher(line);

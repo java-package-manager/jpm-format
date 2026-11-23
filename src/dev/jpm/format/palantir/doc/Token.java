@@ -139,6 +139,7 @@ public final class Token extends Doc implements Op {
 
     @Override
     public void write(State state, Output output) {
+        KeptBreaks.writeNewlineBefore(this, state, output);
         String text = token.getTok().getOriginalText();
         output.append(state, text, range());
     }

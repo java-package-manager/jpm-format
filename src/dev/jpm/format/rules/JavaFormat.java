@@ -17,8 +17,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The layout of the code: indentation, line breaks and spacing. The engine is jpm-format's fork of Palantir Java
- * Format ({@code dev.jpm.format.palantir}), whose output is close to IntelliJ's default Java code style: 120
- * columns, 4-space indents and 8-space continuation indents.
+ * Format ({@code dev.jpm.format.palantir}). In the IntelliJ style it keeps the input's line breaks and indents as
+ * IntelliJ's default Java code style does (4-space indents, 8-space continuation indents); in the Palantir style it
+ * chooses the line breaks itself, wrapping at the line width.
  */
 public final class JavaFormat implements Formatter {
     public static final String ID = "JavaFormat";
@@ -73,13 +74,14 @@ public final class JavaFormat implements Formatter {
         }
         var s = ctx.settings();
         return FORMATTERS.computeIfAbsent(
-                List.of(s.lineWidth(), s.indentWidth(), s.continuationIndentWidth()),
+                List.of(s.lineWidth(), s.indentWidth(), s.continuationIndentWidth(), s.intellijStyle() ? 1 : 0),
                 k -> dev.jpm.format.palantir.java.Formatter.createFormatter(JavaFormatterOptions.builder()
                         .style(JavaFormatterOptions.Style.PALANTIR)
                         .maxLineLength(s.lineWidth())
                         .indent(s.indentWidth())
                         .continuationIndent(s.continuationIndentWidth())
                         .formatJavadoc(false)
+                        .keepLineBreaks(s.intellijStyle())
                         .build()));
     }
 

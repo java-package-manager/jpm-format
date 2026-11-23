@@ -117,6 +117,8 @@ public final class Level extends Doc {
 
     @Override
     public State computeBreaks(CommentsHelper commentsHelper, int maxWidth, State state, Obs.ExplorationNode observer) {
+        KeptBreaks keep = KeptBreaks.current();
+        if (keep != null) return computeKept(keep, commentsHelper, maxWidth, state, observer);
         return tryToFitOnOneLine(maxWidth, state, docs)
                 .map(newWidth -> state.withColumn(newWidth).withLevelState(this, ImmutableLevelState.of(true)))
                 .orElseGet(() -> {
@@ -126,6 +128,90 @@ public final class Level extends Doc {
 
                     return childLevel.finishLevel(state.updateAfterLevel(newState));
                 });
+    }
+
+    /** jpm-format: the debug name of a level whose wrapped lines line up with its start, with kept line breaks. */
+    public static final String ALIGNED = "aligned";
+
+    /**
+     * jpm-format: lays out this level with the breaks that {@link KeptBreaks} keeps. A level without any is one line.
+     * Otherwise a level with an extra indent counts it from the indent of the line it starts on, unless the levels
+     * around it are indented less; a level without one keeps the indent around it; an {@link #ALIGNED} level lines
+     * its wrapped lines up with its first.
+     */
+    private State computeKept(
+            KeptBreaks keep, CommentsHelper commentsHelper, int maxWidth, State state, Obs.ExplorationNode observer) {
+        if (!keep.breaks(this) && !Float.isInfinite(getWidth())) {
+            keep.brackets(this);
+            int paren = getFlat().lastIndexOf('(');
+            if (paren >= 0) keep.afterParen(state.column() + paren + 1, state.numLines());
+            return state.withColumn(state.column() + (int) getWidth())
+                    .withLevelState(this, ImmutableLevelState.of(true));
+        }
+        int plus = getPlusIndent().eval(state);
+        int entryLine = keep.lineIndent;
+        State inner = getDebugName().filter(ALIGNED::equals).isPresent()
+                ? state.withIndentFrom(keep.alignment(state.numLines()), Indent.Const.ZERO)
+                : plus <= 0
+                        ? state.withIndentIncrementedBy(getPlusIndent())
+                        : state.withIndentFrom(Math.min(state.indent(), entryLine), getPlusIndent());
+        if (!memoizedSplitsBreaks.get().breaks().isEmpty()) inner = inner.withBrokenLevel();
+        for (Doc doc : docs) {
+            if (doc instanceof Break b) {
+                inner = keptBreak(keep, b, inner, plus, entryLine);
+            } else {
+                if (keep.startsLine(doc)) {
+                    int indent = keep.firstColumn(doc)
+                            ? 0
+                            : keep.closesEmptyBody(doc)
+                                    ? keep.statementLine
+                                    : closes(doc)
+                                            ? keep.openerLine(Math.min(inner.indent(), entryLine))
+                                            : Math.max(inner.indent(), keep.statementLine + keep.continuation);
+                    keep.laidOut(doc, indent);
+                    keep.lineIndent = indent;
+                    inner = inner.withNewline(indent);
+                }
+                inner = doc.computeBreaks(commentsHelper, maxWidth, inner, observer);
+                keep.bracket(doc);
+                if (doc instanceof Token t && t.getToken().getTok().getOriginalText().equals("(")) {
+                    keep.afterParen(inner.column(), inner.numLines());
+                }
+            }
+        }
+        return state.updateAfterLevel(inner);
+    }
+
+    /**
+     * jpm-format: one break of {@link #computeKept}. A forced break before a closing bracket, in a level without an
+     * extra indent, goes under the line the level started on. A break that another stands in for is not taken, and
+     * the one standing in starts its line at least as far in as it would have.
+     */
+    private static State keptBreak(KeptBreaks keep, Break b, State inner, int plus, int entryLine) {
+        int indent = plus == 0 && b.isForced() && keep.beforeClosing(b)
+                ? Math.min(inner.indent(), entryLine)
+                : inner.indent();
+        int column = Math.max(indent + b.evalPlusIndent(inner), 0);
+        if (keep.replaced(b)) {
+            keep.defer(column);
+            keep.lineIndent = keep.statementLine = column;
+            return b.computeBreaks(inner, false);
+        }
+        if (!keep.taken(b)) return b.computeBreaks(inner, false);
+        int deferred = keep.takeDeferred();
+        if (deferred >= 0) column = Math.max(column, deferred);
+        if (keep.firstColumn(b)) column = 0;
+        int before = inner.indent();
+        State out = b.computeBreaks(inner.withIndentFrom(column - b.evalPlusIndent(inner), Indent.Const.ZERO), true)
+                .withIndentFrom(before, Indent.Const.ZERO);
+        keep.lineIndent = out.column();
+        if (b.isForced() || deferred >= 0) keep.statementLine = out.column();
+        return out;
+    }
+
+    /** jpm-format: whether {@code doc} is a closing parenthesis, bracket or brace, which goes under its line's start. */
+    private static boolean closes(Doc doc) {
+        return doc instanceof Token t && KeptBreaks.isClosing(t);
     }
 
     /**

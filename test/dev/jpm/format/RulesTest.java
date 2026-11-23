@@ -57,9 +57,9 @@ class RulesTest {
     @Test
     void javaFormatWithAnyWidthAndIndent() {
         String in = "class A { void f() { if (true) { call(aaaaaaaaaa, bbbbbbbbbb, cccccccccc, dddddddddd); } } }";
-        RuleTester t =
-                RuleTester.of(new JavaFormat()).config("{\"formatter\": {\"lineWidth\": 50, \"indentWidth\": 3}}");
-        t.assertFormats(in, """
+        RuleTester palantir = RuleTester.of(new JavaFormat())
+                .config("{\"formatter\": {\"style\": \"palantir\", \"lineWidth\": 50, \"indentWidth\": 3}}");
+        palantir.assertFormats(in, """
                 class A {
                    void f() {
                       if (true) {
@@ -72,15 +72,17 @@ class RulesTest {
                    }
                 }
                 """);
-        RuleTester intellij = RuleTester.of(new JavaFormat())
-                .config("{\"formatter\": {\"lineWidth\": 80, \"indentWidth\": 4, \"continuationIndentWidth\": 8}}");
-        assertEquals(
-                RuleTester.of(new JavaFormat())
-                        .config("{\"formatter\": {\"lineWidth\": 80}}")
-                        .format(in),
-                intellij.format(in));
-        String narrow = intellij.format(in);
-        assertTrue(narrow.lines().allMatch(l -> l.length() <= 80), narrow);
+        RuleTester intellij =
+                RuleTester.of(new JavaFormat()).config("{\"formatter\": {\"lineWidth\": 50, \"indentWidth\": 3}}");
+        intellij.assertFormats(in, """
+                class A {
+                   void f() {
+                      if (true) {
+                         call(aaaaaaaaaa, bbbbbbbbbb, cccccccccc, dddddddddd);
+                      }
+                   }
+                }
+                """);
     }
 
     @Test

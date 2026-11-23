@@ -67,10 +67,265 @@ class IntelliJRulesTest {
     }
 
     @Test
-    void linesTheLayoutJoinsStayJoined() {
-        intellij()
-                .assertFormats(
-                        "class A {\n    int x = f(1,\n\n            2);\n}\n", "class A {\n    int x = f(1, 2);\n}\n");
+    void blankLinesInsideAnExpressionAreKept() {
+        intellij().assertFormats(
+                "class A {\n    int x = f(1,\n\n 2);\n}\n", "class A {\n    int x = f(1,\n\n            2);\n}\n");
+    }
+
+    /**
+     * Lines stay broken where they were: one continuation indent from the line a wrapped line continues, blocks
+     * from the line they start on, method parameters lined up. IntelliJ IDEA's own output.
+     */
+    @Test
+    void wrappedLinesAreIndentedFromTheLineTheyContinue() {
+        intellij().assertFormats("""
+                class C {
+                void m() {
+                foo(bar(a,
+                b));
+                foo(
+                a, bar(b,
+                c));
+                foo(x -> {
+                body();
+                });
+                foo(a,
+                x -> {
+                body();
+                });
+                a.b()
+                .c(d,
+                e);
+                int x = a +
+                b;
+                String s = cond
+                ? a
+                : b;
+                foo(a, new Runnable() {
+                public void run() {
+                }
+                });
+                }
+                public <V> C(final Map<String, V> valueMap, final String prefix,
+                final char escape) {
+                }
+                public <V> C(
+                final Map<String, V> valueMap, final String prefix,
+                final char escape) {
+                }
+                }
+                """, """
+                class C {
+                    void m() {
+                        foo(bar(a,
+                                b));
+                        foo(
+                                a, bar(b,
+                                        c));
+                        foo(x -> {
+                            body();
+                        });
+                        foo(a,
+                                x -> {
+                                    body();
+                                });
+                        a.b()
+                                .c(d,
+                                        e);
+                        int x = a +
+                                b;
+                        String s = cond
+                                ? a
+                                : b;
+                        foo(a, new Runnable() {
+                            public void run() {
+                            }
+                        });
+                    }
+
+                    public <V> C(final Map<String, V> valueMap, final String prefix,
+                                 final char escape) {
+                    }
+
+                    public <V> C(
+                            final Map<String, V> valueMap, final String prefix,
+                            final char escape) {
+                    }
+                }
+                """);
+    }
+
+    /**
+     * Line breaks where the layout has no break of its own (after an operator, before a closing parenthesis) are
+     * kept; the else after a } is joined; for and try headers line up. IntelliJ IDEA's own output.
+     */
+    @Test
+    void lineBreaksAreKeptLikeIntelliJ() {
+        intellij().assertFormats("""
+                class D
+                extends Object
+                implements Runnable {
+                @Override public void run() {}
+                @Nullable private String s;
+                @Deprecated
+                private String t;
+                void m() throws
+                Exception {
+                int x = f(1,
+
+                2);
+                a(); b();
+                int[] q = {1, 2,};
+                int[] r = new int[] {1, 2};
+                enum E { A, B; int y; }
+                if (x) foo();
+                Runnable l = () -> {
+                };
+                foo(a
+                );
+                int y =
+                5;
+                String s = "a"
+                + "b";
+                z = a.
+                b();
+                @SuppressWarnings("x") final int w = 1;
+                for (int i = 0;
+                i < 10;
+                i++) {
+                }
+                try (A a = new A();
+                B b = new B()) {
+                }
+                }
+                void n()
+                throws Exception {
+                }
+                }
+                """, """
+                class D
+                        extends Object
+                        implements Runnable {
+                    @Override
+                    public void run() {
+                    }
+
+                    @Nullable
+                    private String s;
+                    @Deprecated
+                    private String t;
+
+                    void m() throws
+                            Exception {
+                        int x = f(1,
+
+                                2);
+                        a();
+                        b();
+                        int[] q = {1, 2,};
+                        int[] r = new int[]{1, 2};
+                        enum E {
+                            A, B;
+                            int y;
+                        }
+                        if (x) foo();
+                        Runnable l = () -> {
+                        };
+                        foo(a
+                        );
+                        int y =
+                                5;
+                        String s = "a"
+                                + "b";
+                        z = a.
+                                b();
+                        @SuppressWarnings("x") final int w = 1;
+                        for (int i = 0;
+                             i < 10;
+                             i++) {
+                        }
+                        try (A a = new A();
+                             B b = new B()) {
+                        }
+                    }
+
+                    void n()
+                            throws Exception {
+                    }
+                }
+                """);
+    }
+
+    /**
+     * Comments at the first column stay there, line comments are not wrapped and keep their spacing, and an if
+     * after an else and a comment is the else's statement. IntelliJ IDEA's own output.
+     */
+    @Test
+    void commentsAndChainsLikeIntelliJ() {
+        intellij().assertFormats("""
+                class F {
+                private static final String[][] X = {
+                {"a", "b"}, // c
+                {"d", "e"},
+                };
+                int y;  // two spaces
+                void m() {
+                //        commented(out);
+                if (a) {
+                x();
+                } else // comment
+                if (b) {
+                y();
+                }
+                switch (c) {
+                case 1:// fall
+                z();
+                // fall through
+                case 2:
+                break;
+                }
+                Object o = new Builder()
+                .with(a,
+                b)
+                .build(
+                );
+                // a very long comment that goes past the right margin of one hundred and twenty columns, which IntelliJ leaves alone
+                long v = aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa + bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb + ccccc;
+                }
+                }
+                """, """
+                class F {
+                    private static final String[][] X = {
+                            {"a", "b"}, // c
+                            {"d", "e"},
+                    };
+                    int y;  // two spaces
+
+                    void m() {
+                //        commented(out);
+                        if (a) {
+                            x();
+                        } else // comment
+                            if (b) {
+                                y();
+                            }
+                        switch (c) {
+                            case 1:// fall
+                                z();
+                // fall through
+                            case 2:
+                                break;
+                        }
+                        Object o = new Builder()
+                                .with(a,
+                                        b)
+                                .build(
+                                );
+                // a very long comment that goes past the right margin of one hundred and twenty columns, which IntelliJ leaves alone
+                        long v = aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa + bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb + ccccc;
+                    }
+                }
+                """);
     }
 
     @Test
@@ -112,8 +367,7 @@ class IntelliJRulesTest {
                     }
 
                     enum E {
-                        X,
-                        Y;
+                        X, Y;
 
                         void m() {
                         }

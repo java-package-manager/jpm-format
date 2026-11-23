@@ -9,16 +9,29 @@ text. Lint rules only report.
 
 ### JavaFormat
 
-The layout of the code: indentation, line breaks, spacing. jpm-format's fork of Palantir Java Format, close to
-IntelliJ's default style: 120 columns, 4-space indents, 8-space continuation indents. Configure with
-`formatter.lineWidth` (20 to 1000), `formatter.indentWidth` (1 to 16), `formatter.continuationIndentWidth`
-(1 to 32; twice `indentWidth` by default, as IntelliJ's 4 and 8) and `formatter.useTabs`. Text blocks are never re-indented. Turn the whole formatter off with
+The layout of the code: indentation, line breaks, spacing. jpm-format's fork of Palantir Java Format. In the
+default `formatter.style: "intellij"` it keeps the input's line breaks, as IntelliJ does ("Keep when reformatting:
+line breaks", and "Do not wrap" for everything): no line is wrapped or joined, except that `else`, `catch`,
+`finally` and the `while` of a `do` move up after a `}`, statements get a line each, and the annotations of
+classes, methods and fields go on their own lines. A wrapped line is indented one continuation indent from the
+line it continues, not from every expression it is in (`foo(bar(a,` then `b))` puts `b` one continuation in), a
+block from the line it starts on, and a closing `)` on its own line under the line with its `(`. Method
+parameters, the parts of a `for` header and try resources line up ("Align when multiline"), array initializers are
+one continuation in and written `new int[]{1}`, and an `if` on its own line after an `else` and a comment is that
+`else`'s statement. Comments stay as written: line comments are not wrapped and keep the text after their
+`//`, and comments at the first column stay there ("Line comment at first column").
+
+With `formatter.style: "palantir"` it chooses the line breaks itself, as Palantir Java Format does, wrapping at
+`formatter.lineWidth` (20 to 1000). Configure with `formatter.indentWidth` (1 to 16),
+`formatter.continuationIndentWidth` (1 to 32; twice `indentWidth` by default, as IntelliJ's 4 and 8) and
+`formatter.useTabs`. Text blocks are never re-indented. Turn the whole formatter off with
 `formatter.enabled: false`.
 
 ### EmptyBodies
 
 IntelliJ's "Keep when reformatting: simple methods / classes / blocks in one line", off by default: an empty body is
-written `{` and `}` on two lines, the brace under the line that opens it. Applies to methods and constructors, named
+written `{` and `}` on two lines, the closing brace under the first line of the declaration or statement (the
+line of the brace for `else`, `catch`, `finally` and `do`). Applies to methods and constructors, named
 classes, initializer blocks and the blocks of `if`, `else`, loops, `try`, `catch`, `finally` and `synchronized`.
 Lambdas, anonymous classes, `switch` cases and array initializers keep `{}`. Runs after `JavaFormat`; off with
 `formatter.style: "palantir"`.
@@ -34,7 +47,7 @@ comments (its Javadoc, a line comment), which Palantir Java Format leaves out. R
 
 IntelliJ's "Keep maximum blank lines" (in declarations, in code and before `}`): blank lines the code already had
 stay, up to `formatter.maxBlankLines` (2 by default, 1 to 10). Palantir Java Format keeps one and none before a
-closing brace. Lines the layout engine joins stay joined. Runs after `JavaFormat`; off with
+closing brace. Runs after `JavaFormat`; off with
 `formatter.style: "palantir"`.
 
 ### JavadocLayout
@@ -57,7 +70,8 @@ tags, are left as they are. Runs after `KeepBlankLines`; off with `formatter.sty
 ### LineCommentSpacing
 
 IntelliJ's "Add a space at line comment start", off by default: `//TODO` and `//$NON-NLS-1$` keep the text right
-after the slashes. Palantir Java Format adds a space. Runs after `JavadocLayout`; off with
+after the slashes. Palantir Java Format adds a space. The space before a comment that ends a line of code stays as
+written too (`case 'a':// fall through`, `int x;  // why`). Runs after `JavadocLayout`; off with
 `formatter.style: "palantir"`.
 
 ### ImportOrder

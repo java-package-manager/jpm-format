@@ -141,6 +141,20 @@ public abstract class State {
                 .build();
     }
 
+    /** jpm-format: the indent {@code plusIndent} past {@code lineIndent}, the indent of the current line. */
+    State withIndentFrom(int lineIndent, Indent plusIndent) {
+        return builder()
+                .from(this)
+                .indent(lineIndent + plusIndent.eval(this))
+                .mustBreak(false)
+                .build();
+    }
+
+    /** jpm-format: a newline that no {@link Break} stands for, continuing at {@code column}. */
+    State withNewline(int column) {
+        return builder().from(this).column(column).numLines(numLines() + 1).build();
+    }
+
     /** Reset any accumulated indent to the same value as {@code lastIndent}. */
     State withNoIndent() {
         return builder().from(this).indent(lastIndent()).mustBreak(false).build();
