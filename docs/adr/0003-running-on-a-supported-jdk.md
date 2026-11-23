@@ -13,5 +13,7 @@ Status: accepted
   path, to test it.
 - A native image cannot load a project's custom rules, so such a command runs on a JVM instead.
 - Relaunched JVMs use class data sharing from the second start onwards, when the classpath holds jars
-  only: CDS refuses folders on the classpath.
+  only: CDS refuses folders on the classpath. Their CDS log is off (`-Xlog:cds*=off`): the JVM logs
+  warnings while it writes the archive, and from JDK 25 an error on every start because the JDK's base
+  archive was written without `--add-exports`. The archive still works, so the log only adds noise.
 - CI runs on JDK 21, where javac still has what the layout engine reads.
