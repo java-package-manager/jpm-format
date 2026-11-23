@@ -1031,7 +1031,8 @@ final class Strings {
         IOStreamConstructor() {
             super("IOStreamConstructor", "performance", Types.NONE,
                     "`new FileInputStream(...)` or `new FileOutputStream(...)`, which have a finalizer;"
-                            + " `Files.newInputStream()` and `Files.newOutputStream()` do not.");
+                            + " `Files.newInputStream()` and `Files.newOutputStream()` do not. A stream of a"
+                            + " `FileDescriptor` (`FileDescriptor.out`), which `Files` cannot open, is left alone.");
         }
 
         @Override
@@ -1040,7 +1041,8 @@ final class Strings {
                 @Override
                 public Void visitNewClass(NewClassTree c, Void v) {
                     String t = Scan.simpleName(c.getIdentifier());
-                    if ((t.equals("FileInputStream") || t.equals("FileOutputStream")) && c.getArguments().size() == 1 && c.getClassBody() == null) {
+                    if ((t.equals("FileInputStream") || t.equals("FileOutputStream")) && c.getArguments().size() == 1 && c.getClassBody() == null
+                            && !c.getArguments().get(0).toString().contains("FileDescriptor")) {
                         s.report(c, "'" + t + "' can be replaced with 'Files.new" + (t.startsWith("FileIn") ? "Input" : "Output") + "Stream()'");
                     }
                     return super.visitNewClass(c, v);

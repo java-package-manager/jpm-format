@@ -330,7 +330,7 @@ class InspectionsTest {
         CASES.put("ToArrayCallWithZeroLengthArrayArgument", """
                 class A { String[] f(java.util.List<String> l) { return l.toArray(»new String[l.size()]); } }""");
         CASES.put("IOStreamConstructor", """
-                class A { Object f(java.io.File f) throws Exception { return »new java.io.FileInputStream(f); } }""");
+                class A { Object f(java.io.File f) throws Exception { new java.io.FileOutputStream(java.io.FileDescriptor.out); return »new java.io.FileInputStream(f); } }""");
         CASES.put("MisorderedAssertEqualsArguments", """
                 import static org.junit.jupiter.api.Assertions.assertEquals;
                 class A { void f(int x) { »assertEquals(x, 3); assertEquals(3, x); } }""");

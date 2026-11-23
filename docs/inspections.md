@@ -513,7 +513,7 @@ A standard charset named by a string, `getBytes("UTF-8")`, where `StandardCharse
 
 ### IOStreamConstructor
 
-`new FileInputStream(...)` or `new FileOutputStream(...)`, which have a finalizer; `Files.newInputStream()` and `Files.newOutputStream()` do not.
+`new FileInputStream(...)` or `new FileOutputStream(...)`, which have a finalizer; `Files.newInputStream()` and `Files.newOutputStream()` do not. A stream of a `FileDescriptor` (`FileDescriptor.out`), which `Files` cannot open, is left alone.
 
 ### StringConcatenationArgumentToLogCall
 
