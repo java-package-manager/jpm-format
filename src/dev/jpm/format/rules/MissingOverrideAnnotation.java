@@ -82,8 +82,8 @@ public final class MissingOverrideAnnotation implements Lint {
 
     static int[] nameRange(String src, String name, int from) {
         Matcher mt = Pattern.compile("\\b" + Pattern.quote(name) + "\\s*\\(").matcher(src);
-        if (mt.find(Math.max(0, from))) return new int[] {mt.start(), mt.start() + name.length()};
-        return new int[] {from, from};
+        if (mt.find(Math.max(0, from))) return new int[]{mt.start(), mt.start() + name.length()};
+        return new int[]{from, from};
     }
 
     private static boolean overrides(TypeInfo ti, ExecutableElement m) {

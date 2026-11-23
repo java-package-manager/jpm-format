@@ -73,7 +73,7 @@ public final class Comments {
                 i += 3;
                 while (i < n && !s.startsWith("\"\"\"", i)) i += s.charAt(i) == '\\' ? 2 : 1;
                 i = Math.min(n, i + 3);
-                out.add(new int[] {st, i});
+                out.add(new int[]{st, i});
             } else if (c == '"' || c == '\'') {
                 i++;
                 while (i < n && s.charAt(i) != c && s.charAt(i) != '\n') i += s.charAt(i) == '\\' ? 2 : 1;

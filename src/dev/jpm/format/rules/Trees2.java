@@ -123,7 +123,7 @@ final class Trees2 {
         int ls = src.lastIndexOf('\n', start - 1) + 1;
         int le = src.indexOf('\n', end);
         le = le < 0 ? src.length() : le + 1;
-        if (src.substring(ls, start).isBlank() && src.substring(end, le).isBlank()) return new int[] {ls, le};
-        return new int[] {start, end};
+        if (src.substring(ls, start).isBlank() && src.substring(end, le).isBlank()) return new int[]{ls, le};
+        return new int[]{start, end};
     }
 }

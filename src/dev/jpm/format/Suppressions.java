@@ -98,7 +98,7 @@ final class Suppressions {
             if (!b.startsWith("jpm-ignore")) continue;
             String rest = b.substring("jpm-ignore".length());
             String kind = "";
-            for (String k : new String[] {"-all", "-start", "-end"}) {
+            for (String k : new String[]{"-all", "-start", "-end"}) {
                 if (rest.startsWith(k)) {
                     kind = k;
                     rest = rest.substring(k.length());
