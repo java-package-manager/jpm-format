@@ -3,6 +3,9 @@ package dev.jpm.format;
 import dev.jpm.format.api.Finding;
 import dev.jpm.format.api.Fix;
 import dev.jpm.format.api.Severity;
+import dev.jpm.format.files.JsonFormat;
+import dev.jpm.format.files.PropertiesFormat;
+import dev.jpm.format.files.XmlFormat;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -21,6 +24,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * applies to ({@code include}, globs relative to the project) and the steps that format them, in order. jpm provides
  * Spotless's jars ({@code dependencies/resolve}) and those of the formatters the steps download, as for
  * {@code formatter.style: "eclipse"}.
+ *
+ * <p>Three steps are jpm-format's own and need nothing downloaded: {@code properties}, {@code json} and {@code xml}
+ * ({@code dev.jpm.format.files}). They are on by default for the files they are named after ({@link #DEFAULTS}) when no
+ * entry includes the file; an entry with {@code "steps": []} turns them off for the files it includes.
  *
  * <pre>
  * "files": [
@@ -59,10 +66,27 @@ final class SpotlessSteps {
             Map.entry("trimTrailingWhitespace", Set.of()),
             Map.entry("endWithNewline", Set.of()),
             Map.entry("removeSemicolons", Set.of()),
-            Map.entry("indent", Set.of("type", "width")));
+            Map.entry("indent", Set.of("type", "width")),
+            Map.entry("properties", Set.of("maxBlankLines")),
+            Map.entry("json", Set.of("indent", "maxBlankLines")),
+            Map.entry("xml", Set.of("indent", "maxBlankLines")));
+
+    /**
+     * The built-in steps files get by their extension when no {@code "files"} entry includes them.
+     */
+    static final Map<String, String> DEFAULTS = Map.ofEntries(
+            Map.entry("properties", "properties"),
+            Map.entry("json", "json"),
+            Map.entry("jsonc", "json"),
+            Map.entry("xml", "xml"),
+            Map.entry("xsd", "xml"),
+            Map.entry("xsl", "xml"),
+            Map.entry("xslt", "xml"),
+            Map.entry("wsdl", "xml"),
+            Map.entry("fxml", "xml"));
 
     private static final Set<String> NO_VERSION = Set.of("jsonSimple", "jacksonJson", "jacksonYaml", "dbeaverSql", "trimTrailingWhitespace",
-            "endWithNewline", "removeSemicolons", "indent");
+            "endWithNewline", "removeSemicolons", "indent", "properties", "json", "xml");
 
     /**
      * Formats text with one step; the plugin's steps run Spotless, tests replace them.
@@ -103,7 +127,7 @@ final class SpotlessSteps {
                 matchers.addAll(Config.matchers(glob));
                 if (glob.startsWith("**/")) matchers.addAll(Config.matchers(glob.substring(3)));
             }
-            if (!(m.get("steps") instanceof List<?> st) || st.isEmpty()) throw new FormatException("files: \"steps\" must be a non-empty array");
+            if (!(m.get("steps") instanceof List<?> st)) throw new FormatException("files: \"steps\" must be an array ([] for none)");
             List<Step> steps = new ArrayList<>();
             for (Object s : st) steps.add(step(s));
             out.add(new Entry(List.copyOf(include), List.copyOf(matchers), List.copyOf(steps)));
@@ -154,18 +178,23 @@ final class SpotlessSteps {
      * The steps for a file, from every entry that includes it, in order; empty for Java files, which the engine formats.
      */
     static List<Step> stepsFor(List<Entry> entries, String rel) {
-        if (rel.endsWith(".java") || entries.isEmpty()) return List.of();
+        if (rel.endsWith(".java")) return List.of();
         Path p = Path.of(rel);
         List<Step> out = new ArrayList<>();
+        boolean included = false;
         for (Entry e : entries) {
             for (PathMatcher m : e.matchers()) {
                 if (m.matches(p)) {
                     out.addAll(e.steps());
+                    included = true;
                     break;
                 }
             }
         }
-        return out;
+        if (included) return out;
+        int dot = rel.lastIndexOf('.');
+        String step = dot < 0 || rel.lastIndexOf('/') > dot ? null : DEFAULTS.get(rel.substring(dot + 1));
+        return step == null ? List.of() : List.of(new Step(step, null, Map.of()));
     }
 
     /**
@@ -211,6 +240,22 @@ final class SpotlessSteps {
     }
 
     private static Fn create(Path root, Step s) {
+        int blank = number(s, "maxBlankLines", 2);
+        switch (s.name()) {
+            case "properties" -> {
+                return (text, file) -> PropertiesFormat.format(text, blank);
+            }
+            case "json" -> {
+                int indent = number(s, "indent", 2);
+                return (text, file) -> JsonFormat.format(text, indent, blank);
+            }
+            case "xml" -> {
+                int indent = number(s, "indent", 4);
+                return (text, file) -> XmlFormat.format(text, indent, blank);
+            }
+            default -> {
+            }
+        }
         ClassLoader loader = ExternalFormatter.spotless(root);
         Object provisioner = ExternalFormatter.provisioner(loader, root);
         Class<?> prov;
