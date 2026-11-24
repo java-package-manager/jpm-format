@@ -328,7 +328,13 @@ public final class Config {
     @SuppressWarnings("unchecked")
     public Settings settings(String rel) {
         Map<String, Object> eff = effective(rel);
-        if (rel.endsWith(".java")) eff = merge(eff, obj(eff.get("java"), "java"));
+        if (rel.endsWith(".java")) {
+            Map<String, Object> f = new LinkedHashMap<>(obj(eff.get("default"), "default"));
+            f.putAll(obj(eff.get("formatter"), "formatter"));
+            f.putAll(obj(eff.get("java"), "java"));
+            eff = new LinkedHashMap<>(eff);
+            eff.put("formatter", f);
+        }
         Map<String, Object> e = eff;
         String key = Json.write(e);
         return settingsByKey.computeIfAbsent(key, k -> parse(e, k));
@@ -336,27 +342,29 @@ public final class Config {
 
     /**
      * The options of one of jpm-format's own formats ({@code properties}, {@code json}, {@code xml}, {@code yaml},
-     * {@code toml}) for a file, as its steps take them: {@code lineWidth}, {@code indentWidth} and
-     * {@code maxBlankLines} of the top-level {@code formatter} (their defaults when not set), then the format's own
-     * {@code formatter} section, which is where one file type is set apart.
+     * {@code toml}) for a file, as its steps take them: those of the {@code default} section the format has, then
+     * the format's own section. What neither sets is the format's own default.
      */
     @SuppressWarnings("unchecked")
     Map<String, Object> formatOptions(String rel, String format) {
         Map<String, Object> eff = effective(rel);
-        Map<String, Object> out = new LinkedHashMap<>(Map.of("lineWidth", 120L, "indent", 4L, "maxBlankLines", 2L));
-        Map<String, Object> shared = obj(eff.get("formatter"), "formatter");
-        Map<String, Object> own = obj(obj(eff.get(format), format).get("formatter"), format + ".formatter");
-        for (Map<String, Object> m : List.of(shared, own)) {
+        Set<String> known = SpotlessSteps.FORMAT_OPTIONS.get(format);
+        Map<String, Object> out = new LinkedHashMap<>();
+        for (Map<String, Object> m : List.of(obj(eff.get("default"), "default"), obj(eff.get(format), format))) {
             for (Map.Entry<String, Object> e : m.entrySet()) {
-                String k = e.getKey();
-                if (m == shared && !SHARED.contains(k)) continue;
-                out.put(k.equals("indentWidth") ? "indent" : k, e.getValue());
+                if (known.contains(e.getKey()))
+                    out.put(e.getKey().equals("indentWidth") ? "indent" : e.getKey(), e.getValue());
             }
         }
         return out;
     }
 
-    private static final Set<String> SHARED = Set.of("lineWidth", "indentWidth", "maxBlankLines");
+    /**
+     * What {@code "default"} takes: the settings every file type has, which apply to each type that does not set them
+     * itself.
+     */
+    private static final Set<String> DEFAULTS =
+            Set.of("lineWidth", "indentWidth", "continuationIndentWidth", "maxBlankLines", "useTabs");
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> effective(String rel) {
@@ -472,7 +480,7 @@ public final class Config {
     }
 
     private static final Set<String> TOP =
-            Set.of("$schema", "extends", "ignore", "formatter", "imports", "linter", "overrides", "files", "java", "json",
+            Set.of("$schema", "extends", "ignore", "formatter", "imports", "linter", "overrides", "files", "default", "java", "json",
                     "xml", "properties", "toml", "yaml");
     private static final Set<String> FORMATTER = Set.of(
             "enabled",
@@ -491,14 +499,10 @@ public final class Config {
     private void validate(Map<String, Object> c, String where) {
         keys(c, TOP, where);
         keys(obj(c.get("formatter"), "formatter"), FORMATTER, where + ": formatter");
-        Map<String, Object> java = obj(c.get("java"), "java");
-        keys(java, Set.of("formatter", "imports", "linter"), where + ": java");
-        keys(obj(java.get("formatter"), "java.formatter"), FORMATTER, where + ": java.formatter");
+        keys(obj(c.get("default"), "default"), DEFAULTS, where + ": default");
+        keys(obj(c.get("java"), "java"), FORMATTER, where + ": java");
         for (String format : List.of("json", "xml", "properties", "toml", "yaml")) {
-            Map<String, Object> section = obj(c.get(format), format);
-            keys(section, Set.of("formatter"), where + ": " + format);
-            keys(obj(section.get("formatter"), format + ".formatter"), SpotlessSteps.FORMAT_OPTIONS.get(format),
-                    where + ": " + format + ".formatter");
+            keys(obj(c.get(format), format), SpotlessSteps.FORMAT_OPTIONS.get(format), where + ": " + format);
         }
         keys(obj(c.get("imports"), "imports"), IMPORTS, where + ": imports");
         Map<String, Object> li = obj(c.get("linter"), "linter");

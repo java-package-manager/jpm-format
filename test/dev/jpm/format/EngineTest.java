@@ -539,20 +539,23 @@ class EngineTest {
     }
 
     @Test
-    void sectionsPerFileTypeOverrideTheSharedSettings() throws IOException {
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"indentWidth\": 3 },"
-                + " \"java\": { \"formatter\": { \"indentWidth\": 2 } },"
-                + " \"json\": { \"formatter\": { \"style\": \"pretty\" } } } } }");
+    void theDefaultSectionAppliesToEveryTypeThatDoesNotSetItsOwn() throws IOException {
+        write("project.jsonc", "{}");
+        Workspace plain = open();
+        assertEquals("{\n  \"a\": [\n    1]\n}\n", plain.engine.run("d.json", "{\n\"a\": [\n1]\n}\n", Engine.Mode.FORMAT).output(),
+                "no default section: each type its own default");
+        assertEquals("a:\n  b: 1\n", plain.engine.run("c.yml", "a:\n    b: 1\n", Engine.Mode.FORMAT).output());
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"default\": { \"indentWidth\": 3 },"
+                + " \"java\": { \"indentWidth\": 2 }, \"json\": { \"style\": \"pretty\" } } } }");
         Workspace ws = open();
         assertEquals("class A {\n  int x;\n}\n", ws.engine.run("A.java", "class A {int x;}\n", Engine.Mode.FORMAT).output());
         assertEquals("{\n   \"a\": 1\n}\n", ws.engine.run("d.json", "{\"a\": 1}\n", Engine.Mode.FORMAT).output(),
-                "the shared indentWidth, the json section's style");
+                "the default's indentWidth, the json section's style");
         assertEquals("<a>\n   <b/>\n</a>\n", ws.engine.run("x.xml", "<a>\n<b/>\n</a>\n", Engine.Mode.FORMAT).output());
-        write("project.jsonc", "{}");
-        assertEquals("a:\n    b: 1\n", open().engine.run("c.yml", "a:\n  b: 1\n", Engine.Mode.FORMAT).output(),
-                "the shared default, an indent of 4, carries over too");
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"json\": { \"formatter\": { \"tabs\": 1 } } } } }");
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"json\": { \"tabs\": 1 } } } }");
         assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("unknown key \"tabs\""));
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"default\": { \"style\": \"pretty\" } } } }");
+        assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("unknown key \"style\""));
     }
 
     @Test
