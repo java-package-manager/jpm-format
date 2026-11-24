@@ -1,8 +1,9 @@
 # 0003. Running on a JDK the layout engine can read
 
 Status: accepted. Since [0006](0006-intellij-style-without-palantir.md) only the external formatters (Palantir
-Java Format, google-java-format) read javac's internals; the IntelliJ style's engine uses its public API, so the
-relaunch is only needed for them (ROADMAP).
+Java Format, google-java-format) read javac's internals; the IntelliJ style's engine uses its public API. `Main`
+exports javac's internals and moves to a supported JDK only when the config picks another `formatter.style`
+(`Config.otherStyle`).
 
 ## Decision
 
