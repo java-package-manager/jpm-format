@@ -17,9 +17,12 @@ Parity is measured against IntelliJ's own formatter on real projects (`checks/Pa
 - [ ] **Spotless steps whose configs have many options:** Flexmark, SortPom and Gherkin.
 - [ ] **A `#branch` of Palantir or google-java-format** as `formatter.style`; they build with Gradle and Maven,
       not jpm.
-- [ ] **No Palantir fork.** Use Palantir Java Format from its own repository instead of the fork in
-      `src/dev/jpm/format/palantir/`. The fork stays for the IntelliJ style: 46 changes of its own (`jpm-format:`
-      in the code), most of them the `keepLineBreaks` mode, that upstream would have to take first.
+- [ ] **The IntelliJ style's own layout engine; no Palantir in the codebase**
+      ([ADR 0006](docs/adr/0006-intellij-style-without-palantir.md)). A whitespace engine in
+      `src/dev/jpm/format/intellij/` replaces the fork in `src/dev/jpm/format/palantir/` for the `intellij` style:
+      indents from javac's tree, spaces between tokens, line breaks kept. It becomes the default once
+      `checks/Parity.java` counts no more than the baseline; then the fork, its `jpm-format:` changes and upstream's
+      test data are deleted, and `"palantir"` runs from Palantir's own jar as an external formatter.
 
 ## Lint
 

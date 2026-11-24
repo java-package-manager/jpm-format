@@ -10,3 +10,4 @@ have no comments (see [0001](0001-decisions-live-in-adrs.md)).
 | [0003](0003-running-on-a-supported-jdk.md) | Running on a JDK the layout engine can read |
 | [0004](0004-configuration-suppressions-cache.md) | Configuration, suppressions and the cache |
 | [0005](0005-rules.md) | Decisions in individual rules |
+| [0006](0006-intellij-style-without-palantir.md) | The IntelliJ style gets its own layout engine; Palantir leaves the codebase |
