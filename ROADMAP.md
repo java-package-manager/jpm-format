@@ -1,35 +1,35 @@
 # Roadmap
 
 What jpm-format does not do yet. jpm's own plan is in its
-[ROADMAP.md](https://github.com/java-package-manager/jpm/blob/main/ROADMAP.md) (Milestone 5: IntelliJ parity in
-formatting and lint).
+[ROADMAP.md](https://github.com/java-package-manager/jpm/blob/main/ROADMAP.md).
 
 ## Formatting
 
-- [ ] **IntelliJ parity.** The rest of IntelliJ's default Javadoc formatting, and IntelliJ's code style options,
-      as rules in `src/dev/jpm/format/intellij/`, measured against IntelliJ's own formatter on real projects
-      (`checks/Parity.java`, see [CONTRIBUTING.md](CONTRIBUTING.md)). Of IntelliJ's default inspections, null checks
-      and data flow are left. Open in the corpus: IntelliJ leaves some Javadocs with `<pre>` entirely as they are
-      (54 of 76: no `<p>`, no alignment) and formats the others; what decides it is not known yet.
-- [ ] **Spotless formatters, natively.** `formatter.style: "eclipse"` runs Spotless's Eclipse JDT step, and
-      `"files"` runs Spotless's steps on files other than Java (ktfmt, ktlint, scalafmt, JSON, YAML, SQL and the
-      generic text steps), with jpm providing the jars. Still to come: the steps that need npm or a native binary
-      (Prettier, ESLint, Biome, clang-format, gofmt, shfmt, buf, black), and Flexmark, SortPom and Gherkin, whose
-      configs have many options.
-- [ ] **Java formatters from Git.** `"formatter": { "style": "..." }` takes `palantir@<version>`,
-      `google-java-format[@<version>]`, the URL of a jar and `github:author/my-java-formatter[@version|#branch]` (a
-      jpm project jpm builds, with Palantir's or google-java-format's `Formatter`, or a jpm-format rule set). Still to
-      come: a `#branch` of Palantir or google-java-format themselves, which build with Gradle and Maven, not jpm.
+Parity is measured against IntelliJ's own formatter on real projects (`checks/Parity.java`, see
+[CONTRIBUTING.md](CONTRIBUTING.md)); rules go in `src/dev/jpm/format/intellij/`.
+
+- [ ] **Javadocs with `<pre>`.** IntelliJ leaves some of them entirely as they are (54 of 76 in the corpus: no
+      `<p>`, no alignment) and formats the others; what decides it is not known yet.
+- [ ] **The rest of IntelliJ's default Javadoc formatting.**
+- [ ] **IntelliJ's code style options.**
+- [ ] **Spotless steps that need npm or a native binary:** Prettier, ESLint, Biome, clang-format, gofmt, shfmt,
+      buf, black.
+- [ ] **Spotless steps whose configs have many options:** Flexmark, SortPom and Gherkin.
+- [ ] **A `#branch` of Palantir or google-java-format** as `formatter.style`; they build with Gradle and Maven,
+      not jpm.
 - [ ] **No Palantir fork.** Use Palantir Java Format from its own repository instead of the fork in
-      `src/dev/jpm/format/palantir/`. `formatter.style: "palantir@<version>"` already runs upstream's releases as
-      they are. The fork stays for the IntelliJ style: 46 changes of its own (`jpm-format:` in the code), most of
-      them the `keepLineBreaks` mode, that upstream would have to take first.
+      `src/dev/jpm/format/palantir/`. The fork stays for the IntelliJ style: 46 changes of its own (`jpm-format:`
+      in the code), most of them the `keepLineBreaks` mode, that upstream would have to take first.
+
+## Lint
+
+- [ ] IntelliJ's default inspections for null checks and data flow.
 
 ## Editors
 
-- [ ] **`project.jsonc` in the language server.** `jpm format lsp` gives diagnostics, formatting and quick fixes
-      for Java files; in `project.jsonc` it only reloads the config. Still to come: jpm's warnings and errors in
-      `project.jsonc`, at the value they are about, from `jpm check` over jpm's protocol, as jpm-intellij shows them.
+- [ ] **`project.jsonc` in the language server:** jpm's warnings and errors in `project.jsonc`, at the value
+      they are about, from `jpm check` over jpm's protocol, as jpm-intellij shows them. Today the server only
+      reloads its config when `project.jsonc` is saved.
 
 ## Running
 
