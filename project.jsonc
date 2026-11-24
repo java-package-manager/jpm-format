@@ -3,7 +3,7 @@
 {
   "name": "jpm-format",
   "group": "dev.jpm",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "license": "MIT",
   "description": "Format and lint jpm projects: an IntelliJ-style formatter, built-in inspections and custom rules",
   "url": "https://github.com/java-package-manager/jpm-format",
