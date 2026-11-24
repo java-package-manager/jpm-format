@@ -1,0 +1,25 @@
+class Continuation {
+    void m() {
+        foo(a,
+        b
+        .c());
+        foo(a, b
+        + c, d
+        + e);
+        foo(a,
+        b + c
+        + d);
+        foo(a,
+        x -> x
+        + 1);
+        foo(a,
+        bar(1,
+        2));
+        foo(a, bar(1,
+        2));
+        int t = c ? 0 : a
+        / b;
+        int t = c ? a
+        / b : 0;
+    }
+}

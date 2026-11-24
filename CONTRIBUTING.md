@@ -30,6 +30,18 @@ The IntelliJ home is the folder with `bin/format.sh` (or `IDEA_HOME`); IntelliJ'
 `.cache/parity/`. Work on parity by picking what differs most, changing the IntelliJ rules or the layout engine,
 and lowering the baseline in the same commit.
 
+The IntelliJ style is moving to a layout engine of its own ([ADR 0006](docs/adr/0006-intellij-style-without-palantir.md)):
+`src/dev/jpm/format/intellij/Layout.java`, with `Tokens` and `Syntax` beside it. Until it is the default, it runs
+with `JPM_FORMAT_LAYOUT=intellij` (in tests: `JavaFormat.withOwnLayout()`) and has a baseline of its own, which CI
+checks too:
+
+```sh
+JPM_FORMAT_LAYOUT=intellij java checks/Parity.java --idea <IntelliJ home> --baseline checks/parity/baseline-layout.txt --show 10
+```
+
+Its cases in `test/assets/intellij/layout` are unformatted code (`.input`) and what IntelliJ's `format.sh
+-allowDefaults` makes of it (`.output`); `LayoutTest` runs them.
+
 ## Rules for the code
 
 - No `//` or `/* */` comments in jpm-format's own code
