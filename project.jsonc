@@ -44,6 +44,9 @@
     // a release is a tag, which `jpm add` installs from: `jpm changeset publish` only tags
     "changeset": { "tagOnly": true },
     "format": {
+      // jpm writes project.jsonc, and GitHub's workflows are written, with an indent of 2
+      "json": { "formatter": { "indentWidth": 2 } },
+      "yaml": { "formatter": { "indentWidth": 2 } },
       // decisions go into docs/adr and explanations into Javadoc (ADR 0001)
       "linter": { "rules": { "style": { "NonJavadocComment": "error" } } }
     },

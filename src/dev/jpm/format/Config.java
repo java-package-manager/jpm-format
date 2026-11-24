@@ -335,14 +335,15 @@ public final class Config {
     }
 
     /**
-     * The options of one of jpm-format's own formats ({@code properties}, {@code json}, {@code xml}) for a file, as
-     * its steps take them: {@code lineWidth}, {@code indentWidth} and {@code maxBlankLines} of the top-level
-     * {@code formatter} when they are set, then the format's own {@code formatter} section.
+     * The options of one of jpm-format's own formats ({@code properties}, {@code json}, {@code xml}, {@code yaml},
+     * {@code toml}) for a file, as its steps take them: {@code lineWidth}, {@code indentWidth} and
+     * {@code maxBlankLines} of the top-level {@code formatter} (their defaults when not set), then the format's own
+     * {@code formatter} section, which is where one file type is set apart.
      */
     @SuppressWarnings("unchecked")
     Map<String, Object> formatOptions(String rel, String format) {
         Map<String, Object> eff = effective(rel);
-        Map<String, Object> out = new LinkedHashMap<>();
+        Map<String, Object> out = new LinkedHashMap<>(Map.of("lineWidth", 120L, "indent", 4L, "maxBlankLines", 2L));
         Map<String, Object> shared = obj(eff.get("formatter"), "formatter");
         Map<String, Object> own = obj(obj(eff.get(format), format).get("formatter"), format + ".formatter");
         for (Map<String, Object> m : List.of(shared, own)) {

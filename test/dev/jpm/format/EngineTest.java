@@ -548,6 +548,9 @@ class EngineTest {
         assertEquals("{\n   \"a\": 1\n}\n", ws.engine.run("d.json", "{\"a\": 1}\n", Engine.Mode.FORMAT).output(),
                 "the shared indentWidth, the json section's style");
         assertEquals("<a>\n   <b/>\n</a>\n", ws.engine.run("x.xml", "<a>\n<b/>\n</a>\n", Engine.Mode.FORMAT).output());
+        write("project.jsonc", "{}");
+        assertEquals("a:\n    b: 1\n", open().engine.run("c.yml", "a:\n  b: 1\n", Engine.Mode.FORMAT).output(),
+                "the shared default, an indent of 4, carries over too");
         write("project.jsonc", "{ \"extensions\": { \"format\": { \"json\": { \"formatter\": { \"tabs\": 1 } } } } }");
         assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("unknown key \"tabs\""));
     }
