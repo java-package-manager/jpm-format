@@ -1,5 +1,6 @@
 package dev.jpm.format;
 
+import dev.jpm.api.model.Problem;
 import dev.jpm.format.api.Context;
 import dev.jpm.format.api.Finding;
 import dev.jpm.format.api.Formatter;
@@ -751,5 +752,56 @@ class EngineTest {
                 o);
         assertTrue(o.contains("\"title\":\"Simplify (PointlessBooleanExpression)\""), o);
         assertTrue(o.contains("\"id\":4,\"error\":{") && o.contains("-32601"), o);
+    }
+
+    @Test
+    void languageServerShowsJpmsProblemsInTheManifest() throws IOException {
+        Path manifest = dir.resolve("project.jsonc");
+        String text = "{\n  \"name\": \"demo\",\n  \"dependencies\": { \"g:a\": \"1\" }\n}\n";
+        Files.writeString(manifest, text);
+        String uri = manifest.toUri().toString();
+        List<Path> asked = new java.util.ArrayList<>();
+        java.util.function.Function<Path, List<Problem>> checker = d -> {
+            asked.add(d);
+            return List.of(
+                    new Problem("warning", "g:a is not pinned", manifest, 3, null, "use a range", "dependencies"),
+                    new Problem("error", "in another file", dir.resolve("core/project.jsonc"), 1, null, null, "manifest"));
+        };
+        StringBuilder in = new StringBuilder();
+        for (String m : List.of(
+                "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"rootUri\":"
+                        + Json.quote(dir.toUri().toString()) + "}}",
+                "{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didOpen\",\"params\":{\"textDocument\":{\"uri\":"
+                        + Json.quote(uri) + ",\"languageId\":\"jsonc\",\"version\":1,\"text\":" + Json.quote(text)
+                        + "}}}",
+                "{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didSave\",\"params\":{\"textDocument\":{\"uri\":"
+                        + Json.quote(uri) + "}}}",
+                "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"shutdown\"}",
+                "{\"jsonrpc\":\"2.0\",\"method\":\"exit\"}")) {
+            in.append("Content-Length: ")
+                    .append(m.getBytes(StandardCharsets.UTF_8).length)
+                    .append("\r\n\r\n")
+                    .append(m);
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        int code = new Lsp(new ByteArrayInputStream(in.toString().getBytes(StandardCharsets.UTF_8)), out, checker, Runnable::run)
+                .run();
+        assertEquals(0, code);
+        assertEquals(List.of(dir, dir), asked);
+        String o = out.toString(StandardCharsets.UTF_8);
+        List<Object> published = new java.util.ArrayList<>();
+        for (String frame : o.split("Content-Length: \\d+\r\n\r\n")) {
+            if (frame.isEmpty()) continue;
+            Map<String, Object> msg = Json.object(frame, "LSP message");
+            if ("textDocument/publishDiagnostics".equals(msg.get("method"))) published.add(msg.get("params"));
+        }
+        Map<String, Object> expected = Map.of("uri", uri, "diagnostics", List.of(Map.of(
+                "range", Map.of("start", Map.of("line", 2L, "character", 2L), "end", Map.of("line", 2L, "character", 32L)),
+                "severity", 2L,
+                "source", "jpm",
+                "code", "dependencies",
+                "message", "g:a is not pinned (use a range)")));
+        assertEquals(List.of(expected, expected), published, o);
+        assertFalse(o.contains("in another file"), o);
     }
 }
