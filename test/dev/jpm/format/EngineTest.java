@@ -539,6 +539,20 @@ class EngineTest {
     }
 
     @Test
+    void sectionsPerFileTypeOverrideTheSharedSettings() throws IOException {
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"indentWidth\": 3 },"
+                + " \"java\": { \"formatter\": { \"indentWidth\": 2 } },"
+                + " \"json\": { \"formatter\": { \"style\": \"pretty\" } } } } }");
+        Workspace ws = open();
+        assertEquals("class A {\n  int x;\n}\n", ws.engine.run("A.java", "class A {int x;}\n", Engine.Mode.FORMAT).output());
+        assertEquals("{\n   \"a\": 1\n}\n", ws.engine.run("d.json", "{\"a\": 1}\n", Engine.Mode.FORMAT).output(),
+                "the shared indentWidth, the json section's style");
+        assertEquals("<a>\n   <b/>\n</a>\n", ws.engine.run("x.xml", "<a>\n<b/>\n</a>\n", Engine.Mode.FORMAT).output());
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"json\": { \"formatter\": { \"tabs\": 1 } } } } }");
+        assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("unknown key \"tabs\""));
+    }
+
+    @Test
     void onlyOtherStylesNeedJavacsInternals() throws IOException {
         write("project.jsonc", "{ \"extensions\": { \"format\": { \"linter\": { \"rules\": { \"style\": {} } } } } }");
         assertFalse(Config.otherStyle(dir));

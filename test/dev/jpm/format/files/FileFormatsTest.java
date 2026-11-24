@@ -233,4 +233,47 @@ class FileFormatsTest {
             assertEquals(bad, XmlFormat.format(bad, 4, 2));
         }
     }
+
+    @Test
+    void jsonStyles() {
+        String in = "{\"a\":[1,2],\n\n \"b\":{\"c\":\"d\"}, // why\n \"e\": {}, \"f\": [\"long enough to wrap\"]}\n";
+        assertEquals("""
+                {
+                  "a": [
+                    1,
+                    2
+                  ],
+                  "b": {
+                    "c": "d"
+                  }, // why
+                  "e": {},
+                  "f": [
+                    "long enough to wrap"
+                  ]
+                }
+                """, JsonFormat.format(in, "pretty", 2, 2, 120));
+        String compact = JsonFormat.format(in, "compact", 2, 2, 24);
+        assertEquals("""
+                {
+                  "a": [1, 2],
+                  "b": { "c": "d" }, // why
+                  "e": {},
+                  "f": [
+                    "long enough to wrap"
+                  ]
+                }
+                """, compact);
+        assertEquals(compact, JsonFormat.format(compact, "compact", 2, 2, 24), "idempotent");
+    }
+
+    @Test
+    void propertiesWrapAndEncoding() {
+        String wrapped = PropertiesFormat.format("k = one two three four five six\n", 2, 20, 4, null);
+        assertEquals("k=one two three \\\n    four five six\n", wrapped);
+        assertEquals(wrapped, PropertiesFormat.format(wrapped, 2, 20, 4, null), "idempotent");
+        assertEquals("a=Gr\\u00FC\\u00DFe\n# K\\u00F6ln\n",
+                PropertiesFormat.format("a=Grüße\n# Köln\n", 2, 0, 4, "ISO-8859-1"));
+        assertEquals("a=Grüße \\u0041 \\\\u00FC 😀\n",
+                PropertiesFormat.format("a=Gr\\u00fc\\u00DFe \\u0041 \\\\u00FC \\uD83D\\uDE00\n", 2, 0, 4, "UTF-8"));
+    }
 }

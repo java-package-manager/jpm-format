@@ -310,7 +310,7 @@ public final class Config {
      * The Spotless steps for a file that is not Java (relative to the root), from {@code "files"}; empty when none apply.
      */
     List<SpotlessSteps.Step> steps(String rel) {
-        return SpotlessSteps.stepsFor(files, rel);
+        return SpotlessSteps.stepsFor(files, rel, format -> formatOptions(rel, format));
     }
 
     /**
@@ -327,6 +327,38 @@ public final class Config {
      */
     @SuppressWarnings("unchecked")
     public Settings settings(String rel) {
+        Map<String, Object> eff = effective(rel);
+        if (rel.endsWith(".java")) eff = merge(eff, obj(eff.get("java"), "java"));
+        Map<String, Object> e = eff;
+        String key = Json.write(e);
+        return settingsByKey.computeIfAbsent(key, k -> parse(e, k));
+    }
+
+    /**
+     * The options of one of jpm-format's own formats ({@code properties}, {@code json}, {@code xml}) for a file, as
+     * its steps take them: {@code lineWidth}, {@code indentWidth} and {@code maxBlankLines} of the top-level
+     * {@code formatter} when they are set, then the format's own {@code formatter} section.
+     */
+    @SuppressWarnings("unchecked")
+    Map<String, Object> formatOptions(String rel, String format) {
+        Map<String, Object> eff = effective(rel);
+        Map<String, Object> out = new LinkedHashMap<>();
+        Map<String, Object> shared = obj(eff.get("formatter"), "formatter");
+        Map<String, Object> own = obj(obj(eff.get(format), format).get("formatter"), format + ".formatter");
+        for (Map<String, Object> m : List.of(shared, own)) {
+            for (Map.Entry<String, Object> e : m.entrySet()) {
+                String k = e.getKey();
+                if (m == shared && !SHARED.contains(k)) continue;
+                out.put(k.equals("indentWidth") ? "indent" : k, e.getValue());
+            }
+        }
+        return out;
+    }
+
+    private static final Set<String> SHARED = Set.of("lineWidth", "indentWidth", "maxBlankLines");
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> effective(String rel) {
         Map<String, Object> cfg = rootConfig;
         Path abs = root.resolve(rel).normalize();
         for (int k = modules.size() - 1; k >= 0; k--) {
@@ -346,9 +378,7 @@ public final class Config {
                 cfg = merge(cfg, without);
             }
         }
-        Map<String, Object> eff = cfg;
-        String key = Json.write(eff);
-        return settingsByKey.computeIfAbsent(key, k -> parse(eff, k));
+        return cfg;
     }
 
     @SuppressWarnings("unchecked")
@@ -441,7 +471,8 @@ public final class Config {
     }
 
     private static final Set<String> TOP =
-            Set.of("$schema", "extends", "ignore", "formatter", "imports", "linter", "overrides", "files");
+            Set.of("$schema", "extends", "ignore", "formatter", "imports", "linter", "overrides", "files", "java", "json",
+                    "xml", "properties");
     private static final Set<String> FORMATTER = Set.of(
             "enabled",
             "style",
@@ -459,6 +490,15 @@ public final class Config {
     private void validate(Map<String, Object> c, String where) {
         keys(c, TOP, where);
         keys(obj(c.get("formatter"), "formatter"), FORMATTER, where + ": formatter");
+        Map<String, Object> java = obj(c.get("java"), "java");
+        keys(java, Set.of("formatter", "imports", "linter"), where + ": java");
+        keys(obj(java.get("formatter"), "java.formatter"), FORMATTER, where + ": java.formatter");
+        for (String format : List.of("json", "xml", "properties")) {
+            Map<String, Object> section = obj(c.get(format), format);
+            keys(section, Set.of("formatter"), where + ": " + format);
+            keys(obj(section.get("formatter"), format + ".formatter"), SpotlessSteps.FORMAT_OPTIONS.get(format),
+                    where + ": " + format + ".formatter");
+        }
         keys(obj(c.get("imports"), "imports"), IMPORTS, where + ": imports");
         Map<String, Object> li = obj(c.get("linter"), "linter");
         keys(li, LINTER, where + ": linter");

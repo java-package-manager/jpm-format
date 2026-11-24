@@ -52,18 +52,6 @@ on a JVM: Kotlin, Scala, JSON, YAML, SQL, Groovy's semicolons and plain text.
   | Protobuf, gRPC | `.proto` | buf or clang-format |
   | GraphQL | schemas | Biome |
   | Gherkin | Cucumber `.feature` | Spotless `gherkinUtils` |
-- [ ] **Settings per format**: one place in the config for each of jpm-format's own formats, instead of a
-      `"files"` entry with a glob, for example `"json": { "style": "compact", "indent": 4 }`. Each takes the shared
-      options (`indent`, `maxBlankLines`, `lineWidth`) and its own. Today `indent` and `maxBlankLines` are only
-      options of the `json` and `xml` steps in a `"files"` entry.
-- [ ] **JSON styles**:
-  - `"keep"`: today's default, which keeps line breaks;
-  - `"compact"`: short arrays and objects on one line, the rest one value per line;
-  - `"pretty"`: exactly the output of a pretty printer, one value per line (IntelliJ's default).
-- [ ] **`.properties` options**:
-  - wrap values longer than `lineWidth` with `\` continuation lines;
-  - `encoding` to enforce one encoding, for example ISO-8859-1 with `\uXXXX` escapes for everything outside it,
-    or UTF-8 with escapes turned back into characters.
 - [ ] **Spotless steps whose configs have many options:** Flexmark, SortPom and Gherkin.
 - [ ] **Prettier and ESLint** with their plugins, for projects that already use them; these need npm.
 
