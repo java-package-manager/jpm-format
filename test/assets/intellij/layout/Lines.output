@@ -1,0 +1,122 @@
+package p;
+
+import java.util.*;
+
+@SuppressWarnings({"a",
+        "b"})
+public class Lines
+        extends Object
+        implements Runnable {
+    int[] a = {
+            1,
+            2
+    };
+    String[][] b = {{"x"},
+            {"y"}};
+
+    enum E {
+        A,
+        B(1,
+                2);
+
+        E() {
+        }
+
+        E(int a, int b) {
+        }
+    }
+
+    @Override
+    public void run() {
+        int x = 1 +
+                2;
+        foo(1,
+                2);
+        foo(bar(1,
+                2), 3);
+        foo(
+                1,
+                2
+        );
+        list.stream()
+                .map(y -> y)
+                .forEach(y -> {
+                    System.out.println(y);
+                });
+        foo(1, y -> {
+            bar();
+        });
+        foo(1,
+                y -> {
+                    bar();
+                });
+        switch (x) {
+            case 1:
+                bar();
+                break;
+            case 2: {
+                bar();
+            }
+            default:
+                bar();
+        }
+        int z = switch (x) {
+            case 1 -> 2;
+            case 3 -> {
+                yield 4;
+            }
+            default -> 5;
+        };
+        if (x == 1)
+            bar();
+        else
+            baz();
+        if (x == 1) {
+        } else {
+        }
+        try {
+        } catch (Exception e) {
+        } finally {
+        }
+        String s = x > 1
+                ? "a"
+                : "b";
+        label:
+        for (int i = 0;
+             i < 1;
+             i++) {
+        }
+        try (var r = open();
+             var q = open()) {
+        }
+        new Thread() {
+            public void run() {
+            }
+        };
+        Object o = new Object() {
+        };
+// first column comment
+        // indented comment
+        /* block
+         * comment */
+        String t = """
+                text
+                  block
+                """;
+    }
+
+    void m(int a,
+           int b,
+           int c) {
+    }
+
+    void n(
+            int a,
+            int b) {
+    }
+
+    <T> void o(int a)
+            throws Exception,
+            RuntimeException {
+    }
+}

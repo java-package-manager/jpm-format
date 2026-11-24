@@ -25,17 +25,18 @@ import java.util.zip.ZipInputStream;
  * counted. The count may only go down: it is stored in checks/parity/baseline.txt.
  *
  * <pre>
- * java checks/Parity.java --idea &lt;IntelliJ home&gt; [--jpm-format &lt;command&gt;] [--update] [--show N]
+ * java checks/Parity.java --idea &lt;IntelliJ home&gt; [--jpm-format &lt;command&gt;] [--baseline &lt;file&gt;] [--update] [--show N]
  * </pre>
  * <p>
  * IntelliJ's home is the folder with bin/format.sh (or IDEA_HOME). jpm-format runs from dist/*-bundle.jar
- * (`jpm build --bundle`) in the corpus folder, unless --jpm-format names another command. --update writes a lower count to the baseline; --show
+ * (`jpm build --bundle`) in the corpus folder, unless --jpm-format names another command. --baseline names another
+ * baseline file than checks/parity/baseline.txt. --update writes a lower count to the baseline; --show
  * prints the N files that differ most, with their first differences.
  */
 public final class Parity {
     private static final Path ROOT = Path.of("").toAbsolutePath();
     private static final Path CACHE = ROOT.resolve(".cache/parity");
-    private static final Path BASELINE = ROOT.resolve("checks/parity/baseline.txt");
+    private static final Path DEFAULT_BASELINE = ROOT.resolve("checks/parity/baseline.txt");
     private static final String CONFIG = """
             {
               "name": "parity-corpus",
@@ -55,12 +56,14 @@ public final class Parity {
         List<String> jpmFormat = null;
         boolean update = false;
         int show = 0;
+        Path baselineFile = DEFAULT_BASELINE;
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "--idea" -> idea = args[++i];
                 case "--jpm-format" -> jpmFormat = List.of(args[++i].split(" "));
                 case "--update" -> update = true;
                 case "--show" -> show = Integer.parseInt(args[++i]);
+                case "--baseline" -> baselineFile = ROOT.resolve(args[++i]);
                 default -> throw new IllegalArgumentException("unknown option " + args[i]);
             }
         }
@@ -131,12 +134,12 @@ public final class Parity {
                         samples.get(e.getKey()).stream().limit(12).forEach(l -> System.out.println("  " + l));
                     });
         }
-        int baseline = Files.exists(BASELINE)
-                ? Integer.parseInt(Files.readString(BASELINE).strip())
+        int baseline = Files.exists(baselineFile)
+                ? Integer.parseInt(Files.readString(baselineFile).strip())
                 : Integer.MAX_VALUE;
         if (update && total < baseline) {
-            Files.createDirectories(BASELINE.getParent());
-            Files.writeString(BASELINE, total + "\n");
+            Files.createDirectories(baselineFile.getParent());
+            Files.writeString(baselineFile, total + "\n");
             System.out.println("baseline: " + total);
         } else if (total > baseline) {
             System.out.println("more than the baseline of " + baseline + ": jpm-format moved away from IntelliJ");

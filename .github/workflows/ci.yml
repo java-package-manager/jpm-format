@@ -74,6 +74,12 @@ jobs:
           jpm build --bundle
           java checks/Parity.java --idea "$RUNNER_TEMP/idea" --show 5
 
+      # The IntelliJ style's own layout engine (ADR 0006), not the default yet, has a ratchet of its own
+      - name: Parity with IntelliJ, own layout engine
+        env:
+          JPM_FORMAT_LAYOUT: intellij
+        run: java checks/Parity.java --idea "$RUNNER_TEMP/idea" --baseline checks/parity/baseline-layout.txt --show 5
+
   # jpm-changeset (CONTRIBUTING.md): while changesets are pending, keep a "Version packages" pull request with
   # the bumped version and CHANGELOG.md; once it is merged, tag the commit and create a GitHub release with the
   # changelog entry. jpm installs extensions from their Git source, so the tag is the release: it is what

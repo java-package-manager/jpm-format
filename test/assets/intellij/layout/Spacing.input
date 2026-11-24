@@ -1,0 +1,67 @@
+package p;
+import java.util.*;
+public  class Spacing<T extends Comparable<? super T>>{
+private static final Map<String,List<Integer>> M=new HashMap<>();
+int a,b;
+@Deprecated  @SuppressWarnings( "x" ) Spacing(){super();}
+public int f(int x,int...ys)throws Exception{
+int y=x+1*2-3/4%5;
+y+=1;y<<=2;y>>>=3;
+boolean b=!(x>1)&&x<2||x!=3;
+int z=-x+ +x;
+z++;--z;
+Object o=(Object)x;
+String s=(String)(Object)"a";
+int[]arr=new int[10];
+int[] arr2=new int[]{1,2,3};
+if(x>1){return x;}else if(x<0){return -x;}
+for(int i=0;i<10;i++){}
+for(String q:List.of("a")){}
+while(x>0){x--;}
+do{x++;}while(x<5);
+try{f(1);}catch(RuntimeException|Error e){}finally{}
+synchronized(this){}
+switch(x){case 1:break;default:}
+Runnable r=()->{run();};
+java.util.function.Function<Integer,Integer> g=(q)->q*2;
+java.util.function.Function<Integer,Integer> h=Integer::valueOf;
+y=x>1?2:3;
+if(o instanceof String str&&str.isEmpty()){}
+List<?extends Number> l=null;
+assert x>0:"msg";
+label:for(;;){break label;}
+return(x);
+}
+@interface A{String value()default "";}
+record R(int a,String b){R{if(a<0)throw new IllegalArgumentException();}}
+static{int q=1;}
+{int w=2;}
+int[]g(){return new int[]{};}
+void h(){
+int x = foo(1, 2) // trailing
++ 3;
+return;
+}
+void k() {
+if (a)
+// comment
+bar();
+x = a
+? b
+// mid
+: c;
+foo(a,
+b, () ->
+bar());
+foo(new Object() {
+void q() {}
+}, 1);
+x = foo(1)
+.bar(new int[] {
+1,
+2
+});
+return a &&
+b;
+}
+}

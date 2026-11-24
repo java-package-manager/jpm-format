@@ -9,6 +9,7 @@ import dev.jpm.format.FormatException;
 import dev.jpm.format.Jdks;
 import dev.jpm.format.api.Context;
 import dev.jpm.format.api.Formatter;
+import dev.jpm.format.intellij.Layout;
 import dev.jpm.format.palantir.java.FormatterException;
 import dev.jpm.format.palantir.java.JavaFormatterOptions;
 
@@ -27,6 +28,24 @@ public final class JavaFormat implements Formatter {
 
     private static final Map<List<Integer>, dev.jpm.format.palantir.java.Formatter> FORMATTERS =
             new ConcurrentHashMap<>();
+
+    private final boolean ownLayout;
+
+    public JavaFormat() {
+        this("intellij".equals(System.getenv("JPM_FORMAT_LAYOUT")));
+    }
+
+    private JavaFormat(boolean ownLayout) {
+        this.ownLayout = ownLayout;
+    }
+
+    /**
+     * JavaFormat with the IntelliJ style's own layout engine ({@link Layout}, ADR 0006) instead of the Palantir fork,
+     * as {@code JPM_FORMAT_LAYOUT=intellij} gives it while the engine is being built.
+     */
+    public static JavaFormat withOwnLayout() {
+        return new JavaFormat(true);
+    }
 
     @Override
     public String id() {
@@ -48,6 +67,7 @@ public final class JavaFormat implements Formatter {
         FileContext fc = (FileContext) ctx;
         var external = fc.settings().externalFormatter();
         if (external != null) return ExternalFormatter.format(external, fc);
+        if (ownLayout(fc)) return tabs(fc, Layout.format(fc));
         try {
             return tabs(fc, palantir(fc).formatSource(ctx.source()));
         } catch (FormatterException e) {
@@ -59,7 +79,7 @@ public final class JavaFormat implements Formatter {
      * Formats only the lines touching {@code [start, end)}.
      */
     public String formatRange(FileContext ctx, int start, int end) {
-        if (ctx.settings().externalFormatter() != null) return format(ctx);
+        if (ctx.settings().externalFormatter() != null || ownLayout(ctx)) return format(ctx);
         try {
             return tabs(
                     ctx,
@@ -68,6 +88,10 @@ public final class JavaFormat implements Formatter {
         } catch (FormatterException e) {
             throw new FormatException(ctx.path() + ": " + e.getMessage(), e);
         }
+    }
+
+    private boolean ownLayout(FileContext ctx) {
+        return ownLayout && ctx.settings().intellijStyle();
     }
 
     private static dev.jpm.format.palantir.java.Formatter palantir(FileContext ctx) {

@@ -1,0 +1,66 @@
+package p;
+
+class Comments {
+    @Deprecated
+    private int f;
+    @Deprecated
+    int g;
+    int a = 1;     // aligned comment
+    int bb = 2;  /* inline */
+    int c = 3;
+
+    void m(@Deprecated int a, @SuppressWarnings("x") final int b) {
+        @SuppressWarnings("y")
+        int q = 1;
+        String t = """
+                deeper
+                still
+                """;
+        foo("x", """
+                arg
+                """);
+        if (a)
+            b();
+        else if (c)
+            d();
+        else
+            e();
+        x = y /*c*/ + z;
+        Collections.<String>emptyList();
+        int arr[] = null;
+        x = (int) -1;
+        x = a - -b;
+        x = - -b;
+        x = "a" + "b" + c;
+        Supplier<int[]> s = int[]::new;
+        for (; ; ) {
+        }
+        while (x) ;
+        int[] v = new int[]
+                {1, 2,};
+        do x++; while (x < 3);
+        switch (x) {
+            case 1, 2 -> foo();
+            default -> {
+                bar();
+            }
+        }
+        switch (x) {
+            case 1:
+                foo();
+                // falls through
+            case 2:
+                bar();
+                break;
+            // next
+            case 3:
+                baz();
+        }
+        return a ? b
+                : c ? d
+                : e;
+    }
+
+    /*public*/ void n() {
+    }
+}

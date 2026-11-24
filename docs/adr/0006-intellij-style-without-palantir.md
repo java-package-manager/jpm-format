@@ -10,16 +10,20 @@ the code)
 - The engine rewrites only the whitespace between javac's tokens: the indent from the syntax tree (block
   indent, continuation indent, alignment of multiline parameters, `for` headers and try resources), the
   spaces between tokens, and the blank lines and comments the IntelliJ rules already handle. Line breaks
-  stay where the code has them, as in IntelliJ's default code style, which neither wraps nor joins lines on
-  reformat. So the engine needs no line-breaking search, which is most of what Palantir is.
+  stay where the code has them, except where IntelliJ's default code style always breaks or joins lines (one
+  statement per line, block contents on their own lines, `{` at the end of the line, `} else`) and where it
+  moves a statement body past the line width to the next line. So the engine needs no line-breaking search,
+  which is most of what Palantir is.
 - javac stays the parser. Palantir used it too; it is not part of what leaves.
 - `"palantir"` and `"palantir@<version>"` stay as `formatter.style`, run as external formatters
   (`ExternalFormatter`) from Palantir's own jar, like `google-java-format`. Nothing of Palantir's code is
   in the repository afterwards.
 - The parity check (`checks/Parity.java`) is how the new engine is judged; it compares output only, so it
   does not depend on the engine. The default switches to the new engine once its count is at or below the
-  baseline in `checks/parity/baseline.txt`; until then both engines exist and the old one is the default.
-- What the parity corpus does not show is pinned down in `IntelliJRulesTest`, as input and expected output.
+  baseline in `checks/parity/baseline.txt`; until then both engines exist and the old one is the default. The new
+  one runs with `JPM_FORMAT_LAYOUT=intellij` and has a ratchet of its own, `checks/parity/baseline-layout.txt`.
+- What the parity corpus does not show is pinned down in `IntelliJRulesTest` and `LayoutTest`, as input and
+  expected output; `LayoutTest`'s cases are IntelliJ's own output.
   Upstream's formatter tests (`test/assets/palantir/testdata`, `PalantirTestdataTest`) leave with the fork.
 
 ## Why
