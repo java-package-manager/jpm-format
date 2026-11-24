@@ -29,7 +29,8 @@ public final class Source {
     /**
      * A syntax error at an offset.
      */
-    public record SyntaxError(int start, int end, String message) {}
+    public record SyntaxError(int start, int end, String message) {
+    }
 
     static final JavaCompiler JAVAC = ToolProvider.getSystemJavaCompiler();
 

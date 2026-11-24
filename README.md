@@ -34,15 +34,16 @@ automatically.
 
 ## Formatting style
 
-IntelliJ IDEA's default Java code style. The layout comes from jpm-format's fork of
-[Palantir Java Format](https://github.com/palantir/palantir-java-format) (Apache 2.0, itself a fork of
-google-java-format), in a mode that keeps your line breaks as IntelliJ does: a line is never wrapped or joined
-(except `} else`, `} catch` and `} finally`), and only indentation and spacing change. A wrapped line is one
-continuation indent (8) in from the line it continues, blocks are 4 in from the line they start on, and method
-parameters, `for` headers and try resources line up as in IntelliJ. The IntelliJ rules
-(`src/dev/jpm/format/intellij/`) then adjust the rest where IntelliJ's defaults differ:
+IntelliJ IDEA's default Java code style, from jpm-format's own layout engine (`src/dev/jpm/format/intellij/`,
+[ADR 0006](docs/adr/0006-intellij-style-without-palantir.md)). It keeps your line breaks as IntelliJ does and
+changes only whitespace: a line is joined or broken only where IntelliJ always does it (one statement per line,
+block contents on their own lines, annotations of declarations on their own lines, `{` at the end of the line,
+`} else`, `} catch`, `} finally`), and a statement body that would end past `lineWidth` moves to the next line.
+Blocks are 4 in from the line they start on; a line that continues something is one continuation indent (8) in
+from the nearest enclosing statement, argument, chain or operand that starts a line; method parameters, `for`
+headers, try resources and record components line up as in IntelliJ. The IntelliJ rules then handle the rest:
 
-- blank lines the code has are kept, up to 2 (also before a closing brace), where Palantir keeps 1;
+- blank lines the code has are kept, up to 2 (also before a closing brace);
 - methods, nested classes and initializers get a blank line around them, also when they start with a comment;
 - empty methods, classes and blocks are written `{` and `}` on two lines; lambdas and anonymous classes keep `{}`;
 - Javadoc gets aligned `@param` descriptions, a blank line before the tags and `<p>` on empty lines;
@@ -108,7 +109,7 @@ merging imports into a wildcard can make names ambiguous.
 
 | Rule | Category | Kind | |
 |---|---|---|---|
-| `JavaFormat` | format | formatter | Layout (forked from Palantir Java Format) |
+| `JavaFormat` | format | formatter | Layout (IntelliJ's default Java code style) |
 | `EmptyBodies` | format | formatter | IntelliJ: empty bodies on two lines |
 | `MemberBlankLines` | format | formatter | IntelliJ: a blank line around methods, classes and initializers |
 | `KeepBlankLines` | format | formatter | IntelliJ: blank lines kept, up to `maxBlankLines` |
@@ -308,12 +309,14 @@ A step takes its formatter's version after `@` (or as `"version"`), else Spotles
 
 ## How it works
 
-- One parser for everything: javac's, as Palantir uses, with Palantir's token stream for comments and
-  whitespace. It parses every Java version exactly as the compiler does, and the same tree serves the
-  formatter, the linter and type attribution.
-- The layout engine is a fork of Palantir Java Format 2.103.0 in `src/dev/jpm/format/palantir/`, so its rules can
-  change; [third_party/palantir-java-format/UPSTREAM.md](third_party/palantir-java-format/UPSTREAM.md) says what was
-  copied and what changed since. Upstream's 226 formatter test cases run as `PalantirTestdataTest`.
+- One parser for everything: javac's. It parses every Java version exactly as the compiler does, and the same
+  tree serves the formatter, the linter and type attribution.
+- The IntelliJ style's layout engine (`Layout`, with `Tokens` and `Syntax`) rewrites only the whitespace between
+  javac's tokens. How close it is to IntelliJ is measured on real projects (`checks/Parity.java`).
+- The `"palantir"` style runs on a fork of Palantir Java Format 2.103.0 in `src/dev/jpm/format/palantir/`, until it
+  runs from Palantir's own jar (ADR 0006);
+  [third_party/palantir-java-format/UPSTREAM.md](third_party/palantir-java-format/UPSTREAM.md) says what was copied
+  and what changed since. Upstream's 226 formatter test cases run as `PalantirTestdataTest`.
 - Built-in rules are compiled into jpm-format. Files are processed in parallel.
 - Palantir needs javac's internal packages. jpm starts extensions on a plain JVM, so jpm-format exports them
   itself on JDK 21–23, and on newer JDKs starts a second JVM with `--add-exports` (with class data sharing,

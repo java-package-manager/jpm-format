@@ -1,7 +1,8 @@
 # 0006. The IntelliJ style gets its own layout engine; Palantir leaves the codebase
 
-Status: accepted (the switch is under way: until it is done, [0002](0002-formatting-pipeline.md) describes
-the code)
+Status: accepted; the IntelliJ style runs on the new engine. Left: removing the fork, which `"palantir"` still runs
+on. Where [0002](0002-formatting-pipeline.md) says "the layout engine (the Palantir fork)", it is now `Layout` in
+the IntelliJ style.
 
 ## Decision
 
@@ -20,8 +21,7 @@ the code)
   in the repository afterwards.
 - The parity check (`checks/Parity.java`) is how the new engine is judged; it compares output only, so it
   does not depend on the engine. The default switches to the new engine once its count is at or below the
-  baseline in `checks/parity/baseline.txt`; until then both engines exist and the old one is the default. The new
-  one runs with `JPM_FORMAT_LAYOUT=intellij` and has a ratchet of its own, `checks/parity/baseline-layout.txt`.
+  baseline in `checks/parity/baseline.txt` (it switched at 905, against the fork's 980).
 - What the parity corpus does not show is pinned down in `IntelliJRulesTest` and `LayoutTest`, as input and
   expected output; `LayoutTest`'s cases are IntelliJ's own output.
   Upstream's formatter tests (`test/assets/palantir/testdata`, `PalantirTestdataTest`) leave with the fork.

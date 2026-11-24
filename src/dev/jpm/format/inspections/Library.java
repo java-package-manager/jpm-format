@@ -160,7 +160,8 @@ final class Library {
                         String named = Scan.simpleName(lit.getExpression());
                         boolean enclosing = false;
                         for (TreePath p = getCurrentPath(); p != null; p = p.getParentPath()) {
-                            if (p.getLeaf() instanceof ClassTree c && c.getSimpleName().contentEquals(named)) enclosing = true;
+                            if (p.getLeaf() instanceof ClassTree c && c.getSimpleName().contentEquals(named))
+                                enclosing = true;
                             if (p.getLeaf() instanceof NewClassTree) enclosing = true;
                         }
                         if (!enclosing) s.report(lit, "Logger initialized with foreign class '" + named + ".class'");
@@ -173,7 +174,8 @@ final class Library {
 
     static boolean logCall(Scan s, MethodInvocationTree m) {
         String n = Scan.name(m);
-        if (!(n.equals("trace") || n.equals("debug") || n.equals("info") || n.equals("warn") || n.equals("error"))) return false;
+        if (!(n.equals("trace") || n.equals("debug") || n.equals("info") || n.equals("warn") || n.equals("error")))
+            return false;
         ExpressionTree r = Scan.receiver(m);
         if (r == null) return false;
         if (s.typed()) return s.isA(r, "org.slf4j.Logger") || s.isA(r, "org.apache.logging.log4j.Logger");
@@ -205,7 +207,8 @@ final class Library {
                             while (pm.find()) if (pm.group(1).length() % 2 == 0) holes++;
                             List<? extends ExpressionTree> args = a.subList(f + 1, a.size());
                             int n = args.size();
-                            if (n == 1 && (Scan.strip(args.get(0)) instanceof com.sun.source.tree.NewArrayTree || s.isArray(args.get(0)))) return super.visitMethodInvocation(m, v);
+                            if (n == 1 && (Scan.strip(args.get(0)) instanceof com.sun.source.tree.NewArrayTree || s.isArray(args.get(0))))
+                                return super.visitMethodInvocation(m, v);
                             if (n == holes + 1 && throwable(args.get(n - 1))) n--;
                             if (n != holes) {
                                 s.report(a.get(f), "Message has " + holes + " placeholder" + (holes == 1 ? "" : "s") + " but " + n + " argument" + (n == 1 ? "" : "s"));
@@ -218,10 +221,12 @@ final class Library {
                 private boolean throwable(ExpressionTree e) {
                     if (s.typed()) return s.isA(e, "java.lang.Throwable");
                     ExpressionTree x = Scan.strip(e);
-                    if (x instanceof NewClassTree n) return Expressions.throwableName(Scan.simpleName(n.getIdentifier()));
+                    if (x instanceof NewClassTree n)
+                        return Expressions.throwableName(Scan.simpleName(n.getIdentifier()));
                     if (x instanceof IdentifierTree i) {
                         for (TreePath p = getCurrentPath(); p != null; p = p.getParentPath()) {
-                            if (p.getLeaf() instanceof com.sun.source.tree.CatchTree c && c.getParameter().getName().contentEquals(i.getName())) return true;
+                            if (p.getLeaf() instanceof com.sun.source.tree.CatchTree c && c.getParameter().getName().contentEquals(i.getName()))
+                                return true;
                         }
                         return i.getName().toString().matches("e|ex|exc|t|th|throwable|exception|cause|error|err");
                     }

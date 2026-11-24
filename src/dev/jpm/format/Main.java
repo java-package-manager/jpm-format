@@ -301,7 +301,8 @@ public final class Main {
 
     private static boolean hasFormatFinding(Engine.Result r, Workspace ws) {
         for (Finding f : r.findings()) {
-            if (f.rule().equals(SpotlessSteps.RULE) || ws.registry.rules.get(f.rule()) instanceof Formatter) return true;
+            if (f.rule().equals(SpotlessSteps.RULE) || ws.registry.rules.get(f.rule()) instanceof Formatter)
+                return true;
         }
         return false;
     }

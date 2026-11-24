@@ -68,7 +68,8 @@ final class Suppressions {
     /**
      * A problem with a suppression comment itself.
      */
-    record Problem(int start, int end, String rule, String message) {}
+    record Problem(int start, int end, String rule, String message) {
+    }
 
     private final List<Entry> entries = new ArrayList<>();
     final List<Problem> problems = new ArrayList<>();

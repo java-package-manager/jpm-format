@@ -45,12 +45,14 @@ final class SpotlessSteps {
     /**
      * A step: its name, the version of the formatter it runs (null for Spotless's default) and its options.
      */
-    record Step(String name, String version, Map<String, Object> options) {}
+    record Step(String name, String version, Map<String, Object> options) {
+    }
 
     /**
      * Files and the steps that format them.
      */
-    record Entry(List<String> include, List<PathMatcher> matchers, List<Step> steps) {}
+    record Entry(List<String> include, List<PathMatcher> matchers, List<Step> steps) {
+    }
 
     /**
      * The steps jpm-format knows, with the options each takes besides {@code step} and {@code version}.
@@ -111,23 +113,28 @@ final class SpotlessSteps {
     @SuppressWarnings("unchecked")
     static List<Entry> parse(Object files) {
         if (files == null) return List.of();
-        if (!(files instanceof List<?> list)) throw new FormatException("\"files\" must be an array of {\"include\": [...], \"steps\": [...]}");
+        if (!(files instanceof List<?> list))
+            throw new FormatException("\"files\" must be an array of {\"include\": [...], \"steps\": [...]}");
         List<Entry> out = new ArrayList<>();
         for (Object o : list) {
-            if (!(o instanceof Map<?, ?> m)) throw new FormatException("\"files\" entries must be objects with \"include\" and \"steps\"");
+            if (!(o instanceof Map<?, ?> m))
+                throw new FormatException("\"files\" entries must be objects with \"include\" and \"steps\"");
             for (Object k : m.keySet()) {
-                if (!k.equals("include") && !k.equals("steps")) throw new FormatException("files: unknown key \"" + k + "\" (\"include\", \"steps\")");
+                if (!k.equals("include") && !k.equals("steps"))
+                    throw new FormatException("files: unknown key \"" + k + "\" (\"include\", \"steps\")");
             }
             List<String> include = new ArrayList<>();
             List<PathMatcher> matchers = new ArrayList<>();
-            if (!(m.get("include") instanceof List<?> inc) || inc.isEmpty()) throw new FormatException("files: \"include\" must be a non-empty array of globs");
+            if (!(m.get("include") instanceof List<?> inc) || inc.isEmpty())
+                throw new FormatException("files: \"include\" must be a non-empty array of globs");
             for (Object g : inc) {
                 if (!(g instanceof String glob)) throw new FormatException("files.include must be globs");
                 include.add(glob);
                 matchers.addAll(Config.matchers(glob));
                 if (glob.startsWith("**/")) matchers.addAll(Config.matchers(glob.substring(3)));
             }
-            if (!(m.get("steps") instanceof List<?> st)) throw new FormatException("files: \"steps\" must be an array ([] for none)");
+            if (!(m.get("steps") instanceof List<?> st))
+                throw new FormatException("files: \"steps\" must be an array ([] for none)");
             List<Step> steps = new ArrayList<>();
             for (Object s : st) steps.add(step(s));
             out.add(new Entry(List.copyOf(include), List.copyOf(matchers), List.copyOf(steps)));
@@ -149,7 +156,8 @@ final class SpotlessSteps {
                 String k = String.valueOf(e.getKey());
                 if (k.equals("step")) continue;
                 if (k.equals("version")) {
-                    if (!(e.getValue() instanceof String v)) throw new FormatException("files.steps: \"version\" of " + n + " must be a string");
+                    if (!(e.getValue() instanceof String v))
+                        throw new FormatException("files.steps: \"version\" of " + n + " must be a string");
                     version = v;
                 } else {
                     options.put(k, e.getValue());
@@ -271,12 +279,14 @@ final class SpotlessSteps {
                 }
                 case "jacksonJson" -> staticCall(loader, "json.JacksonJsonStep", new Class<?>[]{prov}, provisioner);
                 case "jacksonYaml" -> staticCall(loader, "yaml.JacksonYamlStep", new Class<?>[]{prov}, provisioner);
-                case "jsonSimple" -> staticCall(loader, "json.JsonSimpleStep", new Class<?>[]{int.class, prov}, number(s, "indent", 4), provisioner);
+                case "jsonSimple" ->
+                        staticCall(loader, "json.JsonSimpleStep", new Class<?>[]{int.class, prov}, number(s, "indent", 4), provisioner);
                 case "dbeaverSql" -> {
                     File config = file(root, s, "config");
                     yield staticCall(loader, "sql.DBeaverSQLFormatterStep", new Class<?>[]{Iterable.class}, config == null ? List.of() : List.of(config));
                 }
-                case "trimTrailingWhitespace" -> staticCall(loader, "generic.TrimTrailingWhitespaceStep", new Class<?>[0]);
+                case "trimTrailingWhitespace" ->
+                        staticCall(loader, "generic.TrimTrailingWhitespaceStep", new Class<?>[0]);
                 case "endWithNewline" -> staticCall(loader, "generic.EndWithNewlineStep", new Class<?>[0]);
                 case "removeSemicolons" -> staticCall(loader, "groovy.RemoveSemicolonsStep", new Class<?>[0]);
                 case "indent" -> {
@@ -314,7 +324,8 @@ final class SpotlessSteps {
     private static File file(Path root, Step s, String option) {
         Object v = s.options().get(option);
         if (v == null) return null;
-        if (!(v instanceof String path)) throw new FormatException("files.steps: \"" + option + "\" of " + s.name() + " must be a path");
+        if (!(v instanceof String path))
+            throw new FormatException("files.steps: \"" + option + "\" of " + s.name() + " must be a path");
         return root.resolve(path).toAbsolutePath().toFile();
     }
 

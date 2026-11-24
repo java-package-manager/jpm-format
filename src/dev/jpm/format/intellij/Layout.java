@@ -41,10 +41,23 @@ public final class Layout {
      * The file formatted, with {@code \n} or {@code \r\n} as the file has them.
      */
     public static String format(FileContext ctx) {
+        return format(ctx, 0, ctx.source().length());
+    }
+
+    /**
+     * The file with only the lines that touch {@code [start, end)} formatted; the rest is left as it is. The layout of
+     * those lines is worked out as for the whole file, with the lines around them as they are.
+     */
+    public static String format(FileContext ctx, int start, int end) {
         if (!ctx.parsed().errors().isEmpty()) throw new FormatException(ctx.path() + ": does not parse");
         var s = ctx.settings();
-        return new Run(ctx.source(), Syntax.of(ctx, ctx.source()), s.indentWidth(), s.continuationIndentWidth(),
-                s.maxBlankLines(), s.lineWidth()).format();
+        String text = ctx.source();
+        int from = text.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+        if (start == 0) from = 0;
+        int to = text.indexOf('\n', Math.max(start, end - 1));
+        to = to < 0 ? text.length() + 1 : to + 1;
+        return new Run(text, Syntax.of(ctx, text), s.indentWidth(), s.continuationIndentWidth(), s.maxBlankLines(),
+                s.lineWidth(), from, to).format();
     }
 
     private static final class Frame {
@@ -75,8 +88,14 @@ public final class Layout {
         private int column;
         private int current;
         private int prevCode = -1;
+        private int line;
+        private final int[] tokenLine;
+        private final int from;
+        private final int to;
 
-        Run(String text, Syntax syn, int indent, int continuation, int maxBlank, int width) {
+        Run(String text, Syntax syn, int indent, int continuation, int maxBlank, int width, int from, int to) {
+            this.from = from;
+            this.to = to;
             this.width = width;
             this.text = text;
             this.syn = syn;
@@ -88,6 +107,7 @@ public final class Layout {
             this.lines = new int[toks.size()];
             this.lineIndent = new int[toks.size()];
             this.columns = new int[toks.size()];
+            this.tokenLine = new int[toks.size()];
             Arrays.fill(columns, -1);
             Frame root = new Frame();
             root.kind = ROOT;
@@ -98,8 +118,12 @@ public final class Layout {
         String format() {
             breaks();
             for (int i = 0; i < toks.size(); i++) emit(i);
-            stripTrailing();
-            if (!toks.isEmpty()) out.append('\n');
+            if (!toks.isEmpty() && toks.getLast().start() >= to) {
+                out.append(text.substring(toks.getLast().end()).replace("\r", ""));
+            } else {
+                stripTrailing();
+                if (!toks.isEmpty()) out.append('\n');
+            }
             String result = out.toString();
             return newline.equals("\n") ? result : result.replace("\n", newline);
         }
@@ -166,31 +190,49 @@ public final class Layout {
         private void emit(int i) {
             Tokens.Token t = toks.get(i);
             Frame f = frames.peek();
-            if (i > 0 && lines[i] == 0 && !fits(i)) {
+            boolean outside = t.start() < from || t.start() >= to;
+            if (outside) {
+                String gap = i == 0 ? text.substring(0, t.start()) : text.substring(toks.get(i - 1).end(), t.start());
+                gap = gap.replace("\r", "");
+                lines[i] = (int) gap.chars().filter(c -> c == '\n').count();
+                line += lines[i];
+                out.append(gap);
+                if (i == 0 || lines[i] > 0) current = originalColumn(t.start());
+                column = out.length() - out.lastIndexOf("\n") - 1;
+            } else if (i > 0 && lines[i] == 0 && !fits(i)) {
                 boolean body = syn.start[i] == Syntax.BODY && syn.owner[i] >= 0
                         && !(t.word("if") && toks.get(before(i)).word("else"));
                 if (body || syn.joinIfFits[i]) lines[i] = 1;
             }
-            if (lines[i] > 0 || i == 0) {
+            if (!outside && (lines[i] > 0 || i == 0)) {
                 int ind = i == 0 && t.comment() ? 0 : indentFor(i);
                 if (i > 0) {
                     stripTrailing();
                     out.append("\n".repeat(lines[i]));
+                    line += lines[i];
                 }
                 out.append(" ".repeat(Math.max(0, ind)));
                 current = Math.max(0, ind);
                 column = current;
-            } else {
+            } else if (!outside) {
                 int sp = space(i);
                 out.append(" ".repeat(sp));
                 column += sp;
             }
             lineIndent[i] = current;
             columns[i] = column;
+            tokenLine[i] = line;
             if (!t.comment() && f.kind == PAREN && f.align == PENDING) {
                 f.align = lines[i] > 0 || t.op(";") ? -1 : column;
             }
-            write(t);
+            if (outside) {
+                String raw = t.text().replace("\r", "");
+                out.append(raw);
+                line += (int) raw.chars().filter(c -> c == '\n').count();
+                column = raw.indexOf('\n') < 0 ? column + raw.length() : raw.length() - raw.lastIndexOf('\n') - 1;
+            } else {
+                write(t);
+            }
             if (t.comment()) return;
             if (itemStart(i, f)) f.itemIndent = current;
             if (f.kind == PAREN || f.kind == BRACKET || f.kind == ARRAY) {
@@ -202,7 +244,7 @@ public final class Layout {
                     case "(", "[" -> {
                         Frame p = new Frame();
                         p.kind = t.is("(") ? PAREN : BRACKET;
-                        p.base = t.is("(") ? parenBase(i) : current;
+                        p.base = t.is("(") ? parenBase(i, f) : current;
                         p.shiftItems = t.is("(") && wrappedChain(i);
                         p.opener = i;
                         p.align = syn.align[i] ? PENDING : -1;
@@ -231,14 +273,26 @@ public final class Layout {
             return -1;
         }
 
-        private int parenBase(int i) {
+        private int parenBase(int i, Frame f) {
             int dot = chainDot(i);
             if (dot >= 0) return lineIndent[dot];
+            int call = -1;
+            int binary = -1;
+            boolean inside = true;
             for (int n = syn.inner[i]; n >= 0; n = syn.nodeParent[n]) {
                 int st = syn.nodeStart[n];
-                if (st <= i && (st == 0 || lines[st] > 0)) return lineIndent[st];
+                if (st > i) continue;
+                if (call < 0) call = st;
+                if (inside && st <= f.opener) {
+                    inside = false;
+                    if (binary >= 0) return lineIndent[binary];
+                    if (f.opener >= 0 && tokenLine[call] != tokenLine[f.opener]) return lineIndent[call];
+                }
+                if (st == 0 || lines[st] > 0) return lineIndent[binary >= 0 ? binary : st];
+                if (syn.nodeBinary[n]) binary = st;
             }
-            return current;
+            if (binary >= 0) return lineIndent[binary];
+            return call >= 0 ? lineIndent[call] : current;
         }
 
         private boolean wrappedChain(int i) {
@@ -325,7 +379,7 @@ public final class Layout {
                 if (closes(toks.get(j), f)) return child(f);
                 if (f.kind == SWITCH && syn.start[j] == Syntax.CASE && prevCode >= 0 && !toks.get(prevCode).op("{")
                         && (syn.role[prevCode] == Syntax.CASE_COLON
-                                || originalColumn(t.start()) > originalColumn(toks.get(j).start()))) {
+                        || originalColumn(t.start()) > originalColumn(toks.get(j).start()))) {
                     return f.base + 2 * indent;
                 }
                 return indentFor(j);
@@ -339,7 +393,8 @@ public final class Layout {
                 case ROOT, BLOCK, SWITCH -> switch (syn.start[i]) {
                     case Syntax.CASE -> f.base + indent;
                     case Syntax.CASE_STATEMENT -> f.base + 2 * indent;
-                    case Syntax.STATEMENT, Syntax.ENUM_CONSTANT -> f.kind == SWITCH ? f.base + 2 * indent : f.base + indent;
+                    case Syntax.STATEMENT, Syntax.ENUM_CONSTANT ->
+                            f.kind == SWITCH ? f.base + 2 * indent : f.base + indent;
                     case Syntax.BODY -> (o >= 0 ? lineIndent[o] : f.itemIndent) + indent;
                     case Syntax.ANNOTATED -> f.itemIndent;
                     default -> {
@@ -416,6 +471,7 @@ public final class Layout {
             }
             String w = b.toString();
             out.append(w);
+            line += (int) w.chars().filter(c -> c == '\n').count();
             column = w.length() - w.lastIndexOf('\n') - 1;
         }
 
@@ -432,10 +488,7 @@ public final class Layout {
             for (int k = 1; k < parts.length; k++) {
                 String p = parts[k];
                 b.append('\n');
-                if (p.isBlank() && k < parts.length - 1) {
-                    b.append(min < 0 ? p : " ".repeat(current + continuation));
-                    continue;
-                }
+                if (p.isBlank() && k < parts.length - 1) continue;
                 if (min < 0) {
                     b.append(p);
                 } else {
@@ -563,7 +616,7 @@ public final class Layout {
             if (role == Syntax.BIN) return true;
             return switch (op) {
                 case "=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=", ">>>=", "==", "!=", "<=",
-                        ">=", "&&", "||", "->", "|", "&", "^", ":" -> true;
+                     ">=", "&&", "||", "->", "|", "&", "^", ":" -> true;
                 default -> false;
             };
         }

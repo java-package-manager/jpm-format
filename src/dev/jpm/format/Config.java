@@ -64,7 +64,8 @@ public final class Config {
     /**
      * A rule's level and options.
      */
-    public record RuleSetting(Severity level, Map<String, Object> options) {}
+    public record RuleSetting(Severity level, Map<String, Object> options) {
+    }
 
     /**
      * The settings for one file.
@@ -99,10 +100,9 @@ public final class Config {
                 case "LicenseHeader" -> formatterEnabled && licenseHeader != null;
                 case "ImportOrder" -> sortImports;
                 case "UnusedImport" -> removeUnusedImports;
-                default ->
-                    rule instanceof IntelliJRule
-                            ? formatterEnabled && intellijStyle
-                            : formatting || (linterEnabled && (recommended || !builtin));
+                default -> rule instanceof IntelliJRule
+                        ? formatterEnabled && intellijStyle
+                        : formatting || (linterEnabled && (recommended || !builtin));
             };
             if (s != null) {
                 if (s.level() == Severity.OFF) return Severity.OFF;
@@ -120,7 +120,8 @@ public final class Config {
         }
     }
 
-    private record Scoped(Path dir, Map<String, Object> config) {}
+    private record Scoped(Path dir, Map<String, Object> config) {
+    }
 
     public final Path root;
     private final Map<String, Object> rootConfig;

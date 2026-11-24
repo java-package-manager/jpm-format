@@ -173,7 +173,8 @@ public final class XmlFormat {
             } else {
                 strip(out);
                 if (trailing(node, pending)) out.append(gap ? " " : "");
-                else out.append("\n".repeat(Math.max(1, Math.min(pending, maxBlank + 1)))).append(" ".repeat(level * indent));
+                else
+                    out.append("\n".repeat(Math.max(1, Math.min(pending, maxBlank + 1)))).append(" ".repeat(level * indent));
             }
             pending = 0;
             gap = false;
@@ -191,7 +192,7 @@ public final class XmlFormat {
         if (e.empty()) return;
         boolean layout = !preserves(e.startTag()) && !e.children().isEmpty()
                 && e.children().stream().allMatch(c -> c instanceof Text t ? t.text().isBlank() && !t.text()
-                        .startsWith("<![CDATA[") : true)
+                .startsWith("<![CDATA[") : true)
                 && e.children().stream().anyMatch(c -> !(c instanceof Text));
         String content = text.substring(e.contentStart(), e.contentEnd());
         if (!layout && !preserves(e.startTag()) && content.isBlank() && content.indexOf('\n') >= 0) {

@@ -9,13 +9,16 @@ text. Lint rules only report.
 
 ### JavaFormat
 
-The layout of the code: indentation, line breaks, spacing. jpm-format's fork of Palantir Java Format. In the
-default `formatter.style: "intellij"` it keeps the input's line breaks, as IntelliJ does ("Keep when reformatting:
-line breaks", and "Do not wrap" for everything): no line is wrapped or joined, except that `else`, `catch`,
-`finally` and the `while` of a `do` move up after a `}`, statements get a line each, and the annotations of
-classes, methods and fields go on their own lines. A wrapped line is indented one continuation indent from the
-line it continues, not from every expression it is in (`foo(bar(a,` then `b))` puts `b` one continuation in), a
-block from the line it starts on, and a closing `)` on its own line under the line with its `(`. Method
+The layout of the code: indentation, line breaks, spacing. In the default `formatter.style: "intellij"` it is
+jpm-format's own layout engine (ADR 0006), which keeps the input's line breaks, as IntelliJ does ("Keep when
+reformatting: line breaks"): no line is joined, except that `{` moves up to the line it opens from, `else`,
+`catch`, `finally` and the `while` of a `do` move up after a `}`, and a switch rule's body moves up after its `->`
+when it fits; statements get a line each, block contents and the `}` lines of their own, and the annotations of
+classes, methods and fields go on their own lines. The body of an `if`, a loop or a switch rule that would end
+past `formatter.lineWidth` moves to the next line. A wrapped line is indented one continuation indent from the
+nearest enclosing statement, argument, chain or operand that starts a line, not from every expression it is in
+(`foo(bar(a,` then `b))` puts `b` one continuation in), a block from the line it starts on, and a closing `)` on
+its own line under the line with its `(`. Method
 parameters, the parts of a `for` header and try resources line up ("Align when multiline"), array initializers are
 one continuation in and written `new int[]{1}`, and an `if` on its own line after an `else` and a comment is that
 `else`'s statement. Modifiers keep the order they are written in, and the annotations and modifiers of a local
@@ -24,10 +27,12 @@ Comments stay as written: line comments are not wrapped and keep the text after 
 column stay there ("Line comment at first column"), a comment after the statements of a `case` stays indented with
 them, and the other lines of a block comment move as far as its first.
 
-With `formatter.style: "palantir"` it chooses the line breaks itself, as Palantir Java Format does, wrapping at
+With `formatter.style: "palantir"` it is jpm-format's fork of Palantir Java Format, which chooses the line breaks
+itself, wrapping at
 `formatter.lineWidth` (20 to 1000). Configure with `formatter.indentWidth` (1 to 16),
 `formatter.continuationIndentWidth` (1 to 32; twice `indentWidth` by default, as IntelliJ's 4 and 8) and
-`formatter.useTabs`. Text blocks are never re-indented. Turn the whole formatter off with
+`formatter.useTabs`. In the IntelliJ style a text block moves as a whole to one continuation indent in from the
+line it starts on, as in IntelliJ, which keeps its value; tabs never go into it. Turn the whole formatter off with
 `formatter.enabled: false`.
 
 `formatter.style` can also name a formatter release: `"palantir@<version>"` (Palantir Java Format),

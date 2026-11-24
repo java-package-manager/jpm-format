@@ -14,15 +14,14 @@ Facts for AI agents working on jpm-format. Reasons are in [CONTRIBUTING.md](CONT
 | Changeset (every change has one; `--minor`, `--major` or `--empty` instead of `--patch`) | `jpm changeset add --patch -m "<summary>"` |
 | jpm's checks (among them: every change has a changeset), then the tests | `jpm check` |
 | IntelliJ parity (lines that differ from IntelliJ's formatter; may only go down) | `jpm build --bundle && java checks/Parity.java --idea <IntelliJ home> [--show 10] [--update]` |
-| The same for the IntelliJ style's own layout engine (ADR 0006) | `JPM_FORMAT_LAYOUT=intellij java checks/Parity.java --idea <IntelliJ home> --baseline checks/parity/baseline-layout.txt` |
 
 ## Where things live
 
 - `src/dev/jpm/format/Main.java`: the command line. `Engine.java`: the formatting pipeline. `Lsp.java`: the
   language server.
-- `src/dev/jpm/format/palantir/`: the layout engine, a fork of Palantir Java Format.
-- `src/dev/jpm/format/intellij/`: adjustments toward IntelliJ's code style, and `Layout`, the IntelliJ style's own
-  layout engine that replaces the Palantir fork (ADR 0006; on with `JPM_FORMAT_LAYOUT=intellij` until it is the default). `src/dev/jpm/format/rules/`:
+- `src/dev/jpm/format/palantir/`: a fork of Palantir Java Format, for `formatter.style: "palantir"` until ADR 0006 removes it.
+- `src/dev/jpm/format/intellij/`: `Layout`, the IntelliJ style's layout engine (ADR 0006), and the rules after it
+  that adjust its output toward IntelliJ's code style. `src/dev/jpm/format/rules/`:
   lint rules. `src/dev/jpm/format/inspections/`: IntelliJ's default inspections, one nested class each, named by
   IntelliJ's short name; each has a case in `InspectionsTest` and its summary generates `docs/inspections.md`
   (`UPDATE_DOCS=1 jpm test`). `src/dev/jpm/format/api/`: the rule API for custom rules.

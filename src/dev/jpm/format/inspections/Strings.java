@@ -156,8 +156,10 @@ final class Strings {
                         default -> op;
                     };
                     Boolean empty = null;
-                    if (k == 0 && op == Tree.Kind.EQUAL_TO || k == 1 && op == Tree.Kind.LESS_THAN || k == 0 && op == Tree.Kind.LESS_THAN_EQUAL) empty = true;
-                    if (k == 0 && (op == Tree.Kind.NOT_EQUAL_TO || op == Tree.Kind.GREATER_THAN) || k == 1 && op == Tree.Kind.GREATER_THAN_EQUAL) empty = false;
+                    if (k == 0 && op == Tree.Kind.EQUAL_TO || k == 1 && op == Tree.Kind.LESS_THAN || k == 0 && op == Tree.Kind.LESS_THAN_EQUAL)
+                        empty = true;
+                    if (k == 0 && (op == Tree.Kind.NOT_EQUAL_TO || op == Tree.Kind.GREATER_THAN) || k == 1 && op == Tree.Kind.GREATER_THAN_EQUAL)
+                        empty = false;
                     if (empty != null) {
                         String repl = (empty ? "" : "!") + Expressions.operand(s, r) + ".isEmpty()";
                         s.report(b, "'" + s.text(b) + "' can be '" + repl + "'", s.replace("Use isEmpty()", b, repl));
@@ -191,8 +193,10 @@ final class Strings {
                         if (known && k != null) {
                             Tree.Kind op = b.getKind();
                             Boolean contains = null;
-                            if (k == -1 && op == Tree.Kind.NOT_EQUAL_TO || k == 0 && op == Tree.Kind.GREATER_THAN_EQUAL || k == -1 && op == Tree.Kind.GREATER_THAN) contains = true;
-                            if (k == -1 && op == Tree.Kind.EQUAL_TO || k == 0 && op == Tree.Kind.LESS_THAN) contains = false;
+                            if (k == -1 && op == Tree.Kind.NOT_EQUAL_TO || k == 0 && op == Tree.Kind.GREATER_THAN_EQUAL || k == -1 && op == Tree.Kind.GREATER_THAN)
+                                contains = true;
+                            if (k == -1 && op == Tree.Kind.EQUAL_TO || k == 0 && op == Tree.Kind.LESS_THAN)
+                                contains = false;
                             if (contains != null) {
                                 String arg = s.text(m.getArguments().get(0));
                                 String repl = (contains ? "" : "!") + Expressions.operand(s, r) + ".contains(" + arg + ")";
@@ -264,8 +268,10 @@ final class Strings {
                         String n = Scan.name(outer);
                         ExpressionTree r = Scan.receiver(outer);
                         String rs = r == null ? "" : r.toString();
-                        if (n.equals("append")) return s.typed() ? r != null && s.isA(r, "java.lang.AbstractStringBuilder") : rs.matches("(?i)(sb|buf|buffer|builder|.*Builder)");
-                        if (n.equals("print") || n.equals("println")) return rs.equals("System.out") || rs.equals("System.err");
+                        if (n.equals("append"))
+                            return s.typed() ? r != null && s.isA(r, "java.lang.AbstractStringBuilder") : rs.matches("(?i)(sb|buf|buffer|builder|.*Builder)");
+                        if (n.equals("print") || n.equals("println"))
+                            return rs.equals("System.out") || rs.equals("System.err");
                         if (Scan.callsStatic(outer, "String", "valueOf")) return true;
                     }
                     return false;
@@ -318,7 +324,8 @@ final class Strings {
                         ExpressionTree r = Scan.receiver(outer);
                         String n = Scan.name(outer);
                         if (n.equals("append")) return r != null && s.isA(r, "java.lang.AbstractStringBuilder");
-                        if (n.equals("print") || n.equals("println")) return r != null && s.isA(r, "java.io.PrintStream");
+                        if (n.equals("print") || n.equals("println"))
+                            return r != null && s.isA(r, "java.io.PrintStream");
                     }
                     return false;
                 }
@@ -377,7 +384,7 @@ final class Strings {
                             boolean declaration = p instanceof VariableTree;
                             if (receiver && getCurrentPath().getParentPath().getParentPath().getLeaf() instanceof MethodInvocationTree mi
                                     && Scan.name(mi).equals("append") && !(getCurrentPath().getParentPath().getParentPath().getParentPath().getLeaf()
-                                            instanceof com.sun.source.tree.ExpressionStatementTree)
+                                    instanceof com.sun.source.tree.ExpressionStatementTree)
                                     && !(getCurrentPath().getParentPath().getParentPath().getParentPath().getLeaf() instanceof MemberSelectTree)) {
                                 escapes[0] = true;
                             }
@@ -490,7 +497,8 @@ final class Strings {
                     if (var == null || !string) return;
                     for (TreePath p = getCurrentPath().getParentPath(); p != null; p = p.getParentPath()) {
                         Tree t = p.getLeaf();
-                        if (t instanceof MethodTree || t instanceof LambdaExpressionTree || t instanceof ClassTree) return;
+                        if (t instanceof MethodTree || t instanceof LambdaExpressionTree || t instanceof ClassTree)
+                            return;
                         if (Flow.loop(t) && !Flow.contains(t, x -> x == var)) {
                             s.report(op, "String concatenation '" + (op instanceof CompoundAssignmentTree ? "+=" : "+") + "' in a loop");
                             return;
@@ -676,8 +684,9 @@ final class Strings {
                     if (Scan.callsStatic(m, "System", "getProperty") && m.getArguments().size() == 1) {
                         String key = Scan.string(m.getArguments().get(0));
                         String repl = key == null ? null : PROPERTIES.get(key);
-                        if (repl != null) s.report(m, "'System.getProperty(\"" + key + "\")' can be '" + repl.replace("java.io.", "").replace("java.nio.charset.", "") + "'",
-                                s.replace("Simplify", m, repl));
+                        if (repl != null)
+                            s.report(m, "'System.getProperty(\"" + key + "\")' can be '" + repl.replace("java.io.", "").replace("java.nio.charset.", "") + "'",
+                                    s.replace("Simplify", m, repl));
                     }
                     return super.visitMethodInvocation(m, v);
                 }
@@ -704,7 +713,8 @@ final class Strings {
                 return -1;
             }
             if (m.group(1) == null) ordinal++;
-            else if (!m.group(1).equals("<")) explicit = Math.max(explicit, Integer.parseInt(m.group(1).replace("$", "")));
+            else if (!m.group(1).equals("<"))
+                explicit = Math.max(explicit, Integer.parseInt(m.group(1).replace("$", "")));
         }
         return Math.max(ordinal, explicit);
     }
@@ -774,8 +784,10 @@ final class Strings {
                     if (lit != null && Scan.calls(m, "replace", 2)) {
                         ExpressionTree a = Scan.strip(m.getArguments().get(0));
                         String target = Scan.string(a);
-                        if (target == null && a instanceof LiteralTree l && l.getKind() == Tree.Kind.CHAR_LITERAL) target = String.valueOf(l.getValue());
-                        if (target != null && !lit.contains(target)) s.report(m, "'replace()' has no effect: the literal does not contain \"" + target + "\"");
+                        if (target == null && a instanceof LiteralTree l && l.getKind() == Tree.Kind.CHAR_LITERAL)
+                            target = String.valueOf(l.getValue());
+                        if (target != null && !lit.contains(target))
+                            s.report(m, "'replace()' has no effect: the literal does not contain \"" + target + "\"");
                     }
                     return super.visitMethodInvocation(m, v);
                 }
@@ -960,7 +972,8 @@ final class Strings {
                     boolean upper = Scan.name(c).equals("toUpperCase"), lower = Scan.name(c).equals("toLowerCase");
                     if (!upper && !lower || c.getArguments().size() > 1) return;
                     boolean mismatch = upper ? !lit.equals(lit.toUpperCase(Locale.ROOT)) : !lit.equals(lit.toLowerCase(Locale.ROOT));
-                    if (mismatch) s.report(m, "Result of '" + Scan.name(c) + "()' is compared with \"" + lit + "\", which never matches");
+                    if (mismatch)
+                        s.report(m, "Result of '" + Scan.name(c) + "()' is compared with \"" + lit + "\", which never matches");
                 }
             }.run();
         }
@@ -978,13 +991,15 @@ final class Strings {
             new Visitor(s) {
                 @Override
                 public Void visitNewClass(NewClassTree c, Void v) {
-                    if (Scan.simpleName(c.getIdentifier()).equals("SimpleDateFormat") && !c.getArguments().isEmpty()) check(c.getArguments().get(0));
+                    if (Scan.simpleName(c.getIdentifier()).equals("SimpleDateFormat") && !c.getArguments().isEmpty())
+                        check(c.getArguments().get(0));
                     return super.visitNewClass(c, v);
                 }
 
                 @Override
                 public Void visitMethodInvocation(MethodInvocationTree m, Void v) {
-                    if (Scan.callsStatic(m, "DateTimeFormatter", "ofPattern") && !m.getArguments().isEmpty()) check(m.getArguments().get(0));
+                    if (Scan.callsStatic(m, "DateTimeFormatter", "ofPattern") && !m.getArguments().isEmpty())
+                        check(m.getArguments().get(0));
                     return super.visitMethodInvocation(m, v);
                 }
 

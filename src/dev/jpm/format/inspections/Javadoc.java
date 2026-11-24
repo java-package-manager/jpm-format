@@ -186,7 +186,8 @@ final class Javadoc {
                     body.append(t.replaceAll("(?m)^\\s*\\*", "")).append('\n');
                 }
                 String code = body.toString();
-                if (code.strip().lines().count() < 2 || !CODE_HINT.matcher(code).find() || code.contains("TODO") || code.contains("http")) continue;
+                if (code.strip().lines().count() < 2 || !CODE_HINT.matcher(code).find() || code.contains("TODO") || code.contains("http"))
+                    continue;
                 if (parses("class X { void m() {\n" + code + "\n} }") || parses("class X {\n" + code + "\n}") || parses(code)) {
                     Comments.Comment first = g.get(0), last = g.get(g.size() - 1);
                     s.report(first.start(), last.end(), "Commented out code (" + code.strip().lines().count() + " lines)", null);

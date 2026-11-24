@@ -19,7 +19,8 @@ public interface Reporter {
     /**
      * Totals of a run.
      */
-    record Summary(int files, int changed, boolean check, long millis) {}
+    record Summary(int files, int changed, boolean check, long millis) {
+    }
 
     void report(List<Engine.Result> results, Summary summary, Registry registry, PrintStream out);
 
@@ -30,7 +31,7 @@ public interface Reporter {
             case "sarif" -> new Sarif();
             case "github" -> new Github();
             default ->
-                throw new FormatException("Unknown reporter \"" + name + "\"; use pretty, json, sarif or github");
+                    throw new FormatException("Unknown reporter \"" + name + "\"; use pretty, json, sarif or github");
         };
     }
 

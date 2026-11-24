@@ -64,7 +64,8 @@ class InspectionsDocsTest {
         String want = generate();
         if (System.getenv("UPDATE_DOCS") != null) Files.writeString(DOC, want);
         for (Inspection i : Inspections.all()) {
-            if (!CATEGORIES.containsKey(i.category())) throw new AssertionError(i.id() + ": unknown category " + i.category());
+            if (!CATEGORIES.containsKey(i.category()))
+                throw new AssertionError(i.id() + ": unknown category " + i.category());
         }
         assertEquals(want, Files.exists(DOC) ? Files.readString(DOC) : "", "docs/inspections.md is stale: run UPDATE_DOCS=1 jpm test");
     }

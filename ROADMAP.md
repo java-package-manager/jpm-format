@@ -14,16 +14,10 @@ Parity is measured against IntelliJ's own formatter on real projects (`checks/Pa
 - [ ] **IntelliJ's code style options.**
 - [ ] **A `#branch` of Palantir or google-java-format** as `formatter.style`; they build with Gradle and Maven,
       not jpm.
-- [ ] **The IntelliJ style's own layout engine; no Palantir in the codebase**
-      ([ADR 0006](docs/adr/0006-intellij-style-without-palantir.md)). The engine is in
-      `src/dev/jpm/format/intellij/Layout.java`, on with `JPM_FORMAT_LAYOUT=intellij`: 905 lines differ from IntelliJ
-      on the parity corpus, against 980 with the fork. Left to do:
-  - make it the default: `JavaFormat` alone then keeps blank lines and moves text blocks as IntelliJ does, which
-    `RulesTest` and `IntelliJRulesTest.palantirStyleTurnsThemOff` expect from the fork; `checks/parity/baseline.txt`
-    becomes the engine's count; README's "Formatting style" describes the engine;
-  - range formatting (`JavaFormat.formatRange`, used by the language server) formats the whole file;
-  - delete the fork in `src/dev/jpm/format/palantir/`, its `jpm-format:` changes, upstream's test data and
-    `third_party/palantir-java-format`, and run `"palantir"` from Palantir's own jar as an external formatter.
+- [ ] **No Palantir in the codebase** ([ADR 0006](docs/adr/0006-intellij-style-without-palantir.md)). The IntelliJ
+      style runs on its own engine now; `"palantir"` still runs on the fork. Delete the fork in
+      `src/dev/jpm/format/palantir/`, its `jpm-format:` changes, upstream's test data and
+      `third_party/palantir-java-format`, and run `"palantir"` from Palantir's own jar as an external formatter.
 
 ## Other file types
 

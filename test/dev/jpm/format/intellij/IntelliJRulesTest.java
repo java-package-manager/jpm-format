@@ -508,11 +508,10 @@ class IntelliJRulesTest {
     @Test
     void palantirStyleTurnsThemOff() {
         String in = "class A {\n    void f() {}\n\n\n    int x;\n}\n";
+        String palantir = "{\"formatter\": {\"style\": \"palantir\"}}";
         assertEquals(
-                RuleTester.of(new JavaFormat()).format(in),
-                RuleTester.withBuiltins()
-                        .config("{\"formatter\": {\"style\": \"palantir\"}}")
-                        .format(in));
+                RuleTester.of(new JavaFormat()).config(palantir).format(in),
+                RuleTester.withBuiltins().config(palantir).format(in));
         assertTrue(RuleTester.withBuiltins().format(in).contains("void f() {\n    }"));
     }
 

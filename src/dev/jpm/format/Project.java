@@ -39,7 +39,8 @@ public final class Project {
     /**
      * A module: its folder, the folders its sources live in, and its compile classpath.
      */
-    public record Module(Path dir, List<Path> sourceDirs, List<Path> classpath) {}
+    public record Module(Path dir, List<Path> sourceDirs, List<Path> classpath) {
+    }
 
     public final Path root;
     /**

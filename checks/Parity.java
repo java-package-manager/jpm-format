@@ -96,7 +96,8 @@ public final class Parity {
                     .matcher(Files.readString(ROOT.resolve("project.jsonc")));
             if (!v.find()) throw new IOException("no \"version\" in project.jsonc");
             Path bundle = ROOT.resolve("dist/jpm-format-" + v.group(1) + "-bundle.jar");
-            if (!Files.isRegularFile(bundle)) throw new IOException("no " + ROOT.relativize(bundle) + ": run `jpm build --bundle` first");
+            if (!Files.isRegularFile(bundle))
+                throw new IOException("no " + ROOT.relativize(bundle) + ": run `jpm build --bundle` first");
             jpmFormat = List.of(
                     Path.of(System.getProperty("java.home"), "bin", "java").toString(), "-jar", bundle.toString());
         }
