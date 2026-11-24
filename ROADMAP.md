@@ -39,5 +39,3 @@ Parity is measured against IntelliJ's own formatter on real projects (`checks/Pa
 
 - [ ] `jpm import` translates Spotless config (in jpm's
       [ROADMAP.md](https://github.com/java-package-manager/jpm/blob/main/ROADMAP.md)).
-- [ ] The IntelliJ plugin runs `jpm format` on save (in jpm-intellij's
-      [ROADMAP.md](https://github.com/java-package-manager/jpm-intellij/blob/main/ROADMAP.md)).
