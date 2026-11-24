@@ -323,4 +323,15 @@ class FileFormatsTest {
         assertEquals(out, TomlFormat.format(out, 4, 2), "idempotent");
         assertEquals("a = \"open\n", TomlFormat.format("a = \"open\n", 4, 2), "does not lex: left alone");
     }
+
+    @Test
+    void yamlLikeIntelliJExceptFlowCollections() {
+        String in = "server:\n    port:   8080   # the port\n    name: \"a   b\"\nspring:\n  datasource:\n      url:    jdbc:x\n  list:\n  - one\n  -   two\n  - key:  v\n    other: w\ntext: |\n    keep   this\n      and this\nfolded: >\n  a   b\nflow: {a:  1, b: [1,2]}\nempty:\n   \n\ntrailing: x   \n";
+        String out = "server:\n  port: 8080   # the port\n  name: \"a   b\"\nspring:\n  datasource:\n    url: jdbc:x\n  list:\n    - one\n    - two\n    - key: v\n      other: w\ntext: |\n  keep   this\n    and this\nfolded: >\n  a   b\nflow: {a:  1, b: [1,2]}\nempty:\n\n\ntrailing: x   \n";
+        assertEquals(out, YamlFormat.format(in, 2, 2));
+        assertEquals(out, YamlFormat.format(out, 2, 2), "idempotent");
+        for (String unsure : new String[]{"a:\n\tb: 1\n", "a: |2\n   x\n", "a: [1,\n  2]\n", "a: plain\n  continued\n"}) {
+            assertEquals(unsure, YamlFormat.format(unsure, 2, 2), "left alone: " + unsure);
+        }
+    }
 }

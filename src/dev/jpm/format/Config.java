@@ -472,7 +472,7 @@ public final class Config {
 
     private static final Set<String> TOP =
             Set.of("$schema", "extends", "ignore", "formatter", "imports", "linter", "overrides", "files", "java", "json",
-                    "xml", "properties", "toml");
+                    "xml", "properties", "toml", "yaml");
     private static final Set<String> FORMATTER = Set.of(
             "enabled",
             "style",
@@ -493,7 +493,7 @@ public final class Config {
         Map<String, Object> java = obj(c.get("java"), "java");
         keys(java, Set.of("formatter", "imports", "linter"), where + ": java");
         keys(obj(java.get("formatter"), "java.formatter"), FORMATTER, where + ": java.formatter");
-        for (String format : List.of("json", "xml", "properties", "toml")) {
+        for (String format : List.of("json", "xml", "properties", "toml", "yaml")) {
             Map<String, Object> section = obj(c.get(format), format);
             keys(section, Set.of("formatter"), where + ": " + format);
             keys(obj(section.get("formatter"), format + ".formatter"), SpotlessSteps.FORMAT_OPTIONS.get(format),
