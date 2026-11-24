@@ -9,7 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * IntelliJ's default Javadoc formatting, which Palantir Java Format does not do: "Align parameter descriptions" and
+ * IntelliJ's default Javadoc formatting, which the layout engine leaves to it: "Align parameter descriptions" and
  * "Align thrown exception descriptions" (the descriptions of {@code @param} tags, and of {@code @throws} and
  * {@code @exception} tags, start in one column, with their continuation lines under them), "Blank lines: after
  * description" (a blank line between the description and the first block tag), "Do not wrap one line comments"

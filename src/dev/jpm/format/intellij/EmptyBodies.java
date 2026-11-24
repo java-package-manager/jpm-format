@@ -24,8 +24,8 @@ import java.util.List;
 /**
  * IntelliJ's "Keep when reformatting: simple methods / classes / blocks in one line", all off by default: an empty
  * body is written {@code {}} on two lines, the closing brace under the first line of the declaration or statement
- * (the line of the brace for {@code else}, {@code catch}, {@code finally} and {@code do}). Palantir Java Format keeps
- * {@code void f() {}}, {@code class A {}} and {@code if (x) {}} on one line.
+ * (the line of the brace for {@code else}, {@code catch}, {@code finally} and {@code do}). The layout engine keeps
+ * {@code void f() {}} and {@code if (x) {}} on one line.
  *
  * <p>Method and constructor bodies, named classes, initializer blocks and the blocks of {@code if}, {@code else},
  * loops, {@code try}, {@code catch}, {@code finally} and {@code synchronized}. Lambdas, anonymous classes,

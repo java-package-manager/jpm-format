@@ -14,10 +14,9 @@ Parity is measured against IntelliJ's own formatter on real projects (`checks/Pa
 - [ ] **IntelliJ's code style options.**
 - [ ] **A `#branch` of Palantir or google-java-format** as `formatter.style`; they build with Gradle and Maven,
       not jpm.
-- [ ] **No Palantir in the codebase** ([ADR 0006](docs/adr/0006-intellij-style-without-palantir.md)). The IntelliJ
-      style runs on its own engine now; `"palantir"` still runs on the fork. Delete the fork in
-      `src/dev/jpm/format/palantir/`, its `jpm-format:` changes, upstream's test data and
-      `third_party/palantir-java-format`, and run `"palantir"` from Palantir's own jar as an external formatter.
+- [ ] **Start on any JDK for the IntelliJ style.** Its engine uses javac's public API only, but jpm-format still exports
+      javac's internals (`Exports`) and moves a run to JDK 21 when the running JDK's javac is newer (`Jdks`, ADR
+      0003), as Palantir Java Format and google-java-format need. Do that only when `formatter.style` names one of them.
 
 ## Other file types
 

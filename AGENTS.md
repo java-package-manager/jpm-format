@@ -19,19 +19,17 @@ Facts for AI agents working on jpm-format. Reasons are in [CONTRIBUTING.md](CONT
 
 - `src/dev/jpm/format/Main.java`: the command line. `Engine.java`: the formatting pipeline. `Lsp.java`: the
   language server.
-- `src/dev/jpm/format/palantir/`: a fork of Palantir Java Format, for `formatter.style: "palantir"` until ADR 0006 removes it.
 - `src/dev/jpm/format/intellij/`: `Layout`, the IntelliJ style's layout engine (ADR 0006), and the rules after it
   that adjust its output toward IntelliJ's code style. `src/dev/jpm/format/rules/`:
   lint rules. `src/dev/jpm/format/inspections/`: IntelliJ's default inspections, one nested class each, named by
   IntelliJ's short name; each has a case in `InspectionsTest` and its summary generates `docs/inspections.md`
   (`UPDATE_DOCS=1 jpm test`). `src/dev/jpm/format/api/`: the rule API for custom rules.
-- `test/assets/palantir/testdata`: upstream's formatter tests, kept as a regression suite.
+- `test/assets/intellij/layout`: unformatted code and IntelliJ's output for it, which `LayoutTest` runs.
 - `ROADMAP.md`: what is not done yet; remove an item once it is done.
 
 ## Rules that must not be broken
 
-- No `//` or `/* */` comments outside `src/dev/jpm/format/palantir/`. Never remove the copyright headers or
-  `jpm-format:` markers inside it.
+- No `//` or `/* */` comments in the code (Javadoc is fine).
 - `jpm start -- --check` passes.
 - Do not push, tag, or file issues without being asked.
 - Releases and prereleases are made only by jpm-changeset (CI's release job, `jpm changeset version` and

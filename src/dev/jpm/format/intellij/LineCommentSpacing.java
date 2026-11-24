@@ -8,8 +8,7 @@ import java.util.List;
 
 /**
  * IntelliJ's "Add a space at line comment start", off by default: a line comment keeps the text right after its
- * {@code //}, so {@code //TODO} and {@code //$NON-NLS-1$} stay as written. Palantir Java Format adds a space. The
- * layout engine changes only whitespace, so the line comments of its output are those of its input, in the same
+ * {@code //}, so {@code //TODO} and {@code //$NON-NLS-1$} stay as written. The layout engine changes only whitespace, so the line comments of its output are those of its input, in the same
  * order; each one that had no space after {@code //} gets its text back.
  *
  * <p>IntelliJ also leaves the space before a comment that ends a line of code as it was ({@code case 'a':// fall

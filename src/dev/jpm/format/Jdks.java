@@ -46,7 +46,7 @@ public final class Jdks {
      * Why the formatter cannot run here, for error messages.
      */
     public static String unsupportedMessage() {
-        return "the formatter (Palantir Java Format) does not support the javac of Java "
+        return "Palantir Java Format and google-java-format do not support the javac of Java "
                 + Runtime.version().feature() + " yet; run jpm-format on JDK " + SUPPORTED
                 + " (set JPM_FORMAT_JAVA_HOME to its folder)";
     }

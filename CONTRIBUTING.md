@@ -37,11 +37,8 @@ runs them.
 
 ## Rules for the code
 
-- No `//` or `/* */` comments in jpm-format's own code
+- No `//` or `/* */` comments in the code
   ([docs/adr/0001](docs/adr/0001-decisions-live-in-adrs.md)); decisions go into [docs/adr](docs/adr).
-- `src/dev/jpm/format/palantir/` is a fork of Palantir Java Format. Its files keep their Apache 2.0
-  headers and comments; jpm-format's changes to it are marked `jpm-format:` and listed in
-  [third_party/palantir-java-format/UPSTREAM.md](third_party/palantir-java-format/UPSTREAM.md).
 - The jpm-format sources are formatted by jpm-format (`jpm start -- --check` passes).
 - No stability before 1.0.
 

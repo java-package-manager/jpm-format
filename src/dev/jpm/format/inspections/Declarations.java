@@ -212,9 +212,24 @@ final class Declarations {
             }.run();
         }
 
+        /**
+         * Whether a member of an enum is one of its constants: its name is the first word after its annotations, where
+         * a field has its type, and a {@code ,}, {@code ;}, {@code (}, <code>&#123;</code> or <code>&#125;</code>
+         * follows it.
+         */
         static boolean isEnumConstant(Scan s, VariableTree v) {
-            return v instanceof com.sun.tools.javac.tree.JCTree.JCVariableDecl d
-                    && (d.mods.flags & com.sun.tools.javac.code.Flags.ENUM) != 0;
+            String src = s.source();
+            int from = s.start(v);
+            if (from < 0) return false;
+            if (!v.getModifiers().getAnnotations().isEmpty()) from = Math.max(from, s.end(v.getModifiers()));
+            int i = from;
+            while (i < src.length() && Character.isWhitespace(src.charAt(i))) i++;
+            String name = v.getName().toString();
+            if (!src.startsWith(name, i)) return false;
+            i += name.length();
+            if (i < src.length() && Character.isJavaIdentifierPart(src.charAt(i))) return false;
+            while (i < src.length() && Character.isWhitespace(src.charAt(i))) i++;
+            return i >= src.length() || ",;({}".indexOf(src.charAt(i)) >= 0;
         }
 
         private static boolean outside(int at, List<int[]> comments) {

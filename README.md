@@ -49,8 +49,8 @@ headers, try resources and record components line up as in IntelliJ. The Intelli
 - Javadoc gets aligned `@param` descriptions, a blank line before the tags and `<p>` on empty lines;
 - comments stay as written: line comments are not wrapped, keep their spacing and stay at the first column.
 
-`"formatter": {"style": "palantir"}` is Palantir Java Format's output as it is: it chooses the line breaks
-itself, wrapping at `lineWidth`. Imports follow
+`"formatter": {"style": "palantir"}` is Palantir Java Format's output as it is (2.103.0, from its own jar): it
+chooses the line breaks itself, wrapping at 120. Imports follow
 IntelliJ's layout: all other imports, then `java.*` and `javax.*`, then static imports, each group sorted
 alphabetically and separated by a blank line. Javadoc is not reflowed.
 
@@ -71,10 +71,10 @@ project root (not both). In a workspace, a module's own `project.jsonc` applies 
         "style": "intellij",                       // or "palantir", "palantir@<version>", "google-java-format[@<version>]",
                                                    // "eclipse[@<version>]" (with "eclipseConfig": "<profile>.xml")
                                                    // a jar's URL ("…/f.jar#sha256=…") or "github:author/formatter[@<version>|#<branch>]"
-        "lineWidth": 120,                          // 20 to 1000; the "palantir" style wraps at it
+        "lineWidth": 120,                          // 20 to 1000; long statement bodies move to the next line past it
         "indentWidth": 4,                          // 1 to 16
         "continuationIndentWidth": 8,              // wrapped lines; twice indentWidth by default, as in IntelliJ
-        "maxBlankLines": 2,                        // blank lines kept in a row, 1 to 10 (1: as Palantir)
+        "maxBlankLines": 2,                        // blank lines kept in a row, 1 to 10
         "useTabs": false,
         "licenseHeader": "/* Copyright $YEAR Acme */"   // or { "file": "LICENSE_HEADER" }
       },
@@ -313,15 +313,13 @@ A step takes its formatter's version after `@` (or as `"version"`), else Spotles
   tree serves the formatter, the linter and type attribution.
 - The IntelliJ style's layout engine (`Layout`, with `Tokens` and `Syntax`) rewrites only the whitespace between
   javac's tokens. How close it is to IntelliJ is measured on real projects (`checks/Parity.java`).
-- The `"palantir"` style runs on a fork of Palantir Java Format 2.103.0 in `src/dev/jpm/format/palantir/`, until it
-  runs from Palantir's own jar (ADR 0006);
-  [third_party/palantir-java-format/UPSTREAM.md](third_party/palantir-java-format/UPSTREAM.md) says what was copied
-  and what changed since. Upstream's 226 formatter test cases run as `PalantirTestdataTest`.
+- The other styles (`"palantir"`, `"google-java-format"`, `"eclipse"`, a jar or a Git repository) run the formatter
+  itself, which jpm downloads, in a class loader of its own.
 - Built-in rules are compiled into jpm-format. Files are processed in parallel.
-- Palantir needs javac's internal packages. jpm starts extensions on a plain JVM, so jpm-format exports them
+- Palantir Java Format and google-java-format need javac's internal packages. jpm starts extensions on a plain JVM, so jpm-format exports them
   itself on JDK 21–23, and on newer JDKs starts a second JVM with `--add-exports` (with class data sharing,
   so later starts are fast).
-- Newer JDKs changed javac's internal tree in a way Palantir cannot read yet. When jpm starts jpm-format on
+- Newer JDKs changed javac's internal tree in a way Palantir Java Format cannot read yet. When jpm starts jpm-format on
   such a JDK, it moves the run to JDK 21 (`jpm java home 21`, which installs it if needed);
   `JPM_FORMAT_JAVA_HOME` picks the JDK instead.
 
@@ -348,5 +346,4 @@ jpm start -- --check            # jpm-format on itself, on its runtime classpath
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The forked layout engine in `src/dev/jpm/format/palantir/` is Apache 2.0, from Palantir
-Java Format and google-java-format: see [third_party/palantir-java-format](third_party/palantir-java-format).
+MIT, see [LICENSE](LICENSE).
