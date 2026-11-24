@@ -89,8 +89,8 @@ IntelliJ's default Javadoc formatting:
 - a description written on the line after its `@param` or `@throws` name moves up to the tag
 - the parameter types of `{@link}`, `{@linkplain}` and `@see` references are separated by a comma and a space
 
-Text is not re-wrapped. Comments without a `*` at the start of every line, and comments with `<pre>` in their
-tags, are left as they are. Runs after `KeepBlankLines`; off with `formatter.style: "palantir"`.
+Text is not re-wrapped. Comments without a `*` at the start of every line are left as they are; a `<pre>` in a
+comment does not stop the rest of it from being formatted. Runs after `KeepBlankLines`; off with `formatter.style: "palantir"`.
 
 ### LineCommentSpacing
 

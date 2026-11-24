@@ -512,6 +512,38 @@ class IntelliJRulesTest {
     }
 
     @Test
+    void javadocWithPreInItsTagsIsFormattedToo() {
+        intellij().assertFormats("""
+                class A {
+                    /**
+                     * Adds.
+                     * @param a  the first
+                     * @param bb  the second, as in
+                     * <pre>
+                     * add(1,  2)
+                     * </pre>
+                     */
+                    void f(int a, int bb) {
+                    }
+                }
+                """, """
+                class A {
+                    /**
+                     * Adds.
+                     *
+                     * @param a  the first
+                     * @param bb the second, as in
+                     *           <pre>
+                     *           add(1,  2)
+                     *           </pre>
+                     */
+                    void f(int a, int bb) {
+                    }
+                }
+                """);
+    }
+
+    @Test
     void javadocBlockTagsHaveNoBlankLinesBetweenThem() {
         intellij().assertFormats("""
                 class A {
