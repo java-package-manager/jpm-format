@@ -43,5 +43,7 @@ formatting and lint).
 
 ## Elsewhere
 
-- [ ] `jpm import` translates Spotless config (in jpm).
-- [ ] The IntelliJ plugin runs `jpm format` on save (in jpm-intellij).
+- [ ] `jpm import` translates Spotless config (in jpm's
+      [ROADMAP.md](https://github.com/java-package-manager/jpm/blob/main/ROADMAP.md)).
+- [ ] The IntelliJ plugin runs `jpm format` on save (in jpm-intellij's
+      [ROADMAP.md](https://github.com/java-package-manager/jpm-intellij/blob/main/ROADMAP.md)).
