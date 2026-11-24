@@ -43,7 +43,7 @@ public final class Parity {
               "version": "0.0.0",
               "extensions": {
                 "format": {
-                  "formatter": { "style": "intellij" },
+                  "java": { "style": "intellij" },
                   "imports": { "removeUnused": false, "sort": false },
                   "linter": { "enabled": false }
                 }
