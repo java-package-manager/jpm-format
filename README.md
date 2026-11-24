@@ -258,39 +258,36 @@ meant:
 | Files | Formatting | Unlike IntelliJ |
 |---|---|---|
 | `*.properties` | `key=value` without spaces around `=` or `:`, no leading whitespace; values and continuation lines as written | blank lines are kept (up to 2) |
-| `*.json`, `*.jsonc` | `indentWidth` (4 unless a `json` section sets it, as for `project.jsonc` below); `"a": 1`, `[1, 2]`; a line one indent in from the line its object or array opens on; comments stay | line breaks are kept: IntelliJ puts every value on a line of its own |
-| `*.yml`, `*.yaml` | each level `indentWidth` in, a sequence under a key one level in, one space after `key:` and `-`; a block scalar moves with its key | flow collections (`[a, b]`) stay as written, where IntelliJ writes `[ a, b ]`; a file whose structure is not plain enough to be sure of (tabs, multi-line flow collections or quoted values, indentation indicators) is left as it is |
-| `*.toml` (Gradle's `libs.versions.toml`) | `key = value`, `{ a = 1 }`, the lines of a multi-line array `indentWidth` in; strings and comments as written | |
-| `*.xml`, `*.xsd`, `*.xsl`, `*.xslt`, `*.wsdl`, `*.fxml` | `indentWidth`; one child element per line; attributes one space apart, those on lines of their own lined up with the first | text, CDATA and `xml:space="preserve"` content are never changed, and long lines are not wrapped |
+| `*.json`, `*.jsonc` | indent 2; `"a": 1`, `[1, 2]`; a line one indent in from the line its object or array opens on; comments stay | line breaks are kept: IntelliJ puts every value on a line of its own |
+| `*.yml`, `*.yaml` | each level 2 in, a sequence under a key one level in, one space after `key:` and `-`; a block scalar moves with its key | flow collections (`[a, b]`) stay as written, where IntelliJ writes `[ a, b ]`; a file whose structure is not plain enough to be sure of (tabs, multi-line flow collections or quoted values, indentation indicators) is left as it is |
+| `*.toml` (Gradle's `libs.versions.toml`) | `key = value`, `{ a = 1 }`, the lines of a multi-line array 4 in; strings and comments as written | |
+| `*.xml`, `*.xsd`, `*.xsl`, `*.xslt`, `*.wsdl`, `*.fxml` | indent 4; one child element per line; attributes one space apart, those on lines of their own lined up with the first | text, CDATA and `xml:space="preserve"` content are never changed, and long lines are not wrapped |
 
 A file that does not parse is left as it is.
 
 ### Settings per file type
 
-The top-level `formatter` settings apply to every file type: `lineWidth`, `indentWidth` and `maxBlankLines`, set or
-not, carry over to all of them (an indent of 4 by default, for JSON and YAML too). A section named after a type
-overrides them for its files and holds the type's own options; that is the way to set one type apart, not the
-top-level default. jpm writes `project.jsonc` with an indent of 2, so a project that keeps it that way says so:
+Each file type has its own defaults. `"default"` sets what applies to every type that does not set it itself, and
+a section named after a type sets that type's settings, and its own options:
 
 ```jsonc
 "format": {
-  "formatter": { "lineWidth": 120 },                     // all file types
-  "json": { "formatter": { "indentWidth": 2 } },         // project.jsonc as jpm writes it
-  "java": { "formatter": { "indentWidth": 2 }, "linter": { "enabled": false } },  // Java: the same keys as here
-  "yaml": { "formatter": { "indentWidth": 2 } },
-  "xml": { "formatter": { "indentWidth": 2 } },
-  "properties": { "formatter": { "wrap": true, "encoding": "ISO-8859-1" } }
+  "default": { "indentWidth": 4 },                       // every type without an indentWidth of its own
+  "java": { "indentWidth": 2, "useTabs": true },         // what "formatter" takes, for Java files
+  "json": { "indentWidth": 2, "style": "compact" },      // "keep" (default), "compact" or "pretty"
+  "properties": { "wrap": true, "encoding": "ISO-8859-1" }
 }
 ```
 
-| Section | `formatter` options |
+| Section | Settings (default) |
 |---|---|
-| `java` | everything the top-level `formatter` takes, and `imports` and `linter` next to it |
-| `json` | `style` (`"keep"`, `"compact"` or `"pretty"`): `"keep"` keeps line breaks; `"compact"` puts an object or array that fits in `lineWidth` on one line (`{ "a": 1 }`, `[1, 2]`) and the rest one value per line; `"pretty"` puts every value on a line of its own. `indentWidth`, `maxBlankLines`, `lineWidth` |
-| `xml` | `indentWidth`, `maxBlankLines` |
-| `toml` | `indentWidth`, `maxBlankLines` |
-| `yaml` | `indentWidth`, `maxBlankLines` |
-| `properties` | `wrap`: values longer than `lineWidth` go on over `\` continuation lines, `indentWidth` in; `encoding`: `"ISO-8859-1"` writes characters outside ASCII as Unicode escapes, `"UTF-8"` writes those escapes as the characters; `indentWidth`, `maxBlankLines`, `lineWidth` |
+| `default` | `lineWidth`, `indentWidth`, `continuationIndentWidth`, `maxBlankLines`, `useTabs`: each type takes those it has |
+| `java` | everything `formatter` takes; `formatter` still works and counts as `java`, which wins over it. `indentWidth` (4) |
+| `json` | `style`: `"keep"` keeps line breaks; `"compact"` puts an object or array that fits in `lineWidth` on one line (`{ "a": 1 }`, `[1, 2]`) and the rest one value per line; `"pretty"` puts every value on a line of its own. `indentWidth` (2), `maxBlankLines`, `lineWidth` |
+| `xml` | `indentWidth` (4), `maxBlankLines` |
+| `yaml` | `indentWidth` (2), `maxBlankLines` |
+| `toml` | `indentWidth` (4), `maxBlankLines` |
+| `properties` | `wrap`: values longer than `lineWidth` go on over `\` continuation lines, `indentWidth` (4) in; `encoding`: `"ISO-8859-1"` writes characters outside ASCII as Unicode escapes, `"UTF-8"` writes those escapes as the characters; `maxBlankLines`, `lineWidth` |
 
 A `"files"` entry (below) that includes a file replaces these defaults, and one with `"steps": []` turns them off;
 the built-in steps are `properties`, `json`, `xml`, `yaml` and `toml`, which take the options above (`indent` for `indentWidth`):

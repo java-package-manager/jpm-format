@@ -79,8 +79,8 @@ final class SpotlessSteps {
             Map.entry("yaml", Set.of("indent", "maxBlankLines")));
 
     /**
-     * The options of jpm-format's own formats in their config sections ({@code "json": {"formatter": {...}}}), with
-     * the names of the top-level {@code formatter}.
+     * The options of jpm-format's own formats in their config sections ({@code "json": {"indentWidth": 2}}), with
+     * the names of the {@code formatter} settings.
      */
     static final Map<String, Set<String>> FORMAT_OPTIONS = Map.of(
             "properties", Set.of("maxBlankLines", "lineWidth", "indentWidth", "wrap", "encoding"),
