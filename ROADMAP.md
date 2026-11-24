@@ -1,8 +1,8 @@
 # Roadmap
 
 What jpm-format does not do yet. jpm's own plan is in its
-[ROADMAP.md](https://github.com/java-package-manager/jpm/blob/main/ROADMAP.md) (Milestone 5: IntelliJ parity,
-then a language server).
+[ROADMAP.md](https://github.com/java-package-manager/jpm/blob/main/ROADMAP.md) (Milestone 5: IntelliJ parity in
+formatting and lint).
 
 ## Formatting
 
@@ -24,6 +24,12 @@ then a language server).
       `src/dev/jpm/format/palantir/`. `formatter.style: "palantir@<version>"` already runs upstream's releases as
       they are. The fork stays for the IntelliJ style: 46 changes of its own (`jpm-format:` in the code), most of
       them the `keepLineBreaks` mode, that upstream would have to take first.
+
+## Editors
+
+- [ ] **`project.jsonc` in the language server.** `jpm format lsp` gives diagnostics, formatting and quick fixes
+      for Java files; in `project.jsonc` it only reloads the config. Still to come: jpm's warnings and errors in
+      `project.jsonc`, at the value they are about, from `jpm check` over jpm's protocol, as jpm-intellij shows them.
 
 ## Running
 
