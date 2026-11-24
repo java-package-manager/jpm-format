@@ -227,7 +227,10 @@ t.assertFormats(input, expected); // also checks idempotence
 ## Editor support
 
 `jpm format lsp` is a language server for VS Code, Zed, Neovim and others: diagnostics as you type,
-document and range formatting, quick fixes for each finding, and "Format and apply safe fixes".
+document and range formatting, quick fixes for each finding, and "Format and apply safe fixes". In
+`project.jsonc` it shows jpm's own warnings and errors (what `jpm check` reports for the manifest, its
+dependencies, license and paths) at the line they are about, when the file is opened and saved, as
+jpm-intellij does.
 
 ## CI
 

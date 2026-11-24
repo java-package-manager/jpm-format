@@ -1,5 +1,6 @@
 package dev.jpm.format;
 
+import dev.jpm.api.model.Problem;
 import dev.jpm.format.api.Finding;
 import dev.jpm.format.api.Fix;
 import dev.jpm.format.api.Lint;
@@ -11,17 +12,22 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.function.Function;
 
 /**
  * {@code jpm format lsp} ({@code jpm-format lsp}): a language server over stdio for VS Code, Zed, Neovim and
  * other editors. It publishes findings as diagnostics while you type, formats documents and selections, and
- * offers each finding's fix as a quick fix.
+ * offers each finding's fix as a quick fix. In {@code project.jsonc} it shows jpm's own warnings and errors, from
+ * {@code jpm check} over jpm's protocol, when the file is opened and saved.
  */
 final class Lsp {
     private final InputStream in;
@@ -31,10 +37,27 @@ final class Lsp {
     private Workspace ws;
     private Path root;
     private boolean shutdown;
+    private final Function<Path, List<Problem>> checker;
+    private final Executor checks;
+
+    /**
+     * The checks of {@code jpm check} that are about project.jsonc itself and need no build.
+     */
+    static final List<String> MANIFEST_CHECKS = List.of("manifest", "dependencies", "license", "paths");
 
     Lsp(InputStream in, OutputStream out) {
+        this(in, out, dir -> Project.check(dir, MANIFEST_CHECKS), Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "jpm-format-check");
+            t.setDaemon(true);
+            return t;
+        }));
+    }
+
+    Lsp(InputStream in, OutputStream out, Function<Path, List<Problem>> checker, Executor checks) {
         this.in = in;
         this.out = out;
+        this.checker = checker;
+        this.checks = checks;
     }
 
     int run() {
@@ -98,6 +121,7 @@ final class Lsp {
                 Map<String, Object> td = (Map<String, Object>) p.get("textDocument");
                 docs.put((String) td.get("uri"), (String) td.get("text"));
                 lint((String) td.get("uri"));
+                if (isManifest((String) td.get("uri"))) checkManifest((String) td.get("uri"));
                 return null;
             }
             case "textDocument/didChange" -> {
@@ -115,6 +139,7 @@ final class Lsp {
                     reload();
                     for (String u : docs.keySet()) lint(u);
                 }
+                if (isManifest(uri)) checkManifest(uri);
                 return null;
             }
             case "textDocument/didClose" -> {
@@ -163,6 +188,60 @@ final class Lsp {
 
     private static boolean isJava(String uri) {
         return uri.endsWith(".java");
+    }
+
+    private static boolean isManifest(String uri) {
+        return uri.startsWith("file:") && uri.endsWith("/project.jsonc");
+    }
+
+    /**
+     * Publishes jpm's problems with the project.jsonc at {@code uri}, each at the value it is about. jpm reads the file
+     * from disk, so this runs when it is opened and saved, on a thread of its own: starting jpm takes a moment.
+     */
+    private void checkManifest(String uri) {
+        Path file = Path.of(URI.create(uri));
+        checks.execute(() -> {
+            List<Problem> problems;
+            try {
+                problems = checker.apply(file.getParent());
+            } catch (RuntimeException e) {
+                log("jpm check: " + e.getMessage());
+                return;
+            }
+            String text = docs.get(uri);
+            if (text == null) {
+                try {
+                    text = Files.readString(file);
+                } catch (IOException e) {
+                    return;
+                }
+            }
+            publishProblems(uri, file, problems, text);
+        });
+    }
+
+    private void publishProblems(String uri, Path file, List<Problem> problems, String text) {
+        Source src = new Source(uri, text);
+        Path self = file.toAbsolutePath().normalize();
+        List<Object> diags = new ArrayList<>();
+        for (Problem p : problems) {
+            if (p.file() != null && !p.file().toAbsolutePath().normalize().equals(self)) continue;
+            int line = Math.max(1, Math.min(p.line() == null ? 1 : p.line(), src.lineCount()));
+            int start = src.lineStart(line);
+            int end = src.lineStart(line + 1);
+            while (end > start && Character.isWhitespace(text.charAt(end - 1))) end--;
+            int from = start;
+            if (p.column() != null && p.column() > 1) from = Math.min(end, start + p.column() - 1);
+            else while (from < end && Character.isWhitespace(text.charAt(from))) from++;
+            Map<String, Object> d = new LinkedHashMap<>();
+            d.put("range", range(src, from, end));
+            d.put("severity", "warning".equals(p.severity()) ? 2 : 1);
+            d.put("source", "jpm");
+            if (p.check() != null) d.put("code", p.check());
+            d.put("message", p.message() + (p.hint() == null ? "" : " (" + p.hint() + ")"));
+            diags.add(d);
+        }
+        notify("textDocument/publishDiagnostics", Map.of("uri", uri, "diagnostics", diags));
     }
 
     private String rel(String uri) {

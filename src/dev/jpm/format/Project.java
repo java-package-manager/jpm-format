@@ -9,6 +9,7 @@ import dev.jpm.api.client.JpmNotInstalled;
 import dev.jpm.api.client.LoadOptions;
 import dev.jpm.api.client.ProtocolMismatch;
 import dev.jpm.api.model.Classpaths;
+import dev.jpm.api.model.Problem;
 import dev.jpm.format.api.TypeInfo;
 
 import java.io.File;
@@ -108,6 +109,25 @@ public final class Project {
             return untyped(root, e.getMessage());
         } catch (JpmError e) {
             return untyped(root, "jpm could not load the project: " + e.getMessage());
+        }
+    }
+
+    /**
+     * jpm's warnings and errors about the project at {@code dir}: {@code jpm check} with only {@code checks}, over jpm's
+     * protocol ({@code check/run}). A problem jpm stops at, such as a manifest that does not parse, is the only one.
+     *
+     * @throws IllegalStateException when jpm cannot be run or does not answer
+     */
+    static List<Problem> check(Path dir, List<String> checks) {
+        String jpm = System.getenv("JPM_EXE");
+        if (jpm == null || jpm.isBlank()) jpm = "jpm";
+        try (JpmClient client = JpmClient.start(List.of(jpm, "api"), dir, Map.of(), "jpm-format", Main.VERSION)) {
+            return client.check(dir, checks, false).problems();
+        } catch (JpmNotInstalled e) {
+            throw new IllegalStateException("could not run " + jpm, e);
+        } catch (JpmError e) {
+            if (e.problem() != null) return List.of(e.problem());
+            throw new IllegalStateException(e.getMessage(), e);
         }
     }
 

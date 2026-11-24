@@ -25,12 +25,6 @@ Parity is measured against IntelliJ's own formatter on real projects (`checks/Pa
 
 - [ ] IntelliJ's default inspections for null checks and data flow.
 
-## Editors
-
-- [ ] **`project.jsonc` in the language server:** jpm's warnings and errors in `project.jsonc`, at the value
-      they are about, from `jpm check` over jpm's protocol, as jpm-intellij shows them. Today the server only
-      reloads its config when `project.jsonc` is saved.
-
 ## Running
 
 - [ ] **Native binary.** jpm starts extensions on a JVM today. `jpm build --native` builds `dist/jpm-format` (42 MB,
