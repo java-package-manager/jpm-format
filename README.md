@@ -248,6 +248,29 @@ classpath, so unchanged files are skipped; restore that folder between CI runs t
       - run: jpm format --check
 ```
 
+## Other file types
+
+`.properties`, JSON and XML files are formatted out of the box, by jpm-format's own formatters (nothing is
+downloaded), as IntelliJ IDEA's default code style does, with a few differences that keep files the way they were
+meant:
+
+| Files | Formatting | Unlike IntelliJ |
+|---|---|---|
+| `*.properties` | `key=value` without spaces around `=` or `:`, no leading whitespace; values and continuation lines as written | blank lines are kept (up to 2) |
+| `*.json`, `*.jsonc` | indent 2; `"a": 1`, `[1, 2]`; a line one indent in from the line its object or array opens on; comments stay | line breaks are kept: IntelliJ puts every value on a line of its own |
+| `*.xml`, `*.xsd`, `*.xsl`, `*.xslt`, `*.wsdl`, `*.fxml` | indent 4; one child element per line; attributes one space apart, those on lines of their own lined up with the first | text, CDATA and `xml:space="preserve"` content are never changed, and long lines are not wrapped |
+
+A file that does not parse is left as it is. A `"files"` entry (below) that includes a file replaces these
+defaults, and one with `"steps": []` turns them off; the built-in steps are `properties` (option
+`maxBlankLines`), `json` and `xml` (options `indent` and `maxBlankLines`):
+
+```jsonc
+"files": [
+  { "include": ["src/main/resources/legacy/**"], "steps": [] },
+  { "include": ["**/*.json"], "steps": [{ "step": "json", "indent": 4 }] }
+]
+```
+
 ## Spotless compatibility
 
 The common Spotless steps are built in: import order (`ImportOrder`), removing unused imports
@@ -278,6 +301,7 @@ would change.
 | `trimTrailingWhitespace`, `endWithNewline` | any text | |
 | `indent` | any text | `type`: `"space"` (default) or `"tab"`, `width` (default 4) |
 | `removeSemicolons` | Groovy | |
+| `properties`, `json`, `xml` | jpm-format's own, on by default ([Other file types](#other-file-types)) | `maxBlankLines`; `json`, `xml`: `indent` |
 
 A step takes its formatter's version after `@` (or as `"version"`), else Spotless's default. Globs starting with
 `**/` match at the project root too. Java files are always formatted by jpm-format itself.

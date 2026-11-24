@@ -349,7 +349,8 @@ class EngineTest {
         write("test/A.java", code);
         write("src/gen/G.java", code);
         Workspace ws = open();
-        assertEquals(List.of(dir.resolve("src/A.java"), dir.resolve("test/A.java")), ws.files(List.of()));
+        assertEquals(List.of(dir.resolve("src/A.java"), dir.resolve("test/A.java")),
+                ws.files(List.of()).stream().filter(p -> p.toString().endsWith(".java")).toList());
         Lint ecb = ws.registry.rules.get("EmptyCatchBlock");
         assertEquals(Severity.ERROR, ws.config.settings("src/A.java").level(ecb, true));
         assertEquals(Severity.OFF, ws.config.settings("test/A.java").level(ecb, true));
@@ -504,6 +505,27 @@ class EngineTest {
         } finally {
             SpotlessSteps.factory = before;
         }
+    }
+
+    @Test
+    void propertiesJsonAndXmlAreFormattedByDefault() throws IOException {
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"files\": ["
+                + " { \"include\": [\"legacy/**\"], \"steps\": [] } ] } } }");
+        write("src/app.properties", "a = 1\n");
+        write("data.json", "{\"a\":1}\n");
+        write("pom.xml", "<project>\n<a/>\n</project>\n");
+        write("legacy/old.xml", "<x>\n<y/>\n</x>\n");
+        write("notes.txt", "left alone");
+        Workspace ws = open();
+        assertEquals(List.of("data.json", "pom.xml", "project.jsonc", "src/app.properties"),
+                ws.files(List.of()).stream().map(p -> Config.rel(dir, p)).filter(r -> !r.endsWith(".java")).toList());
+        assertEquals("a=1\n", ws.engine.run("src/app.properties", "a = 1\n", Engine.Mode.FORMAT).output());
+        assertEquals("{\"a\": 1}\n", ws.engine.run("data.json", "{\"a\":1}\n", Engine.Mode.FORMAT).output());
+        assertEquals("<project>\r\n    <a/>\r\n</project>\r\n",
+                ws.engine.run("pom.xml", "<project>\r\n<a/>\r\n</project>\r\n", Engine.Mode.FORMAT).output());
+        Engine.Result check = ws.engine.run("pom.xml", "<project>\n<a/>\n</project>\n", Engine.Mode.CHECK);
+        assertEquals("Not formatted by xml", check.findings().get(0).message());
+        assertEquals(List.of(), SpotlessSteps.stepsFor(List.of(), "README.md"));
     }
 
     @Test
