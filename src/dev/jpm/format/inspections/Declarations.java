@@ -689,7 +689,7 @@ final class Declarations {
                         List<? extends VariableTree> ps = m.getParameters();
                         boolean strings = ps.size() == 1 && ps.get(0).getType().getKind() == Tree.Kind.ARRAY_TYPE
                                 && Scan.simpleName(((com.sun.source.tree.ArrayTypeTree) ps.get(0).getType()).getType())
-                                        .equals("String");
+                                .equals("String");
                         boolean entry = isVoid(m.getReturnType()) && (ps.isEmpty() || strings);
                         if (!entry) {
                             int at = s.source().indexOf("main", s.end(m.getReturnType()));
@@ -744,13 +744,13 @@ final class Declarations {
                         String p = m.getParameters().get(0).getName().toString();
                         boolean checks = Flow.contains(m.getBody(), t -> t instanceof InstanceOfTree
                                 || t instanceof MethodInvocationTree mi && (Scan.name(mi).equals("getClass")
-                                        || Scan.name(mi).equals("isInstance") || Scan.name(mi).equals("isAssignableFrom")
-                                        || Scan.name(mi).equals("equals") || Scan.name(mi).equals("isEqual"))
+                                || Scan.name(mi).equals("isInstance") || Scan.name(mi).equals("isAssignableFrom")
+                                || Scan.name(mi).equals("equals") || Scan.name(mi).equals("isEqual"))
                                 || t instanceof com.sun.source.tree.TryTree
                                 || t instanceof com.sun.source.tree.SwitchTree
                                 || t instanceof com.sun.source.tree.SwitchExpressionTree)
                                 || !Flow.contains(m.getBody(), t -> t instanceof com.sun.source.tree.TypeCastTree tc
-                                        && Scan.strip(tc.getExpression()) instanceof IdentifierTree i && i.getName().contentEquals(p));
+                                && Scan.strip(tc.getExpression()) instanceof IdentifierTree i && i.getName().contentEquals(p));
                         if (!checks) {
                             int at = s.source().indexOf("equals", s.end(m.getReturnType()));
                             s.report(at, at + 6, "'equals()' does not check the class of its parameter", null);
@@ -944,7 +944,8 @@ final class Declarations {
                 }
 
                 private boolean assignsEach(List<? extends StatementTree> st, MethodTree ctor, List<String> components) {
-                    if (ctor.getParameters().size() != components.size() || st.size() != components.size()) return false;
+                    if (ctor.getParameters().size() != components.size() || st.size() != components.size())
+                        return false;
                     for (int k = 0; k < components.size(); k++) {
                         if (!ctor.getParameters().get(k).getName().contentEquals(components.get(k))) return false;
                     }
@@ -1152,7 +1153,7 @@ final class Declarations {
                 private boolean target(ExpressionTree e, String n) {
                     return e instanceof IdentifierTree i && i.getName().contentEquals(n)
                             || e instanceof MemberSelectTree m && m.getIdentifier().contentEquals(n)
-                                    && (m.getExpression().toString().equals("this") || Character.isUpperCase(m.getExpression().toString().charAt(0)));
+                            && (m.getExpression().toString().equals("this") || Character.isUpperCase(m.getExpression().toString().charAt(0)));
                 }
 
                 private int assigns(Tree root, String n) {
@@ -1219,9 +1220,9 @@ final class Declarations {
                     String type = Scan.simpleName(v.getType());
                     if ((field || param) && v.getType() != null && s.start(v.getType()) >= 0
                             && (type.equals("Optional") || type.equals("OptionalInt") || type.equals("OptionalLong")
-                                    || type.equals("OptionalDouble"))
+                            || type.equals("OptionalDouble"))
                             && !(p instanceof MethodTree m2 && m2.getModifiers().getAnnotations().stream()
-                                    .anyMatch(a -> Scan.simpleName(a.getAnnotationType()).equals("Override")))) {
+                            .anyMatch(a -> Scan.simpleName(a.getAnnotationType()).equals("Override")))) {
                         s.report(v.getType(), "'" + type + "' used as the type of " + (field ? "field" : "parameter")
                                 + " '" + v.getName() + "'");
                     }

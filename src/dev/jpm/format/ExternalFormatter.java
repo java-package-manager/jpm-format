@@ -35,7 +35,8 @@ public final class ExternalFormatter {
      * A style name, the Maven key jpm resolves, the version asked for, the project whose jpm resolves it, and for
      * {@code eclipse} the profile to format with (null for Eclipse's defaults).
      */
-    public record Spec(String name, String key, String version, Path root, Path config) {}
+    public record Spec(String name, String key, String version, Path root, Path config) {
+    }
 
     static final String SPOTLESS = "4.12.0";
     private static final Map<String, String> KEYS = Map.of(
@@ -85,15 +86,18 @@ public final class ExternalFormatter {
             int hash = style.indexOf("#sha256=");
             String url = hash < 0 ? style : style.substring(0, hash);
             String sha = hash < 0 ? null : style.substring(hash + "#sha256=".length()).toLowerCase(java.util.Locale.ROOT);
-            if (!url.endsWith(".jar")) throw new FormatException("formatter.style names a URL, which must be of a jar (ending in .jar): " + url);
-            if (sha != null && !SHA256.matcher(sha).matches()) throw new FormatException("formatter.style: #sha256= takes the jar's SHA-256 in hex");
+            if (!url.endsWith(".jar"))
+                throw new FormatException("formatter.style names a URL, which must be of a jar (ending in .jar): " + url);
+            if (sha != null && !SHA256.matcher(sha).matches())
+                throw new FormatException("formatter.style: #sha256= takes the jar's SHA-256 in hex");
             return new Spec("jar", url, sha, root, null);
         }
         java.util.regex.Matcher g = GIT.matcher(style);
         if (!g.matches()) return null;
         String rest = g.group(2);
         String version = rest == null ? "*" : rest.startsWith("@") ? rest.substring(1) : rest;
-        if (version.isBlank()) throw new FormatException("formatter.style " + style + " needs a version after @ or a branch after #");
+        if (version.isBlank())
+            throw new FormatException("formatter.style " + style + " needs a version after @ or a branch after #");
         return new Spec("git", g.group(1), version, root, null);
     }
 
@@ -132,7 +136,8 @@ public final class ExternalFormatter {
             return switch (spec.name()) {
                 case "palantir" -> palantir(loader);
                 case "eclipse" -> eclipse(loader, spec);
-                default -> loader.loadClass("com.google.googlejavaformat.java.Formatter").getConstructor().newInstance();
+                default ->
+                        loader.loadClass("com.google.googlejavaformat.java.Formatter").getConstructor().newInstance();
             };
         } catch (InvocationTargetException e) {
             throw new FormatException("could not start " + spec.name() + ": " + e.getCause(), e.getCause());
@@ -192,7 +197,8 @@ public final class ExternalFormatter {
             }
         }
         List<dev.jpm.format.api.Formatter> formatters = new ArrayList<>();
-        for (dev.jpm.format.api.Lint l : rules.all()) if (l instanceof dev.jpm.format.api.Formatter f) formatters.add(f);
+        for (dev.jpm.format.api.Lint l : rules.all())
+            if (l instanceof dev.jpm.format.api.Formatter f) formatters.add(f);
         if (formatters.isEmpty()) {
             throw new FormatException(spec.key() + " has no formatter: its jars need Palantir's or google-java-format's Formatter class,"
                     + " or a jpm-format RuleSet with a Formatter, listed in META-INF/services/dev.jpm.format.api.RuleSet");
@@ -281,7 +287,8 @@ public final class ExternalFormatter {
      * Spotless's Provisioner, which Spotless's steps ask for the jars of the formatters they run: jpm resolves them.
      */
     static Object provisioner(ClassLoader loader, Path root) {
-        if (System.getProperty("slf4j.internal.verbosity") == null) System.setProperty("slf4j.internal.verbosity", "ERROR");
+        if (System.getProperty("slf4j.internal.verbosity") == null)
+            System.setProperty("slf4j.internal.verbosity", "ERROR");
         Class<?> provisionerType;
         try {
             provisionerType = loader.loadClass("com.diffplug.spotless.Provisioner");
@@ -324,7 +331,8 @@ public final class ExternalFormatter {
         for (Object o : coordinates) {
             String c = String.valueOf(o);
             int last = c.lastIndexOf(':');
-            if (last < 0) throw new FormatException("Spotless asked for " + c + ", which is not group:artifact:version");
+            if (last < 0)
+                throw new FormatException("Spotless asked for " + c + ", which is not group:artifact:version");
             deps.put(c.substring(0, last), c.substring(last + 1));
             String[] parts = c.split(":");
             wanted.add(parts[parts.length - 2] + "-" + parts[parts.length - 1] + ".jar");

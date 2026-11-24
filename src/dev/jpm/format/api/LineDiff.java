@@ -10,7 +10,8 @@ final class LineDiff {
     /**
      * {@code [start, end)} of the old text, made of whole lines, becomes {@code replacement}.
      */
-    record Hunk(int start, int end, String replacement) {}
+    record Hunk(int start, int end, String replacement) {
+    }
 
     private LineDiff() {
     }

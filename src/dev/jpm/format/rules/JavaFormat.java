@@ -18,34 +18,16 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The layout of the code: indentation, line breaks and spacing. The engine is jpm-format's fork of Palantir Java
- * Format ({@code dev.jpm.format.palantir}). In the IntelliJ style it keeps the input's line breaks and indents as
- * IntelliJ's default Java code style does (4-space indents, 8-space continuation indents); in the Palantir style it
- * chooses the line breaks itself, wrapping at the line width.
+ * The layout of the code: indentation, line breaks and spacing. In the IntelliJ style the engine is jpm-format's own
+ * ({@link Layout}, ADR 0006): IntelliJ's default Java code style, with the input's line breaks kept where IntelliJ
+ * keeps them. In the Palantir style it is jpm-format's fork of Palantir Java Format ({@code dev.jpm.format.palantir}),
+ * which chooses the line breaks itself, wrapping at the line width.
  */
 public final class JavaFormat implements Formatter {
     public static final String ID = "JavaFormat";
 
     private static final Map<List<Integer>, dev.jpm.format.palantir.java.Formatter> FORMATTERS =
             new ConcurrentHashMap<>();
-
-    private final boolean ownLayout;
-
-    public JavaFormat() {
-        this("intellij".equals(System.getenv("JPM_FORMAT_LAYOUT")));
-    }
-
-    private JavaFormat(boolean ownLayout) {
-        this.ownLayout = ownLayout;
-    }
-
-    /**
-     * JavaFormat with the IntelliJ style's own layout engine ({@link Layout}, ADR 0006) instead of the Palantir fork,
-     * as {@code JPM_FORMAT_LAYOUT=intellij} gives it while the engine is being built.
-     */
-    public static JavaFormat withOwnLayout() {
-        return new JavaFormat(true);
-    }
 
     @Override
     public String id() {
@@ -67,7 +49,7 @@ public final class JavaFormat implements Formatter {
         FileContext fc = (FileContext) ctx;
         var external = fc.settings().externalFormatter();
         if (external != null) return ExternalFormatter.format(external, fc);
-        if (ownLayout(fc)) return tabs(fc, Layout.format(fc));
+        if (fc.settings().intellijStyle()) return tabs(fc, Layout.format(fc));
         try {
             return tabs(fc, palantir(fc).formatSource(ctx.source()));
         } catch (FormatterException e) {
@@ -79,7 +61,8 @@ public final class JavaFormat implements Formatter {
      * Formats only the lines touching {@code [start, end)}.
      */
     public String formatRange(FileContext ctx, int start, int end) {
-        if (ctx.settings().externalFormatter() != null || ownLayout(ctx)) return format(ctx);
+        if (ctx.settings().externalFormatter() != null) return format(ctx);
+        if (ctx.settings().intellijStyle()) return tabs(ctx, Layout.format(ctx, start, Math.max(start + 1, end)));
         try {
             return tabs(
                     ctx,
@@ -88,10 +71,6 @@ public final class JavaFormat implements Formatter {
         } catch (FormatterException e) {
             throw new FormatException(ctx.path() + ": " + e.getMessage(), e);
         }
-    }
-
-    private boolean ownLayout(FileContext ctx) {
-        return ownLayout && ctx.settings().intellijStyle();
     }
 
     private static dev.jpm.format.palantir.java.Formatter palantir(FileContext ctx) {

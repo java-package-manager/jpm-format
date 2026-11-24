@@ -127,8 +127,10 @@ final class Expressions {
                     String cond = operand(s, c.getCondition());
                     String repl = null;
                     if (t != null && f != null && t != f) repl = t ? s.text(Scan.strip(c.getCondition())) : "!" + cond;
-                    else if (t == null && Boolean.FALSE.equals(f)) repl = cond + " && " + operand(s, c.getTrueExpression());
-                    else if (Boolean.TRUE.equals(t) && f == null) repl = cond + " || " + operand(s, c.getFalseExpression());
+                    else if (t == null && Boolean.FALSE.equals(f))
+                        repl = cond + " && " + operand(s, c.getTrueExpression());
+                    else if (Boolean.TRUE.equals(t) && f == null)
+                        repl = cond + " || " + operand(s, c.getFalseExpression());
                     if (repl != null) s.report(c, "'" + s.text(c) + "' can be simplified to '" + repl + "'",
                             s.replace("Simplify", c, repl));
                     return super.visitConditionalExpression(c, v);
@@ -291,7 +293,8 @@ final class Expressions {
 
     static boolean numericLiteral(ExpressionTree e, double value) {
         ExpressionTree x = Scan.strip(e);
-        if (x instanceof UnaryTree u && u.getKind() == Tree.Kind.UNARY_MINUS) return numericLiteral(u.getExpression(), -value);
+        if (x instanceof UnaryTree u && u.getKind() == Tree.Kind.UNARY_MINUS)
+            return numericLiteral(u.getExpression(), -value);
         return x instanceof LiteralTree l && l.getValue() instanceof Number n && !(l.getValue() instanceof Character)
                 && n.doubleValue() == value && (value != 0 || !(n instanceof Double || n instanceof Float) || 1 / n.doubleValue() > 0);
     }
@@ -504,7 +507,8 @@ final class Expressions {
                             boolean isInt = left == TypeKind.INT || left == TypeKind.SHORT || left == TypeKind.BYTE || left == TypeKind.CHAR
                                     || l instanceof LiteralTree lit2 && lit2.getKind() == Tree.Kind.INT_LITERAL;
                             int max = isLong ? 63 : isInt ? 31 : 63;
-                            if (n < 0 || n > max) s.report(b, "Shift by " + n + " is out of range for " + (isLong ? "'long'" : isInt ? "'int'" : "this type"));
+                            if (n < 0 || n > max)
+                                s.report(b, "Shift by " + n + " is out of range for " + (isLong ? "'long'" : isInt ? "'int'" : "this type"));
                         }
                     }
                     return super.visitBinary(b, v);
@@ -597,7 +601,8 @@ final class Expressions {
                     if (c1 == null) return;
                     boolean never = m.getKind() == Tree.Kind.AND ? (c2 & ~c1) != 0
                             : m.getKind() == Tree.Kind.OR && (c1 & ~c2) != 0;
-                    if (never) s.report(cmp, "'" + s.text(cmp) + "' is always " + (cmp.getKind() == Tree.Kind.NOT_EQUAL_TO));
+                    if (never)
+                        s.report(cmp, "'" + s.text(cmp) + "' is always " + (cmp.getKind() == Tree.Kind.NOT_EQUAL_TO));
                 }
             }.run();
         }
@@ -696,7 +701,7 @@ final class Expressions {
                         Long n = Scan.integer(lit);
                         if (call instanceof MethodInvocationTree m && n != null && (n == 1 || n == -1)
                                 && (Scan.name(m).equals("compareTo") && m.getArguments().size() == 1
-                                        || Scan.name(m).equals("compare") && m.getArguments().size() == 2)) {
+                                || Scan.name(m).equals("compare") && m.getArguments().size() == 2)) {
                             String op = (n == 1) == (b.getKind() == Tree.Kind.EQUAL_TO) ? " > 0" : n == 1 ? " <= 0" : " >= 0";
                             if (n == -1) op = b.getKind() == Tree.Kind.EQUAL_TO ? " < 0" : " >= 0";
                             s.report(b, "Result of '" + Scan.name(m) + "()' compared with " + n,
@@ -751,7 +756,7 @@ final class Expressions {
                 public Void visitAssert(AssertTree a, Void v) {
                     boolean effects = Flow.contains(a.getCondition(), t -> t instanceof AssignmentTree || t instanceof CompoundAssignmentTree
                             || t instanceof UnaryTree u && (u.getKind() == Tree.Kind.POSTFIX_INCREMENT || u.getKind() == Tree.Kind.PREFIX_INCREMENT
-                                    || u.getKind() == Tree.Kind.POSTFIX_DECREMENT || u.getKind() == Tree.Kind.PREFIX_DECREMENT));
+                            || u.getKind() == Tree.Kind.POSTFIX_DECREMENT || u.getKind() == Tree.Kind.PREFIX_DECREMENT));
                     if (effects) s.report(a.getCondition(), "'assert' has side effects");
                     return super.visitAssert(a, v);
                 }
@@ -845,7 +850,7 @@ final class Expressions {
                     ExpressionTree r = Scan.receiver(m);
                     if (r != null && Scan.pure(r) && !(Scan.strip(r) instanceof LiteralTree)
                             && (n.equals("add") || n.equals("put") || n.equals("offer") || n.equals("push") || n.equals("addFirst")
-                                    || n.equals("addLast"))
+                            || n.equals("addLast"))
                             && m.getArguments().stream().anyMatch(a -> Scan.same(a, r))
                             && !r.toString().equals("this")) {
                         s.report(m, "'" + s.text(r) + "' is added to itself");
@@ -946,7 +951,8 @@ final class Expressions {
                 public Void visitExpressionStatement(ExpressionStatementTree e, Void v) {
                     if (Scan.strip(e.getExpression()) instanceof NewClassTree n && n.getClassBody() == null) {
                         boolean isThrowable = s.typed() ? s.isA(n, "java.lang.Throwable") : throwableName(Scan.simpleName(n.getIdentifier()));
-                        if (isThrowable) s.report(n, "Exception '" + Scan.simpleName(n.getIdentifier()) + "' is created but not thrown");
+                        if (isThrowable)
+                            s.report(n, "Exception '" + Scan.simpleName(n.getIdentifier()) + "' is created but not thrown");
                     }
                     return super.visitExpressionStatement(e, v);
                 }
@@ -999,7 +1005,8 @@ final class Expressions {
 
                 private boolean caught(String name) {
                     for (TreePath p = getCurrentPath(); p != null; p = p.getParentPath()) {
-                        if (p.getLeaf() instanceof com.sun.source.tree.CatchTree c && c.getParameter().getName().contentEquals(name)) return true;
+                        if (p.getLeaf() instanceof com.sun.source.tree.CatchTree c && c.getParameter().getName().contentEquals(name))
+                            return true;
                     }
                     return false;
                 }
@@ -1085,14 +1092,16 @@ final class Expressions {
             new Visitor(s) {
                 @Override
                 public Void visitMethodInvocation(MethodInvocationTree m, Void v) {
-                    if (Scan.callsStatic(m, "Thread", "sleep") && inLoop()) s.report(m, "Call to 'Thread.sleep()' in a loop");
+                    if (Scan.callsStatic(m, "Thread", "sleep") && inLoop())
+                        s.report(m, "Call to 'Thread.sleep()' in a loop");
                     return super.visitMethodInvocation(m, v);
                 }
 
                 private boolean inLoop() {
                     for (TreePath p = getCurrentPath().getParentPath(); p != null; p = p.getParentPath()) {
                         Tree t = p.getLeaf();
-                        if (t instanceof ClassTree || t instanceof com.sun.source.tree.LambdaExpressionTree || t instanceof MethodTree) return false;
+                        if (t instanceof ClassTree || t instanceof com.sun.source.tree.LambdaExpressionTree || t instanceof MethodTree)
+                            return false;
                         if (Flow.loop(t)) return true;
                     }
                     return false;
@@ -1271,7 +1280,8 @@ final class Expressions {
                 private boolean synchronizedAround() {
                     for (TreePath p = getCurrentPath(); p != null; p = p.getParentPath()) {
                         if (p.getLeaf() instanceof SynchronizedTree) return true;
-                        if (p.getLeaf() instanceof MethodTree m) return m.getModifiers().getFlags().contains(Modifier.SYNCHRONIZED);
+                        if (p.getLeaf() instanceof MethodTree m)
+                            return m.getModifiers().getFlags().contains(Modifier.SYNCHRONIZED);
                     }
                     return false;
                 }
@@ -1308,7 +1318,8 @@ final class Expressions {
                         for (TreePath p = getCurrentPath(); p != null; p = p.getParentPath()) {
                             if (p.getLeaf() instanceof com.sun.source.tree.LambdaExpressionTree) break;
                             if (p.getLeaf() instanceof MethodTree m) {
-                                if (optionalType(m.getReturnType())) s.report(r.getExpression(), "'null' returned from a method that returns Optional");
+                                if (optionalType(m.getReturnType()))
+                                    s.report(r.getExpression(), "'null' returned from a method that returns Optional");
                                 break;
                             }
                         }
@@ -1350,7 +1361,7 @@ final class Expressions {
     static boolean boxedNumber(Scan s, ExpressionTree e) {
         return s.isA(e, "java.lang.Number") && !Scan.isNull(e) && s.primitive(e) == null
                 && Set.of("Integer", "Long", "Short", "Byte", "Double", "Float", "BigInteger", "BigDecimal", "AtomicInteger", "AtomicLong")
-                        .stream().anyMatch(n -> s.is(e, (n.startsWith("Big") ? "java.math." : n.startsWith("Atomic") ? "java.util.concurrent.atomic." : "java.lang.") + n));
+                .stream().anyMatch(n -> s.is(e, (n.startsWith("Big") ? "java.math." : n.startsWith("Atomic") ? "java.util.concurrent.atomic." : "java.lang.") + n));
     }
 
     static final class NumberEquality extends Inspection {
@@ -1491,12 +1502,14 @@ final class Expressions {
 
                 private boolean floatingContext() {
                     TreePath p = getCurrentPath().getParentPath();
-                    while (p != null && p.getLeaf() instanceof com.sun.source.tree.ParenthesizedTree) p = p.getParentPath();
+                    while (p != null && p.getLeaf() instanceof com.sun.source.tree.ParenthesizedTree)
+                        p = p.getParentPath();
                     if (p == null) return false;
                     Tree t = p.getLeaf();
                     TypeKind k = null;
                     if (t instanceof BinaryTree pb && (pb.getKind() == Tree.Kind.PLUS || pb.getKind() == Tree.Kind.MINUS
-                            || pb.getKind() == Tree.Kind.MULTIPLY || pb.getKind() == Tree.Kind.DIVIDE)) k = s.primitive(pb);
+                            || pb.getKind() == Tree.Kind.MULTIPLY || pb.getKind() == Tree.Kind.DIVIDE))
+                        k = s.primitive(pb);
                     else if (t instanceof VariableTree var) k = s.primitive(var.getType());
                     else if (t instanceof AssignmentTree a) k = s.primitive(a.getVariable());
                     return k == TypeKind.DOUBLE || k == TypeKind.FLOAT;
@@ -1530,7 +1543,8 @@ final class Expressions {
 
                 private boolean longContext() {
                     TreePath p = getCurrentPath().getParentPath();
-                    while (p != null && p.getLeaf() instanceof com.sun.source.tree.ParenthesizedTree) p = p.getParentPath();
+                    while (p != null && p.getLeaf() instanceof com.sun.source.tree.ParenthesizedTree)
+                        p = p.getParentPath();
                     if (p == null) return false;
                     Tree t = p.getLeaf();
                     TypeKind k = null;

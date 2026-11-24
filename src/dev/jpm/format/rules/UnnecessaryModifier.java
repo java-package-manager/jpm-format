@@ -23,7 +23,8 @@ import javax.lang.model.element.Modifier;
  * records, and {@code private} on enum constructors.
  */
 public final class UnnecessaryModifier implements Formatter {
-    record Problem(int start, int end, String message) {}
+    record Problem(int start, int end, String message) {
+    }
 
     @Override
     public String id() {

@@ -22,7 +22,8 @@ final class Cache {
     /**
      * A file's findings for a content hash; {@code formatted} if formatting would not change it.
      */
-    record Entry(String hash, boolean formatted, List<Finding> findings) {}
+    record Entry(String hash, boolean formatted, List<Finding> findings) {
+    }
 
     private final Path file;
     private final String key;

@@ -76,6 +76,7 @@ final class Syntax {
     final int[] inner;
     int[] nodeStart;
     int[] nodeParent;
+    boolean[] nodeBinary;
     final boolean[] joinIfFits;
     final int[] match;
 
@@ -139,9 +140,11 @@ final class Syntax {
         }
         s.nodeStart = new int[facts.nodeStart.size()];
         s.nodeParent = new int[facts.nodeStart.size()];
+        s.nodeBinary = new boolean[facts.nodeStart.size()];
         for (int k = 0; k < s.nodeStart.length; k++) {
             s.nodeStart[k] = index[facts.nodeStart.get(k)];
             s.nodeParent[k] = facts.nodeParent.get(k);
+            s.nodeBinary[k] = facts.nodeBinary.get(k);
         }
         s.pair();
         return s;
@@ -198,6 +201,7 @@ final class Syntax {
         final int[] inner;
         final List<Integer> nodeStart = new ArrayList<>();
         final List<Integer> nodeParent = new ArrayList<>();
+        final List<Boolean> nodeBinary = new ArrayList<>();
         private final Deque<Integer> nodes = new ArrayDeque<>();
         private final Set<Tree> members = Collections.newSetFromMap(new IdentityHashMap<>());
         private final Set<ClassTree> anonymous = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -419,7 +423,9 @@ final class Syntax {
             int id = nodeStart.size();
             nodeStart.add(at(first));
             nodeParent.add(nodes.isEmpty() ? -1 : nodes.peek());
-            for (int i = first; i < tokens.size() && tokens.get(i).start() < end; i++) inner[tokens.get(i).start()] = id;
+            nodeBinary.add(t instanceof BinaryTree);
+            for (int i = first; i < tokens.size() && tokens.get(i).start() < end; i++)
+                inner[tokens.get(i).start()] = id;
             nodes.push(id);
             try {
                 return super.scan(t, v);

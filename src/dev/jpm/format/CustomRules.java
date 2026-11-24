@@ -169,7 +169,7 @@ final class CustomRules {
                     out.getFileName() + ".tmp" + ProcessHandle.current().pid()));
             DiagnosticCollector<JavaFileObject> diags = new DiagnosticCollector<>();
             try (StandardJavaFileManager fm =
-                    Source.JAVAC.getStandardFileManager(diags, Locale.ROOT, StandardCharsets.UTF_8)) {
+                         Source.JAVAC.getStandardFileManager(diags, Locale.ROOT, StandardCharsets.UTF_8)) {
                 List<String> opts = List.of(
                         "-proc:none", "-d", tmp.toString(), "-cp", apiClasspath(), "-encoding", "UTF-8", "-Xlint:none");
                 boolean ok = Source.JAVAC
@@ -184,7 +184,7 @@ final class CustomRules {
                                         d.getSource() == null
                                                 ? ""
                                                 : Path.of(d.getSource().toUri()).getFileName() + ":" + d.getLineNumber()
-                                                        + ": ")
+                                                + ": ")
                                 .append(d.getMessage(Locale.ROOT));
                     }
                     throw new FormatException(sb.toString());

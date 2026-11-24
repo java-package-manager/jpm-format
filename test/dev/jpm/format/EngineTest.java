@@ -160,12 +160,22 @@ class EngineTest {
     }
 
     @Test
+    void rangeFormattingChangesOnlyTheLinesItTouches() throws IOException {
+        String text = "class A {\n  void f() {\n  int x=1;\n  }\n    void g() {\n  int y=2;\n      }\n}\n";
+        int start = text.indexOf("int y");
+        String out = open().engine.formatRange("src/A.java", text, start, start + 3);
+        assertEquals("class A {\n  void f() {\n  int x=1;\n  }\n    void g() {\n        int y = 2;\n      }\n}\n", out,
+                "the line is indented from the lines around it as they are");
+        assertEquals(text.replace("int y=2;", "int y = 2;").replace("\n  int y", "\n        int y"), out);
+    }
+
+    @Test
     void invisibleDifferencesAreNamed() {
         RuleTester t = RuleTester.of(new JavaFormat());
         assertEquals(
                 List.of("4:1 format/JavaFormat Missing newline at end of file"),
                 t.findings("@NullMarked\npackage p;\n\nimport org.jspecify.annotations.NullMarked;"));
-        assertEquals(List.of("1:1 format/JavaFormat Trailing whitespace"), t.findings("class A {}   \n"));
+        assertEquals(List.of("2:1 format/JavaFormat Trailing whitespace"), t.findings("class A {\n}   \n"));
         Formatter lf = new Formatter() {
             @Override
             public String id() {

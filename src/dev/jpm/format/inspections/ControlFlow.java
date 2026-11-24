@@ -1026,7 +1026,7 @@ final class ControlFlow {
                         List<? extends Tree> body = body(c);
                         boolean trivial = body.isEmpty() || body.size() == 1 && body.get(0) instanceof BreakTree
                                 || body.stream().allMatch(x -> x instanceof BreakTree || x instanceof ThrowTree t2
-                                        && t2.getExpression() instanceof com.sun.source.tree.NewClassTree);
+                                && t2.getExpression() instanceof com.sun.source.tree.NewClassTree);
                         boolean complete = c.getCaseKind() == CaseTree.CaseKind.RULE
                                 || !body.isEmpty() && body.get(body.size() - 1) instanceof StatementTree st && Flow.jumps(st);
                         boolean pattern = c.getLabels().stream().anyMatch(l -> l instanceof com.sun.source.tree.PatternCaseLabelTree);
@@ -1076,7 +1076,8 @@ final class ControlFlow {
                         StatementTree only = b.getStatements().get(0);
                         String repl = null;
                         if (only instanceof YieldTree y) repl = s.text(y.getValue()) + ";";
-                        else if (only instanceof ExpressionStatementTree || only instanceof ThrowTree) repl = s.text(only);
+                        else if (only instanceof ExpressionStatementTree || only instanceof ThrowTree)
+                            repl = s.text(only);
                         if (y(only) && !(parent() instanceof SwitchExpressionTree)) repl = null;
                         if (repl != null) {
                             s.report(b, "Unnecessary code block in 'case ->'", s.replace("Unwrap", b, repl));
@@ -1283,7 +1284,8 @@ final class ControlFlow {
                 private boolean self(MethodTree m, com.sun.source.tree.MethodInvocationTree call) {
                     if (!Scan.name(call).contentEquals(m.getName())) return false;
                     ExpressionTree r = Scan.receiver(call);
-                    if (r != null && !(r instanceof IdentifierTree i && i.getName().contentEquals("this"))) return false;
+                    if (r != null && !(r instanceof IdentifierTree i && i.getName().contentEquals("this")))
+                        return false;
                     if (call.getArguments().size() != m.getParameters().size()) return false;
                     if (s.typed()) {
                         var callee = s.element(call);

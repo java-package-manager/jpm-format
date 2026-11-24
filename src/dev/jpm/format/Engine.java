@@ -57,7 +57,8 @@ public final class Engine {
     /**
      * The rules that run on a file at their levels, formatters in order.
      */
-    private record Active(Lint rule, Severity level) {}
+    private record Active(Lint rule, Severity level) {
+    }
 
     private List<Active> active(Config.Settings s) {
         List<Active> out = new ArrayList<>();
@@ -132,7 +133,8 @@ public final class Engine {
     /**
      * The result of running every formatter in order, and the last one that changed the text.
      */
-    private record Pipeline(Source out, Formatter lastChange) {}
+    private record Pipeline(Source out, Formatter lastChange) {
+    }
 
     private Pipeline pipeline(Source src, Config.Settings settings, List<Active> rules, List<Finding> findings) {
         Source cur = src;

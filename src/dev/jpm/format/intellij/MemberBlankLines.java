@@ -66,7 +66,8 @@ public final class MemberBlankLines implements IntelliJRule {
         int start = ctx.start(m);
         for (Comments.Comment c : Comments.scan(src)) {
             if (c.end() > start) break;
-            if (!c.line() && c.text().startsWith("/**") && src.substring(c.end(), start).isBlank()) return ctx.line(c.start());
+            if (!c.line() && c.text().startsWith("/**") && src.substring(c.end(), start).isBlank())
+                return ctx.line(c.start());
         }
         return -1;
     }

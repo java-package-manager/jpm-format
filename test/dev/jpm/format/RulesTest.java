@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RulesTest {
     @Test
     void javaFormatLaysOutCodeLikeIntelliJ() {
-        RuleTester.of(new JavaFormat()).assertFormats("class A{int x;void f(){if(x>0){x--;}}}", """
+        RuleTester.withBuiltins().assertFormats("class A{int x;void f(){if(x>0){x--;}}}", """
                 class A {
                     int x;
 
@@ -46,7 +46,7 @@ class RulesTest {
                 .config("{\"formatter\": {\"useTabs\": true}}")
                 .format("class A { String s = \"\"\"\n    keep\n    \"\"\"; void f() { int y = 1; } }");
         assertTrue(out.contains("\n\tvoid f() {\n\t\tint y = 1;"), out);
-        assertTrue(out.contains("\n    keep\n    \"\"\";"), out);
+        assertTrue(out.contains("\n            keep\n            \"\"\";"), out);
     }
 
     @Test
@@ -127,12 +127,12 @@ class RulesTest {
                 """);
         assertEquals(
                 """
-                import java.util.*;
+                        import java.util.*;
 
-                import a.B;
-                import static x.Y.z;
-                class A {}
-                """,
+                        import a.B;
+                        import static x.Y.z;
+                        class A {}
+                        """,
                 t.format(
                         "import a.B;\nimport java.util.Map;\nimport static x.Y.z;\nimport java.util.List;\nclass A {}\n"));
     }
@@ -311,18 +311,18 @@ class RulesTest {
                         "6:34 correctness/UnusedLocalVariable Parameter 'q' is never used",
                         "8:18 correctness/UnusedLocalVariable Local variable 'k' is never used"),
                 t.findings("""
-                class A {
-                    void f(int p) {
-                        int a = 1;
-                        int b = 2; Runnable r = () -> System.out.println(b); r.run();
-                    }
-                    private void g(int used, int q) { System.out.println(used); }
-                    void h() {
-                        for (int k = 0, n = 3; n > 0; n--) {}
-                        int ignored = 0;
-                    }
-                }
-                """));
+                        class A {
+                            void f(int p) {
+                                int a = 1;
+                                int b = 2; Runnable r = () -> System.out.println(b); r.run();
+                            }
+                            private void g(int used, int q) { System.out.println(used); }
+                            void h() {
+                                for (int k = 0, n = 3; n > 0; n--) {}
+                                int ignored = 0;
+                            }
+                        }
+                        """));
     }
 
     @Test
@@ -334,17 +334,17 @@ class RulesTest {
                         "5:18 correctness/UnusedPrivateMember Private method 'never()' is never used",
                         "8:50 correctness/UnusedPrivateMember Private field 'notUsedStatic' is never used"),
                 t.findings("""
-                class A implements java.io.Serializable {
-                    private int dead;
-                    private int live = 1;
-                    private static final long serialVersionUID = 1L;
-                    private void never() {}
-                    private void used() {}
-                    @Deprecated private int annotated;
-                    record R(int component) { private static int notUsedStatic; }
-                    int get() { used(); return this.live; }
-                }
-                """));
+                        class A implements java.io.Serializable {
+                            private int dead;
+                            private int live = 1;
+                            private static final long serialVersionUID = 1L;
+                            private void never() {}
+                            private void used() {}
+                            @Deprecated private int annotated;
+                            record R(int component) { private static int notUsedStatic; }
+                            int get() { used(); return this.live; }
+                        }
+                        """));
     }
 
     @Test

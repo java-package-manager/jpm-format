@@ -24,7 +24,8 @@ public final class UnusedImport implements Formatter {
     private static final Pattern JAVADOC_REF = Pattern.compile(
             "\\{@(?:link|linkplain|value)\\s+([A-Za-z_$][\\w$]*)|@(?:see|throws|exception)\\s+([A-Za-z_$][\\w$]*)");
 
-    record Problem(ImportTree imp, String message) {}
+    record Problem(ImportTree imp, String message) {
+    }
 
     @Override
     public String id() {

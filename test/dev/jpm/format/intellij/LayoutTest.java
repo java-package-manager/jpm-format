@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class LayoutTest {
     private static RuleTester intellij() {
         return RuleTester.of(
-                JavaFormat.withOwnLayout(),
+                new JavaFormat(),
                 new EmptyBodies(),
                 new MemberBlankLines(),
                 new KeepBlankLines(),
