@@ -34,8 +34,3 @@ Parity is measured against IntelliJ's own formatter on real projects (`checks/Pa
   - javac's message bundles and classes such as `Log$DeferredDiagnosticHandler` are missing from the image. The
     configuration `jpm start --trace -- --check` records is not enough; javac's classes probably need to be
     initialized at run time (`--initialize-at-run-time=com.sun.tools.javac`) and its resources listed by hand.
-
-## Elsewhere
-
-- [ ] `jpm import` translates Spotless config (in jpm's
-      [ROADMAP.md](https://github.com/java-package-manager/jpm/blob/main/ROADMAP.md)).
