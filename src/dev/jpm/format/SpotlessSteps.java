@@ -69,9 +69,18 @@ final class SpotlessSteps {
             Map.entry("endWithNewline", Set.of()),
             Map.entry("removeSemicolons", Set.of()),
             Map.entry("indent", Set.of("type", "width")),
-            Map.entry("properties", Set.of("maxBlankLines")),
-            Map.entry("json", Set.of("indent", "maxBlankLines")),
+            Map.entry("properties", Set.of("maxBlankLines", "lineWidth", "indent", "wrap", "encoding")),
+            Map.entry("json", Set.of("indent", "maxBlankLines", "lineWidth", "style")),
             Map.entry("xml", Set.of("indent", "maxBlankLines")));
+
+    /**
+     * The options of jpm-format's own formats in their config sections ({@code "json": {"formatter": {...}}}), with
+     * the names of the top-level {@code formatter}.
+     */
+    static final Map<String, Set<String>> FORMAT_OPTIONS = Map.of(
+            "properties", Set.of("maxBlankLines", "lineWidth", "indentWidth", "wrap", "encoding"),
+            "json", Set.of("indentWidth", "maxBlankLines", "lineWidth", "style"),
+            "xml", Set.of("indentWidth", "maxBlankLines"));
 
     /**
      * The built-in steps files get by their extension when no {@code "files"} entry includes them.
@@ -186,6 +195,14 @@ final class SpotlessSteps {
      * The steps for a file, from every entry that includes it, in order; empty for Java files, which the engine formats.
      */
     static List<Step> stepsFor(List<Entry> entries, String rel) {
+        return stepsFor(entries, rel, format -> Map.of());
+    }
+
+    /**
+     * The same, with the options of jpm-format's own formats from their config sections under a step's own.
+     */
+    static List<Step> stepsFor(List<Entry> entries, String rel,
+                               java.util.function.Function<String, Map<String, Object>> formats) {
         if (rel.endsWith(".java")) return List.of();
         Path p = Path.of(rel);
         List<Step> out = new ArrayList<>();
@@ -193,7 +210,7 @@ final class SpotlessSteps {
         for (Entry e : entries) {
             for (PathMatcher m : e.matchers()) {
                 if (m.matches(p)) {
-                    out.addAll(e.steps());
+                    for (Step s : e.steps()) out.add(withFormat(s, formats));
                     included = true;
                     break;
                 }
@@ -202,7 +219,14 @@ final class SpotlessSteps {
         if (included) return out;
         int dot = rel.lastIndexOf('.');
         String step = dot < 0 || rel.lastIndexOf('/') > dot ? null : DEFAULTS.get(rel.substring(dot + 1));
-        return step == null ? List.of() : List.of(new Step(step, null, Map.of()));
+        return step == null ? List.of() : List.of(withFormat(new Step(step, null, Map.of()), formats));
+    }
+
+    private static Step withFormat(Step s, java.util.function.Function<String, Map<String, Object>> formats) {
+        if (!FORMAT_OPTIONS.containsKey(s.name())) return s;
+        Map<String, Object> options = new LinkedHashMap<>(formats.apply(s.name()));
+        options.putAll(s.options());
+        return new Step(s.name(), s.version(), Map.copyOf(options));
     }
 
     /**
@@ -251,11 +275,16 @@ final class SpotlessSteps {
         int blank = number(s, "maxBlankLines", 2);
         switch (s.name()) {
             case "properties" -> {
-                return (text, file) -> PropertiesFormat.format(text, blank);
+                int width = Boolean.TRUE.equals(flag(s, "wrap")) ? width(s) : 0;
+                int indent = number(s, "indent", 4);
+                String encoding = choice(s, "encoding", null, "ISO-8859-1", "UTF-8");
+                return (text, file) -> PropertiesFormat.format(text, blank, width, indent, encoding);
             }
             case "json" -> {
                 int indent = number(s, "indent", 2);
-                return (text, file) -> JsonFormat.format(text, indent, blank);
+                int width = width(s);
+                String style = choice(s, "style", "keep", "keep", "compact", "pretty");
+                return (text, file) -> JsonFormat.format(text, style, indent, blank, width);
             }
             case "xml" -> {
                 int indent = number(s, "indent", 4);
@@ -327,6 +356,29 @@ final class SpotlessSteps {
         if (!(v instanceof String path))
             throw new FormatException("files.steps: \"" + option + "\" of " + s.name() + " must be a path");
         return root.resolve(path).toAbsolutePath().toFile();
+    }
+
+    private static int width(Step s) {
+        Object v = s.options().get("lineWidth");
+        if (v == null) return 120;
+        if (!(v instanceof Number n) || n.intValue() < 20 || n.intValue() > 1000) {
+            throw new FormatException("\"lineWidth\" of " + s.name() + " must be a number from 20 to 1000");
+        }
+        return n.intValue();
+    }
+
+    private static Boolean flag(Step s, String option) {
+        Object v = s.options().get(option);
+        if (v != null && !(v instanceof Boolean))
+            throw new FormatException("\"" + option + "\" of " + s.name() + " must be true or false");
+        return (Boolean) v;
+    }
+
+    private static String choice(Step s, String option, String fallback, String... values) {
+        Object v = s.options().get(option);
+        if (v == null) return fallback;
+        for (String c : values) if (c.equals(v)) return c;
+        throw new FormatException("\"" + option + "\" of " + s.name() + " must be " + String.join(", ", values));
     }
 
     private static int number(Step s, String option, int fallback) {

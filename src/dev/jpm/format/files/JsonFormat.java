@@ -76,6 +76,93 @@ public final class JsonFormat {
         return out.toString();
     }
 
+    /**
+     * The file in a style: {@code "keep"} ({@link #format(String, int, int)}), {@code "pretty"} (every value of a
+     * non-empty object or array on a line of its own, as a pretty printer writes it) or {@code "compact"} (an object
+     * or array that fits on its line within {@code width} stays on it, written {@code { "a": 1 }} and
+     * {@code [1, 2]}; the others are written as in {@code "pretty"}). Both rewrite the line breaks, without blank
+     * lines; an object or array with a comment in it is never put on one line, and a comment stays at the end of the
+     * line it ends.
+     */
+    public static String format(String text, String style, int indent, int maxBlankLines, int width) {
+        if (style.equals("keep")) return format(text, indent, maxBlankLines);
+        List<Token> tokens = lex(text);
+        if (tokens == null || !balanced(tokens)) return text;
+        boolean pretty = style.equals("pretty");
+        int n = tokens.size();
+        int[] close = new int[n];
+        int[] inline = new int[n];
+        Deque<Integer> open = new ArrayDeque<>();
+        for (int i = 0; i < n; i++) {
+            if (tokens.get(i).opens()) open.push(i);
+            else if (tokens.get(i).closes()) close[open.pop()] = i;
+        }
+        for (int i = 0; i < n; i++) if (tokens.get(i).opens()) inline[i] = inlineLength(tokens, i, close[i]);
+        StringBuilder out = new StringBuilder(text.length());
+        Deque<int[]> frames = new ArrayDeque<>();
+        int line = 0;
+        boolean element = false;
+        for (int i = 0; i < n; i++) {
+            Token t = tokens.get(i);
+            Token prev = i == 0 ? null : tokens.get(i - 1);
+            int[] f = frames.peek();
+            boolean expanded = f != null && f[1] == 1;
+            boolean closing = t.closes() && f != null;
+            boolean sameLine = prev != null && count(text.substring(prev.end(), t.start()), '\n') == 0;
+            if (prev == null) {
+                line = 0;
+            } else if (t.comment() && sameLine && prev.kind() != Kind.LINE_COMMENT) {
+                out.append(' ');
+            } else if (prev.kind() == Kind.LINE_COMMENT || t.comment() || closing && expanded
+                    || expanded && element) {
+                line = f == null ? 0 : closing ? f[0] : f[0] + indent;
+                strip(out);
+                out.append('\n').append(" ".repeat(line));
+            } else {
+                out.append(" ".repeat(inlineSpace(prev, t, f)));
+            }
+            if (!t.comment()) element = false;
+            out.append(t.text());
+            if (t.opens()) {
+                int column = out.length() - out.lastIndexOf("\n") - 1 - 1;
+                boolean empty = close[i] == i + 1;
+                boolean fits = !pretty && inline[i] >= 0 && column + inline[i] <= width;
+                frames.push(new int[]{line, empty || fits ? 0 : 1, t.is('{') ? 1 : 0});
+                element = !empty && !fits;
+            } else if (t.closes() && f != null) {
+                frames.pop();
+            } else if (t.is(',') && expanded) {
+                element = true;
+            }
+        }
+        strip(out);
+        if (text.endsWith("\n") && !out.isEmpty()) out.append('\n');
+        return out.toString();
+    }
+
+    private static int inlineSpace(Token a, Token b, int[] frame) {
+        if (b.is(',') || b.is(':')) return 0;
+        if (a.is(',') || a.is(':')) return 1;
+        if (a.opens() && b.closes()) return 0;
+        boolean object = frame != null && frame[2] == 1;
+        if (a.is('{') || b.is('}') && object) return 1;
+        if (a.is('[') || b.is(']')) return 0;
+        return 1;
+    }
+
+    private static int inlineLength(List<Token> tokens, int open, int close) {
+        if (close == open + 1) return 2;
+        int length = 0;
+        for (int k = open; k <= close; k++) {
+            Token t = tokens.get(k);
+            if (t.comment()) return -1;
+            length += t.text().length();
+            if (t.is(',') || t.is(':')) length++;
+            if (t.is('{') && !tokens.get(k + 1).is('}')) length += 2;
+        }
+        return length;
+    }
+
     private static int space(Token a, Token b, int original) {
         if (b.comment()) return original;
         if (b.is(',') || b.is(':')) return 0;
