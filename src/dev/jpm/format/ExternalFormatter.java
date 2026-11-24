@@ -22,13 +22,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A Java formatter picked by name in {@code formatter.style}: {@code palantir[@<version>]} (Palantir Java Format,
+ * A Java formatter picked by name in {@code java.style}: {@code palantir[@<version>]} (Palantir Java Format,
  * {@value #PALANTIR} by default),
  * {@code google-java-format[@<version>]}, or {@code eclipse[@<version>]} (Eclipse JDT, through Spotless's step, with
- * the profile in {@code formatter.eclipseConfig}). jpm resolves the jars ({@code dependencies/resolve}, protocol
+ * the profile in {@code java.eclipseConfig}). jpm resolves the jars ({@code dependencies/resolve}, protocol
  * 1.2), and they run in a class loader of their own, so their Guava never meets jpm-format's. Palantir and
  * google-java-format are called through {@code Formatter.formatSource(String)} with their own default options
- * (Palantir in its Palantir style, as its {@code --palantir} flag gives); {@code formatter.lineWidth} and the
+ * (Palantir in its Palantir style, as its {@code --palantir} flag gives); {@code java.lineWidth} and the
  * indentation settings do not apply.
  */
 public final class ExternalFormatter {
@@ -61,17 +61,17 @@ public final class ExternalFormatter {
     }
 
     /**
-     * The formatter a {@code formatter.style} value names, or null for the built-in {@code intellij}. {@code config} is
-     * {@code formatter.eclipseConfig}, resolved against the project.
+     * The formatter a {@code java.style} value names, or null for the built-in {@code intellij}. {@code config} is
+     * {@code java.eclipseConfig}, resolved against the project.
      */
     public static Spec parse(String style, Path root, Path config) {
         if (style.equals("intellij")) {
-            if (config != null) throw new FormatException("formatter.eclipseConfig needs formatter.style \"eclipse\"");
+            if (config != null) throw new FormatException("java.eclipseConfig needs java.style \"eclipse\"");
             return null;
         }
         Spec other = jarOrGit(style, root);
         if (other != null) {
-            if (config != null) throw new FormatException("formatter.eclipseConfig needs formatter.style \"eclipse\"");
+            if (config != null) throw new FormatException("java.eclipseConfig needs java.style \"eclipse\"");
             return other;
         }
         int at = style.indexOf('@');
@@ -79,12 +79,12 @@ public final class ExternalFormatter {
         String version = at < 0 ? name.equals("palantir") ? PALANTIR : "latest" : style.substring(at + 1);
         String key = KEYS.get(name);
         if (key == null || version.isBlank()) {
-            throw new FormatException("formatter.style must be \"intellij\" (the default), \"palantir[@<version>]\","
+            throw new FormatException("java.style must be \"intellij\" (the default), \"palantir[@<version>]\","
                     + " \"google-java-format[@<version>]\", \"eclipse[@<version>]\", the URL of a jar, or a Git repository such as"
                     + " \"github:author/formatter[@<version>|#<branch>]\", not \"" + style + "\"");
         }
         if (config != null && !name.equals("eclipse")) {
-            throw new FormatException("formatter.eclipseConfig needs formatter.style \"eclipse\"");
+            throw new FormatException("java.eclipseConfig needs java.style \"eclipse\"");
         }
         return new Spec(name, key, version, root, config);
     }
@@ -98,9 +98,9 @@ public final class ExternalFormatter {
             String url = hash < 0 ? style : style.substring(0, hash);
             String sha = hash < 0 ? null : style.substring(hash + "#sha256=".length()).toLowerCase(java.util.Locale.ROOT);
             if (!url.endsWith(".jar"))
-                throw new FormatException("formatter.style names a URL, which must be of a jar (ending in .jar): " + url);
+                throw new FormatException("java.style names a URL, which must be of a jar (ending in .jar): " + url);
             if (sha != null && !SHA256.matcher(sha).matches())
-                throw new FormatException("formatter.style: #sha256= takes the jar's SHA-256 in hex");
+                throw new FormatException("java.style: #sha256= takes the jar's SHA-256 in hex");
             return new Spec("jar", url, sha, root, null);
         }
         java.util.regex.Matcher g = GIT.matcher(style);
@@ -108,7 +108,7 @@ public final class ExternalFormatter {
         String rest = g.group(2);
         String version = rest == null ? "*" : rest.startsWith("@") ? rest.substring(1) : rest;
         if (version.isBlank())
-            throw new FormatException("formatter.style " + style + " needs a version after @ or a branch after #");
+            throw new FormatException("java.style " + style + " needs a version after @ or a branch after #");
         return new Spec("git", g.group(1), version, root, null);
     }
 
@@ -247,7 +247,7 @@ public final class ExternalFormatter {
                 String actual = Hashing.sha256(java.nio.file.Files.readAllBytes(target));
                 if (!actual.equals(spec.version())) {
                     java.nio.file.Files.deleteIfExists(target);
-                    throw new FormatException("the formatter " + url + " has SHA-256 " + actual + ", not the " + spec.version() + " formatter.style names");
+                    throw new FormatException("the formatter " + url + " has SHA-256 " + actual + ", not the " + spec.version() + " java.style names");
                 }
             }
             return target;
@@ -374,7 +374,7 @@ public final class ExternalFormatter {
         if (jpm == null || jpm.isBlank()) jpm = "jpm";
         try (JpmClient client = JpmClient.start(List.of(jpm, "api"), root, Map.of(), "jpm-format", Main.VERSION)) {
             if (!client.supports("dependencies/resolve")) {
-                throw new FormatException("a formatter.style that names a formatter release needs jpm 0.15.0 or newer"
+                throw new FormatException("a java.style that names a formatter release needs jpm 0.15.0 or newer"
                         + " (protocol 1.2, dependencies/resolve); upgrade with `jpm upgrade`");
             }
             Map<String, Object> params = new LinkedHashMap<>();
@@ -386,7 +386,7 @@ public final class ExternalFormatter {
             if (out.isEmpty()) throw new FormatException("jpm resolved no jars for " + dependencies);
             return out;
         } catch (JpmNotInstalled e) {
-            throw new FormatException("a formatter.style that names a formatter release needs jpm to download it, and "
+            throw new FormatException("a java.style that names a formatter release needs jpm to download it, and "
                     + jpm + " could not run", e);
         } catch (JpmError e) {
             throw new FormatException("jpm could not resolve " + dependencies + ": " + e.getMessage(), e);

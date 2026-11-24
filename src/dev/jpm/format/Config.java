@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {
  *   "extends": ["config/format.jsonc"],
  *   "ignore": ["src/generated/**"],
- *   "formatter": { "enabled": true, "lineWidth": 120, "indentWidth": 4, "continuationIndentWidth": 8, "useTabs": false,
+ *   "java": { "enabled": true, "lineWidth": 120, "indentWidth": 4, "continuationIndentWidth": 8, "useTabs": false,
  *                  "licenseHeader": "/* (c) $YEAR Me *&#47;" },
  *   "imports": { "removeUnused": true, "sort": true, "groups": ["*", ["java.*", "javax.*"], "static *"],
  *                "wildcardThreshold": 0 },
@@ -166,7 +166,7 @@ public final class Config {
     }
 
     /**
-     * Whether any part of the project's config picks a {@code formatter.style} other than {@code "intellij"}: those
+     * Whether any part of the project's config picks a {@code java.style} other than {@code "intellij"}: those
      * formatters (Palantir Java Format, google-java-format, a jar) may read javac's internals, which then have to be
      * exported, on a JDK they support (ADR 0003). The IntelliJ style uses javac's public API only.
      */
@@ -179,7 +179,7 @@ public final class Config {
     private static boolean otherStyle(Object o) {
         if (o instanceof Map<?, ?> m) {
             for (Map.Entry<?, ?> e : m.entrySet()) {
-                if ("formatter".equals(e.getKey()) && e.getValue() instanceof Map<?, ?> f
+                if ("java".equals(e.getKey()) && e.getValue() instanceof Map<?, ?> f
                         && f.get("style") instanceof String st && !st.equals("intellij")) {
                     return true;
                 }
@@ -328,13 +328,10 @@ public final class Config {
     @SuppressWarnings("unchecked")
     public Settings settings(String rel) {
         Map<String, Object> eff = effective(rel);
-        if (rel.endsWith(".java")) {
-            Map<String, Object> f = new LinkedHashMap<>(obj(eff.get("default"), "default"));
-            f.putAll(obj(eff.get("formatter"), "formatter"));
-            f.putAll(obj(eff.get("java"), "java"));
-            eff = new LinkedHashMap<>(eff);
-            eff.put("formatter", f);
-        }
+        Map<String, Object> f = new LinkedHashMap<>(obj(eff.get("default"), "default"));
+        f.putAll(obj(eff.get("java"), "java"));
+        eff = new LinkedHashMap<>(eff);
+        eff.put("formatter", f);
         Map<String, Object> e = eff;
         String key = Json.write(e);
         return settingsByKey.computeIfAbsent(key, k -> parse(e, k));
@@ -395,32 +392,32 @@ public final class Config {
         Map<String, Object> f = obj(c.get("formatter"), "formatter");
         Map<String, Object> im = obj(c.get("imports"), "imports");
         Map<String, Object> li = obj(c.get("linter"), "linter");
-        int width = range(f.getOrDefault("lineWidth", 120L), "formatter.lineWidth", 20, 1000);
-        int indent = range(f.getOrDefault("indentWidth", 4L), "formatter.indentWidth", 1, 16);
+        int width = range(f.getOrDefault("lineWidth", 120L), "java.lineWidth", 20, 1000);
+        int indent = range(f.getOrDefault("indentWidth", 4L), "java.indentWidth", 1, 16);
         int continuation = range(
                 f.getOrDefault("continuationIndentWidth", (long) (2 * indent)),
-                "formatter.continuationIndentWidth",
+                "java.continuationIndentWidth",
                 1,
                 32);
         Object st = f.getOrDefault("style", "intellij");
         if (!(st instanceof String style)) {
-            throw new FormatException("formatter.style must be a string, not " + Json.write(st));
+            throw new FormatException("java.style must be a string, not " + Json.write(st));
         }
         Object ec = f.get("eclipseConfig");
-        if (ec != null && !(ec instanceof String)) throw new FormatException("formatter.eclipseConfig must be a path");
+        if (ec != null && !(ec instanceof String)) throw new FormatException("java.eclipseConfig must be a path");
         ExternalFormatter.Spec external = ExternalFormatter.parse(style, root, ec == null ? null : root.resolve((String) ec));
-        int maxBlank = range(f.getOrDefault("maxBlankLines", 2L), "formatter.maxBlankLines", 1, 10);
+        int maxBlank = range(f.getOrDefault("maxBlankLines", 2L), "java.maxBlankLines", 1, 10);
         String header = null;
         Object h = f.get("licenseHeader");
         if (h instanceof String s) header = s;
         else if (h instanceof Map<?, ?> hm && hm.get("file") instanceof String file)
             header = readString(root.resolve(file));
         else if (h != null)
-            throw new FormatException("formatter.licenseHeader must be a string or {\"file\": \"...\"}");
+            throw new FormatException("java.licenseHeader must be a string or {\"file\": \"...\"}");
         if (header != null) {
             header = header.replace("\r\n", "\n").strip();
             if (!header.startsWith("/*") && !header.startsWith("//")) {
-                throw new FormatException("formatter.licenseHeader must be a Java comment (start with /* or //)");
+                throw new FormatException("java.licenseHeader must be a Java comment (start with /* or //)");
             }
         }
         List<List<String>> groups = new ArrayList<>();
@@ -460,13 +457,13 @@ public final class Config {
             }
         }
         return new Settings(
-                bool(f.getOrDefault("enabled", true), "formatter.enabled"),
+                bool(f.getOrDefault("enabled", true), "java.enabled"),
                 width,
                 indent,
                 continuation,
                 "intellij".equals(st),
                 maxBlank,
-                bool(f.getOrDefault("useTabs", false), "formatter.useTabs"),
+                bool(f.getOrDefault("useTabs", false), "java.useTabs"),
                 header,
                 bool(im.getOrDefault("removeUnused", true), "imports.removeUnused"),
                 bool(im.getOrDefault("sort", true), "imports.sort"),
@@ -480,7 +477,7 @@ public final class Config {
     }
 
     private static final Set<String> TOP =
-            Set.of("$schema", "extends", "ignore", "formatter", "imports", "linter", "overrides", "files", "default", "java", "json",
+            Set.of("$schema", "extends", "ignore", "imports", "linter", "overrides", "files", "default", "java", "json",
                     "xml", "properties", "toml", "yaml");
     private static final Set<String> FORMATTER = Set.of(
             "enabled",
@@ -497,8 +494,11 @@ public final class Config {
 
     @SuppressWarnings("unchecked")
     private void validate(Map<String, Object> c, String where) {
+        if (c.containsKey("formatter")) {
+            throw new FormatException(where + ": \"formatter\" is gone: Java's settings go in \"java\", and those for every"
+                    + " file type in \"default\"");
+        }
         keys(c, TOP, where);
-        keys(obj(c.get("formatter"), "formatter"), FORMATTER, where + ": formatter");
         keys(obj(c.get("default"), "default"), DEFAULTS, where + ": default");
         keys(obj(c.get("java"), "java"), FORMATTER, where + ": java");
         for (String format : List.of("json", "xml", "properties", "toml", "yaml")) {

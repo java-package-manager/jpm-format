@@ -6,7 +6,7 @@ import dev.jpm.format.api.Context;
 
 /**
  * IntelliJ's "Keep maximum blank lines" (in declarations, in code and before {@code '}'}), 2 by default: blank
- * lines the code already had stay, up to {@code formatter.maxBlankLines}.
+ * lines the code already had stay, up to {@code java.maxBlankLines}.
  *
  * <p>The layout engine only changes whitespace, so its input and output have the same non-whitespace text. Walking
  * both side by side lines up every gap between two characters; where the output still breaks the line but has

@@ -12,7 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Puts {@code formatter.licenseHeader} at the top of every file, replacing the comments before the package
+ * Puts {@code java.licenseHeader} at the top of every file, replacing the comments before the package
  * declaration, like Spotless's licenseHeader step. {@code $YEAR} becomes the current year, but a year (or
  * range) already in a matching header is kept.
  */

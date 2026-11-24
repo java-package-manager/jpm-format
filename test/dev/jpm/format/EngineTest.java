@@ -195,7 +195,7 @@ class EngineTest {
     @Test
     void crlfFilesKeepTheirLineEndings() {
         String out = RuleTester.withBuiltins()
-                .config("{\"formatter\": {\"licenseHeader\": \"/*\\n * Acme\\n */\"}}")
+                .config("{\"java\": {\"licenseHeader\": \"/*\\n * Acme\\n */\"}}")
                 .format("import b.B;\r\nimport java.util.List;\r\nimport a.A;\r\nclass C { A a; B b; List<A> l; }\r\n");
         assertEquals(
                 "/*\r\n * Acme\r\n */\r\n\r\nimport a.A;\r\nimport b.B;\r\n\r\nimport java.util.List;\r\n\r\n"
@@ -419,7 +419,7 @@ class EngineTest {
         assertEquals("4.32", ExternalFormatter.parse("eclipse@4.32", root, root.resolve("e.xml")).version());
         assertThrows(FormatException.class, () -> ExternalFormatter.parse("intellij", root, root.resolve("e.xml")));
         assertThrows(FormatException.class, () -> ExternalFormatter.parse("google-java-format", root, root.resolve("e.xml")));
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"style\": \"google-java-format@1.24.0\" } } } }");
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"java\": { \"style\": \"google-java-format@1.24.0\" } } } }");
         Config.Settings s = open().config.settings("A.java");
         assertEquals("1.24.0", s.externalFormatter().version());
         assertFalse(s.intellijStyle());
@@ -469,13 +469,13 @@ class EngineTest {
             out.write("up.Upper\n".getBytes(StandardCharsets.UTF_8));
         }
         String sha = Hashing.sha256(Files.readAllBytes(jarFile));
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"style\": \"" + jarFile.toUri() + "#sha256=" + sha + "\" } } } }");
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"java\": { \"style\": \"" + jarFile.toUri() + "#sha256=" + sha + "\" } } } }");
         Config.Settings s = open().config.settings("A.java");
         assertFalse(s.intellijStyle());
         FileContext ctx = new FileContext(new Source("A.java", "class a {}\n"), null, Severity.ERROR, s, null, new java.util.ArrayList<>());
         assertEquals("class A {}\n", ExternalFormatter.format(s.externalFormatter(), ctx));
         assertTrue(Files.isDirectory(dir.resolve(".cache/format/formatters")), "the jar is kept in the cache");
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"style\": \"" + jarFile.toUri() + "#sha256=" + "0".repeat(64) + "\" } } } }");
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"java\": { \"style\": \"" + jarFile.toUri() + "#sha256=" + "0".repeat(64) + "\" } } } }");
         Config.Settings wrong = open().config.settings("A.java");
         FormatException e = assertThrows(FormatException.class, () -> ExternalFormatter.format(wrong.externalFormatter(), ctx));
         assertTrue(e.getMessage().contains("has SHA-256 " + sha), e.getMessage());
@@ -554,6 +554,8 @@ class EngineTest {
         assertEquals("<a>\n   <b/>\n</a>\n", ws.engine.run("x.xml", "<a>\n<b/>\n</a>\n", Engine.Mode.FORMAT).output());
         write("project.jsonc", "{ \"extensions\": { \"format\": { \"json\": { \"tabs\": 1 } } } }");
         assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("unknown key \"tabs\""));
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"indentWidth\": 2 } } } }");
+        assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("go in \"java\""));
         write("project.jsonc", "{ \"extensions\": { \"format\": { \"default\": { \"style\": \"pretty\" } } } }");
         assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("unknown key \"style\""));
     }
@@ -563,7 +565,7 @@ class EngineTest {
         write("project.jsonc", "{ \"extensions\": { \"format\": { \"linter\": { \"rules\": { \"style\": {} } } } } }");
         assertFalse(Config.otherStyle(dir));
         write("sub/project.jsonc", "{ \"extensions\": { \"format\": { \"overrides\": [ { \"include\": [\"**\"],"
-                + " \"formatter\": { \"style\": \"palantir\" } } ] } } }");
+                + " \"java\": { \"style\": \"palantir\" } } ] } } }");
         assertTrue(Config.otherStyle(dir));
     }
 
@@ -596,13 +598,13 @@ class EngineTest {
                 "{ \"extensions\": { \"format\": { \"linter\": { \"rules\": { \"style\": { \"EmptyCatchBlock\": \"warn\" } } } } } }");
         assertTrue(
                 assertThrows(FormatException.class, this::open).getMessage().contains("is in category \"suspicious\""));
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"tabs\": true } } } }");
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"java\": { \"tabs\": true } } } }");
         assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("unknown key \"tabs\""));
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"lineWidth\": 5 } } } }");
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"java\": { \"lineWidth\": 5 } } } }");
         Workspace ws = open();
         assertTrue(assertThrows(FormatException.class, () -> ws.config.settings("A.java"))
                 .getMessage()
-                .contains("formatter.lineWidth must be from 20 to 1000, not 5"));
+                .contains("java.lineWidth must be from 20 to 1000, not 5"));
         write("project.jsonc", "{ \"extensions\": { \"format\": {} } }");
         write("jpm-format.jsonc", "{}");
         assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("keep one"));
