@@ -35,7 +35,7 @@
   // jpm's client, dev.jpm:jpm-api, is published here
   "repositories": ["https://repo.thenextlvl.net/releases"],
   "runtime": {
-    "dev.jpm:jpm-api": "0.14.0"
+    "dev.jpm:jpm-api": "0.17.0"
   },
   "test": {
     "org.junit.jupiter:junit-jupiter": "6.1.3"
