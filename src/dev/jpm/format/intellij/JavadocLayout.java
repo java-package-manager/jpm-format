@@ -19,8 +19,8 @@ import java.util.regex.Pattern;
  * of {@code {@link}} and {@code @see} references are separated by a comma and a space. A description written on the line after its
  * {@code @param} or {@code @throws} name is joined onto the tag's line.
  *
- * <p>Text is not re-wrapped, and comments that do not have a {@code *} at the start of every line, or that contain
- * {@code <pre>} in their tags, are left as they are.
+ * <p>Text is not re-wrapped, and comments that do not have a {@code *} at the start of every line are left as they
+ * are. A {@code <pre>} anywhere in a comment does not stop the rest of it from being formatted, as in IntelliJ.
  */
 public final class JavadocLayout implements IntelliJRule {
     public static final String ID = "JavadocLayout";
@@ -115,7 +115,6 @@ public final class JavadocLayout implements IntelliJRule {
         }
         boolean tagged = firstTag >= 0;
         if (!tagged) firstTag = body.size();
-        for (int k = firstTag; k < body.size(); k++) if (body.get(k).contains("<pre>")) return null;
         List<String> lines = new ArrayList<>(body);
         paragraphs(lines, firstTag);
         boolean described = false;
