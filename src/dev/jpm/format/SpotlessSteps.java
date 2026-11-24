@@ -5,6 +5,7 @@ import dev.jpm.format.api.Fix;
 import dev.jpm.format.api.Severity;
 import dev.jpm.format.files.JsonFormat;
 import dev.jpm.format.files.PropertiesFormat;
+import dev.jpm.format.files.TomlFormat;
 import dev.jpm.format.files.XmlFormat;
 
 import java.io.File;
@@ -25,7 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Spotless's jars ({@code dependencies/resolve}) and those of the formatters the steps download, as for
  * {@code formatter.style: "eclipse"}.
  *
- * <p>Three steps are jpm-format's own and need nothing downloaded: {@code properties}, {@code json} and {@code xml}
+ * <p>Four steps are jpm-format's own and need nothing downloaded: {@code properties}, {@code json}, {@code xml} and
+ * {@code toml}
  * ({@code dev.jpm.format.files}). They are on by default for the files they are named after ({@link #DEFAULTS}) when no
  * entry includes the file; an entry with {@code "steps": []} turns them off for the files it includes.
  *
@@ -71,7 +73,8 @@ final class SpotlessSteps {
             Map.entry("indent", Set.of("type", "width")),
             Map.entry("properties", Set.of("maxBlankLines", "lineWidth", "indent", "wrap", "encoding")),
             Map.entry("json", Set.of("indent", "maxBlankLines", "lineWidth", "style")),
-            Map.entry("xml", Set.of("indent", "maxBlankLines")));
+            Map.entry("xml", Set.of("indent", "maxBlankLines")),
+            Map.entry("toml", Set.of("indent", "maxBlankLines")));
 
     /**
      * The options of jpm-format's own formats in their config sections ({@code "json": {"formatter": {...}}}), with
@@ -80,7 +83,8 @@ final class SpotlessSteps {
     static final Map<String, Set<String>> FORMAT_OPTIONS = Map.of(
             "properties", Set.of("maxBlankLines", "lineWidth", "indentWidth", "wrap", "encoding"),
             "json", Set.of("indentWidth", "maxBlankLines", "lineWidth", "style"),
-            "xml", Set.of("indentWidth", "maxBlankLines"));
+            "xml", Set.of("indentWidth", "maxBlankLines"),
+            "toml", Set.of("indentWidth", "maxBlankLines"));
 
     /**
      * The built-in steps files get by their extension when no {@code "files"} entry includes them.
@@ -94,10 +98,11 @@ final class SpotlessSteps {
             Map.entry("xsl", "xml"),
             Map.entry("xslt", "xml"),
             Map.entry("wsdl", "xml"),
-            Map.entry("fxml", "xml"));
+            Map.entry("fxml", "xml"),
+            Map.entry("toml", "toml"));
 
     private static final Set<String> NO_VERSION = Set.of("jsonSimple", "jacksonJson", "jacksonYaml", "dbeaverSql", "trimTrailingWhitespace",
-            "endWithNewline", "removeSemicolons", "indent", "properties", "json", "xml");
+            "endWithNewline", "removeSemicolons", "indent", "properties", "json", "xml", "toml");
 
     /**
      * Formats text with one step; the plugin's steps run Spotless, tests replace them.
@@ -289,6 +294,10 @@ final class SpotlessSteps {
             case "xml" -> {
                 int indent = number(s, "indent", 4);
                 return (text, file) -> XmlFormat.format(text, indent, blank);
+            }
+            case "toml" -> {
+                int indent = number(s, "indent", 4);
+                return (text, file) -> TomlFormat.format(text, indent, blank);
             }
             default -> {
             }
