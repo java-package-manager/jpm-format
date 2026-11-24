@@ -316,11 +316,11 @@ A step takes its formatter's version after `@` (or as `"version"`), else Spotles
 - The other styles (`"palantir"`, `"google-java-format"`, `"eclipse"`, a jar or a Git repository) run the formatter
   itself, which jpm downloads, in a class loader of its own.
 - Built-in rules are compiled into jpm-format. Files are processed in parallel.
-- Palantir Java Format and google-java-format need javac's internal packages. jpm starts extensions on a plain JVM, so jpm-format exports them
-  itself on JDK 21–23, and on newer JDKs starts a second JVM with `--add-exports` (with class data sharing,
-  so later starts are fast).
-- Newer JDKs changed javac's internal tree in a way Palantir Java Format cannot read yet. When jpm starts jpm-format on
-  such a JDK, it moves the run to JDK 21 (`jpm java home 21`, which installs it if needed);
+- The IntelliJ style runs on any JDK with javac, in the JVM jpm starts. Palantir Java Format and google-java-format
+  need javac's internal packages, so with another `formatter.style` jpm-format exports them itself on JDK 21–23, and
+  on newer JDKs starts a second JVM with `--add-exports` (with class data sharing, so later starts are fast).
+- Newer JDKs changed javac's internal tree in a way Palantir Java Format cannot read yet. With another
+  `formatter.style`, when jpm starts jpm-format on such a JDK, it moves the run to JDK 21 (`jpm java home 21`, which installs it if needed);
   `JPM_FORMAT_JAVA_HOME` picks the JDK instead.
 
 ## Status

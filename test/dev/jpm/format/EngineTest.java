@@ -539,6 +539,15 @@ class EngineTest {
     }
 
     @Test
+    void onlyOtherStylesNeedJavacsInternals() throws IOException {
+        write("project.jsonc", "{ \"extensions\": { \"format\": { \"linter\": { \"rules\": { \"style\": {} } } } } }");
+        assertFalse(Config.otherStyle(dir));
+        write("sub/project.jsonc", "{ \"extensions\": { \"format\": { \"overrides\": [ { \"include\": [\"**\"],"
+                + " \"formatter\": { \"style\": \"palantir\" } } ] } } }");
+        assertTrue(Config.otherStyle(dir));
+    }
+
+    @Test
     void spotlessStepErrors() {
         assertEquals(new SpotlessSteps.Step("jsonSimple", null, Map.of("indent", 2L)),
                 SpotlessSteps.parse(List.of(Map.of("include", List.of("*.json"), "steps", List.of(Map.of("step", "jsonSimple", "indent", 2L))))).get(0).steps().get(0));

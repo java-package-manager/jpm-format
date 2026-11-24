@@ -91,11 +91,12 @@ public final class Main {
         }
         boolean nativeImage = System.getProperty("org.graalvm.nativeimage.imagecode") != null;
         boolean child = System.getenv("JPM_FORMAT_CHILD") != null;
-        if (!nativeImage && !Jdks.formatterSupported()) {
+        boolean javac = !nativeImage && otherStyle();
+        if (javac && !Jdks.formatterSupported()) {
             if (child) throw new FormatException(Jdks.unsupportedMessage());
             return relaunch(args, System.getProperty("java.class.path"), Jdks.supportedJava());
         }
-        if (!nativeImage && !Exports.open() && !child) {
+        if (javac && !Exports.open() && !child) {
             return relaunch(args, System.getProperty("java.class.path"), javaExecutable());
         }
         if (nativeImage && System.getenv("JPM_FORMAT_CHILD") == null) {
@@ -160,6 +161,18 @@ public final class Main {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return 130;
+        }
+    }
+
+    /**
+     * Whether the project's config picks a formatter that may read javac's internals ({@link Config#otherStyle}); a
+     * config that does not load is reported later, by the command.
+     */
+    private static boolean otherStyle() {
+        try {
+            return Config.otherStyle(Project.findRoot(Path.of("")));
+        } catch (FormatException | IllegalArgumentException e) {
+            return false;
         }
     }
 

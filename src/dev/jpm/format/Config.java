@@ -162,7 +162,36 @@ public final class Config {
      * Loads the config of the project at {@code root}, checking rule names against {@code rules}.
      */
     public static Config load(Path root, Rules rules, String extraHash) {
-        Map<String, Object> rootCfg = rootConfig(root);
+        return new Config(root, rootConfig(root), modules(root), rules, extraHash);
+    }
+
+    /**
+     * Whether any part of the project's config picks a {@code formatter.style} other than {@code "intellij"}: those
+     * formatters (Palantir Java Format, google-java-format, a jar) may read javac's internals, which then have to be
+     * exported, on a JDK they support (ADR 0003). The IntelliJ style uses javac's public API only.
+     */
+    public static boolean otherStyle(Path root) {
+        if (otherStyle((Object) rootConfig(root))) return true;
+        for (Scoped s : modules(root)) if (otherStyle((Object) s.config())) return true;
+        return false;
+    }
+
+    private static boolean otherStyle(Object o) {
+        if (o instanceof Map<?, ?> m) {
+            for (Map.Entry<?, ?> e : m.entrySet()) {
+                if ("formatter".equals(e.getKey()) && e.getValue() instanceof Map<?, ?> f
+                        && f.get("style") instanceof String st && !st.equals("intellij")) {
+                    return true;
+                }
+                if (otherStyle(e.getValue())) return true;
+            }
+        } else if (o instanceof List<?> l) {
+            for (Object x : l) if (otherStyle(x)) return true;
+        }
+        return false;
+    }
+
+    private static List<Scoped> modules(Path root) {
         List<Scoped> mods = new ArrayList<>();
         try (var walk = Files.walk(root, 6)) {
             for (Path p : (Iterable<Path>) walk::iterator) {
@@ -181,7 +210,7 @@ public final class Config {
             throw new FormatException("Could not read " + root + ": " + e.getMessage());
         }
         mods.sort((a, b) -> b.dir().getNameCount() - a.dir().getNameCount());
-        return new Config(root, rootCfg, mods, rules, extraHash);
+        return mods;
     }
 
     /**
