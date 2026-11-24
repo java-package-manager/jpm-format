@@ -59,10 +59,10 @@ class IntelliJRulesTest {
         String in = "class A {\n    int a;\n\n\n\n\n    int b;\n}\n";
         assertEquals(
                 "class A {\n    int a;\n\n    int b;\n}\n",
-                intellij().config("{\"formatter\": {\"maxBlankLines\": 1}}").format(in));
+                intellij().config("{\"java\": {\"maxBlankLines\": 1}}").format(in));
         assertEquals(
                 "class A {\n    int a;\n\n\n\n    int b;\n}\n",
-                intellij().config("{\"formatter\": {\"maxBlankLines\": 3}}").format(in));
+                intellij().config("{\"java\": {\"maxBlankLines\": 3}}").format(in));
     }
 
     /**

@@ -49,7 +49,7 @@ headers, try resources and record components line up as in IntelliJ. The Intelli
 - Javadoc gets aligned `@param` descriptions, a blank line before the tags and `<p>` on empty lines;
 - comments stay as written: line comments are not wrapped, keep their spacing and stay at the first column.
 
-`"formatter": {"style": "palantir"}` is Palantir Java Format's output as it is (2.103.0, from its own jar): it
+`"java": {"style": "palantir"}` is Palantir Java Format's output as it is (2.103.0, from its own jar): it
 chooses the line breaks itself, wrapping at 120. Imports follow
 IntelliJ's layout: all other imports, then `java.*` and `javax.*`, then static imports, each group sorted
 alphabetically and separated by a blank line. Javadoc is not reflowed.
@@ -66,7 +66,7 @@ project root (not both). In a workspace, a module's own `project.jsonc` applies 
     "format": {
       "extends": ["config/format.jsonc"],          // shared configs, merged in order, then this one
       "ignore": ["src/generated/**"],              // .cache, dist, build, target, .git … are always ignored
-      "formatter": {
+      "java": {
         "enabled": true,
         "style": "intellij",                       // or "palantir", "palantir@<version>", "google-java-format[@<version>]",
                                                    // "eclipse[@<version>]" (with "eclipseConfig": "<profile>.xml")
@@ -116,7 +116,7 @@ merging imports into a wildcard can make names ambiguous.
 | `JavadocLayout` | format | formatter | IntelliJ: aligned `@param` and `@throws` descriptions, a blank line before the tags, `<p>` |
 | `LineCommentSpacing` | format | formatter | IntelliJ: `//comment` keeps its text right after the slashes |
 | `ImportOrder` | format | formatter | Import groups and order |
-| `LicenseHeader` | format | formatter | Header from `formatter.licenseHeader` |
+| `LicenseHeader` | format | formatter | Header from `java.licenseHeader` |
 | `UnusedImport` | style | formatter | Unused, redundant and duplicate imports |
 | `UnnecessaryModifier` | style | formatter | Modifiers the language implies, such as `public` on interface methods |
 | `MissingOverrideAnnotation` | style | lint, needs types | Overriding methods without `@Override` |
@@ -273,7 +273,7 @@ a section named after a type sets that type's settings, and its own options:
 ```jsonc
 "format": {
   "default": { "indentWidth": 4 },                       // every type without an indentWidth of its own
-  "java": { "indentWidth": 2, "useTabs": true },         // what "formatter" takes, for Java files
+  "java": { "indentWidth": 2, "useTabs": true },         // Java files only
   "json": { "indentWidth": 2, "style": "compact" },      // "keep" (default), "compact" or "pretty"
   "properties": { "wrap": true, "encoding": "ISO-8859-1" }
 }
@@ -282,7 +282,7 @@ a section named after a type sets that type's settings, and its own options:
 | Section | Settings (default) |
 |---|---|
 | `default` | `lineWidth`, `indentWidth`, `continuationIndentWidth`, `maxBlankLines`, `useTabs`: each type takes those it has |
-| `java` | everything `formatter` takes; `formatter` still works and counts as `java`, which wins over it. `indentWidth` (4) |
+| `java` | `enabled`, `style`, `eclipseConfig`, `lineWidth`, `indentWidth` (4), `continuationIndentWidth`, `maxBlankLines`, `useTabs`, `licenseHeader` (see [Configuration](#configuration)) |
 | `json` | `style`: `"keep"` keeps line breaks; `"compact"` puts an object or array that fits in `lineWidth` on one line (`{ "a": 1 }`, `[1, 2]`) and the rest one value per line; `"pretty"` puts every value on a line of its own. `indentWidth` (2), `maxBlankLines`, `lineWidth` |
 | `xml` | `indentWidth` (4), `maxBlankLines` |
 | `yaml` | `indentWidth` (2), `maxBlankLines` |
@@ -344,10 +344,10 @@ A step takes its formatter's version after `@` (or as `"version"`), else Spotles
   itself, which jpm downloads, in a class loader of its own.
 - Built-in rules are compiled into jpm-format. Files are processed in parallel.
 - The IntelliJ style runs on any JDK with javac, in the JVM jpm starts. Palantir Java Format and google-java-format
-  need javac's internal packages, so with another `formatter.style` jpm-format exports them itself on JDK 21–23, and
+  need javac's internal packages, so with another `java.style` jpm-format exports them itself on JDK 21–23, and
   on newer JDKs starts a second JVM with `--add-exports` (with class data sharing, so later starts are fast).
 - Newer JDKs changed javac's internal tree in a way Palantir Java Format cannot read yet. With another
-  `formatter.style`, when jpm starts jpm-format on such a JDK, it moves the run to JDK 21 (`jpm java home 21`, which installs it if needed);
+  `java.style`, when jpm starts jpm-format on such a JDK, it moves the run to JDK 21 (`jpm java home 21`, which installs it if needed);
   `JPM_FORMAT_JAVA_HOME` picks the JDK instead.
 
 ## Status

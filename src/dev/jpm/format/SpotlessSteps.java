@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Spotless's steps for files other than Java, from {@code "files"} in the config: each entry names the files it
  * applies to ({@code include}, globs relative to the project) and the steps that format them, in order. jpm provides
  * Spotless's jars ({@code dependencies/resolve}) and those of the formatters the steps download, as for
- * {@code formatter.style: "eclipse"}.
+ * {@code java.style: "eclipse"}.
  *
  * <p>Five steps are jpm-format's own and need nothing downloaded: {@code properties}, {@code json}, {@code xml},
  * {@code yaml} and {@code toml}

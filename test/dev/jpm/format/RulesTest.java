@@ -43,7 +43,7 @@ class RulesTest {
     @Test
     void javaFormatWithTabsKeepsTextBlocks() {
         String out = RuleTester.of(new JavaFormat())
-                .config("{\"formatter\": {\"useTabs\": true}}")
+                .config("{\"java\": {\"useTabs\": true}}")
                 .format("class A { String s = \"\"\"\n    keep\n    \"\"\"; void f() { int y = 1; } }");
         assertTrue(out.contains("\n\tvoid f() {\n\t\tint y = 1;"), out);
         assertTrue(out.contains("\n            keep\n            \"\"\";"), out);
@@ -52,7 +52,7 @@ class RulesTest {
     @Test
     void javaFormatWithTwoSpaceIndent() {
         String out = RuleTester.of(new JavaFormat())
-                .config("{\"formatter\": {\"lineWidth\": 100, \"indentWidth\": 2}}")
+                .config("{\"java\": {\"lineWidth\": 100, \"indentWidth\": 2}}")
                 .format("class A { void f() { } }");
         assertEquals("class A {\n  void f() {}\n}\n", out);
     }
@@ -67,7 +67,7 @@ class RulesTest {
             return source.replace("\n\n\n", "\n\n");
         };
         try {
-            String out = RuleTester.withBuiltins().config("{\"formatter\": {\"style\": \"palantir\"}}").format(in);
+            String out = RuleTester.withBuiltins().config("{\"java\": {\"style\": \"palantir\"}}").format(in);
             assertEquals("class A {\n    void f() {}\n\n    int x;\n}\n", out, "no IntelliJ rule runs after it");
             assertEquals("palantir@2.103.0", asked.getFirst());
         } finally {
@@ -79,7 +79,7 @@ class RulesTest {
     void javaFormatWithAnyWidthAndIndent() {
         String in = "class A { void f() { if (true) { call(aaaaaaaaaa, bbbbbbbbbb, cccccccccc, dddddddddd); } } }";
         RuleTester intellij =
-                RuleTester.of(new JavaFormat()).config("{\"formatter\": {\"lineWidth\": 50, \"indentWidth\": 3}}");
+                RuleTester.of(new JavaFormat()).config("{\"java\": {\"lineWidth\": 50, \"indentWidth\": 3}}");
         intellij.assertFormats(in, """
                 class A {
                    void f() {
@@ -220,7 +220,7 @@ class RulesTest {
     @Test
     void licenseHeaderIsAddedAndKeepsItsYear() {
         RuleTester t = RuleTester.of(new LicenseHeader())
-                .config("{\"formatter\": {\"licenseHeader\": \"/* (c) $YEAR Acme */\"}}");
+                .config("{\"java\": {\"licenseHeader\": \"/* (c) $YEAR Acme */\"}}");
         int year = Year.now().getValue();
         t.assertFormats(
                 "// old header\npackage p;\nclass A {}\n", "/* (c) " + year + " Acme */\n\npackage p;\nclass A {}\n");
@@ -235,7 +235,7 @@ class RulesTest {
         FormatException e = assertThrows(
                 FormatException.class,
                 () -> RuleTester.of(new LicenseHeader())
-                        .config("{\"formatter\": {\"licenseHeader\": \"Copyright me\"}}")
+                        .config("{\"java\": {\"licenseHeader\": \"Copyright me\"}}")
                         .format("class A {}"));
         assertTrue(e.getMessage().contains("must be a Java comment"), e.getMessage());
     }

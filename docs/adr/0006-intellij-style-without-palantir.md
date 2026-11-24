@@ -16,7 +16,7 @@ Palantir Java Format 2.103.0 from its own jar. Where [0002](0002-formatting-pipe
   moves a statement body past the line width to the next line. So the engine needs no line-breaking search,
   which is most of what Palantir is.
 - javac stays the parser. Palantir used it too; it is not part of what leaves.
-- `"palantir"` and `"palantir@<version>"` stay as `formatter.style`, run as external formatters
+- `"palantir"` and `"palantir@<version>"` stay as `java.style`, run as external formatters
   (`ExternalFormatter`) from Palantir's own jar, like `google-java-format`. Nothing of Palantir's code is
   in the repository afterwards.
 - The parity check (`checks/Parity.java`) is how the new engine is judged; it compares output only, so it

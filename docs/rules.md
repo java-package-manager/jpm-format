@@ -9,13 +9,13 @@ text. Lint rules only report.
 
 ### JavaFormat
 
-The layout of the code: indentation, line breaks, spacing. In the default `formatter.style: "intellij"` it is
+The layout of the code: indentation, line breaks, spacing. In the default `java.style: "intellij"` it is
 jpm-format's own layout engine (ADR 0006), which keeps the input's line breaks, as IntelliJ does ("Keep when
 reformatting: line breaks"): no line is joined, except that `{` moves up to the line it opens from, `else`,
 `catch`, `finally` and the `while` of a `do` move up after a `}`, and a switch rule's body moves up after its `->`
 when it fits; statements get a line each, block contents and the `}` lines of their own, and the annotations of
 classes, methods and fields go on their own lines. The body of an `if`, a loop or a switch rule that would end
-past `formatter.lineWidth` moves to the next line. A wrapped line is indented one continuation indent from the
+past `java.lineWidth` moves to the next line. A wrapped line is indented one continuation indent from the
 nearest enclosing statement, argument, chain or operand that starts a line, not from every expression it is in
 (`foo(bar(a,` then `b))` puts `b` one continuation in), a block from the line it starts on, and a closing `)` on
 its own line under the line with its `(`. Method
@@ -27,18 +27,18 @@ Comments stay as written: line comments are not wrapped and keep the text after 
 column stay there ("Line comment at first column"), a comment after the statements of a `case` stays indented with
 them, and the other lines of a block comment move as far as its first.
 
-`formatter.lineWidth` (20 to 1000) is where statement bodies move to the next line. Configure with
-`formatter.indentWidth` (1 to 16),
-`formatter.continuationIndentWidth` (1 to 32; twice `indentWidth` by default, as IntelliJ's 4 and 8) and
-`formatter.useTabs`. In the IntelliJ style a text block moves as a whole to one continuation indent in from the
+`java.lineWidth` (20 to 1000) is where statement bodies move to the next line. Configure with
+`java.indentWidth` (1 to 16),
+`java.continuationIndentWidth` (1 to 32; twice `indentWidth` by default, as IntelliJ's 4 and 8) and
+`java.useTabs`. In the IntelliJ style a text block moves as a whole to one continuation indent in from the
 line it starts on, as in IntelliJ, which keeps its value; tabs never go into it. Turn the whole formatter off with
-`formatter.enabled: false`.
+`java.enabled: false`.
 
-`formatter.style` can also name another formatter: `"palantir[@<version>]"` (Palantir Java Format, 2.103.0 without a
+`java.style` can also name another formatter: `"palantir[@<version>]"` (Palantir Java Format, 2.103.0 without a
 version: the release jpm-format's own fork of it came from, before ADR 0006 removed the fork),
 `"google-java-format[@<version>]"` (its latest release without a version), in any version syntax jpm reads, or
 `"eclipse[@<version>]"`: Eclipse's JDT formatter, through Spotless's Eclipse step (Spotless 4.12.0, the Eclipse
-version Spotless picks without one), with the profile exported from Eclipse in `formatter.eclipseConfig`. jpm
+version Spotless picks without one), with the profile exported from Eclipse in `java.eclipseConfig`. jpm
 downloads it (`dependencies/resolve`, so it needs jpm 0.15.0 or newer), and it runs in a class loader of its own
 with its own defaults: `lineWidth`, the indentation settings, `useTabs` and the IntelliJ rules do not apply. The
 import rules, `LicenseHeader` and the linter still do.
@@ -58,7 +58,7 @@ written `{` and `}` on two lines, the closing brace under the first line of the 
 line of the brace for `else`, `catch`, `finally` and `do`). Applies to methods and constructors, named
 classes, initializer blocks and the blocks of `if`, `else`, loops, `try`, `catch`, `finally` and `synchronized`.
 Lambdas, anonymous classes, `switch` cases and array initializers keep `{}`. Runs after `JavaFormat`; off with
-`formatter.style: "palantir"`.
+`java.style: "palantir"`.
 
 ### MemberBlankLines
 
@@ -66,13 +66,13 @@ IntelliJ's "Minimum blank lines": one blank line around methods, nested classes 
 required between fields, after the class header or before its end. The blank line goes before the member's
 comments (its Javadoc, a line comment); when it has a Javadoc, right before
 the Javadoc, as IntelliJ does not count other comments before it as the member's. Runs after `JavaFormat`; off with
-`formatter.style: "palantir"`.
+`java.style: "palantir"`.
 
 ### KeepBlankLines
 
 IntelliJ's "Keep maximum blank lines" (in declarations, in code and before `}`): blank lines the code already had
-stay, up to `formatter.maxBlankLines` (2 by default, 1 to 10). Runs after `JavaFormat`; off with
-`formatter.style: "palantir"`.
+stay, up to `java.maxBlankLines` (2 by default, 1 to 10). Runs after `JavaFormat`; off with
+`java.style: "palantir"`.
 
 ### JavadocLayout
 
@@ -90,14 +90,14 @@ IntelliJ's default Javadoc formatting:
 - the parameter types of `{@link}`, `{@linkplain}` and `@see` references are separated by a comma and a space
 
 Text is not re-wrapped. Comments without a `*` at the start of every line are left as they are; a `<pre>` in a
-comment does not stop the rest of it from being formatted. Runs after `KeepBlankLines`; off with `formatter.style: "palantir"`.
+comment does not stop the rest of it from being formatted. Runs after `KeepBlankLines`; off with `java.style: "palantir"`.
 
 ### LineCommentSpacing
 
 IntelliJ's "Add a space at line comment start", off by default: `//TODO` and `//$NON-NLS-1$` keep the text right
 after the slashes. The space before a comment that ends a line of code stays as
 written too (`case 'a':// fall through`, `int x;  // why`). Runs after `JavadocLayout`; off with
-`formatter.style: "palantir"`.
+`java.style: "palantir"`.
 
 ### ImportOrder
 
@@ -109,7 +109,7 @@ Imports with comments between them are left alone. Off with `imports.sort: false
 
 ### LicenseHeader
 
-Puts `formatter.licenseHeader` (a comment, or `{ "file": "…" }`) at the top of every file, replacing the
+Puts `java.licenseHeader` (a comment, or `{ "file": "…" }`) at the top of every file, replacing the
 comments before the `package` line, like Spotless. `$YEAR` is the current year, but a year or range already in
 a matching header is kept. In a file without a package, other leading comments such as a class's Javadoc are
 kept after the header. Only runs when a header is configured.
