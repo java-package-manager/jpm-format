@@ -20,7 +20,7 @@ Parity is measured against IntelliJ's own formatter on real projects (`checks/Pa
 
 The goal: every file type that is common in a Java project is formatted by `jpm format` out of the box, chosen
 by its extension, with no `"files"` entry needed; `"files"` still overrides the defaults. Out of the box today:
-`.properties`, JSON and XML (jpm-format's own formatters); listed by hand in `"files"`, the Spotless steps that run
+`.properties`, JSON, XML and TOML (jpm-format's own formatters); listed by hand in `"files"`, the Spotless steps that run
 on a JVM: Kotlin, Scala, JSON, YAML, SQL, Groovy's semicolons and plain text.
 
 - [ ] **Native formatters, downloaded by jpm**: a binary per platform, pinned by version and SHA-256, with no npm
@@ -45,7 +45,7 @@ on a JVM: Kotlin, Scala, JSON, YAML, SQL, Groovy's semicolons and plain text.
   | Markdown | `README.md`, docs | Flexmark (Spotless, JVM), oxfmt or dprint |
   | Groovy, Gradle | `build.gradle`, Spock tests | greclipse (Spotless, JVM) |
   | Kotlin, `.kts` | Kotlin code, `build.gradle.kts` | `ktfmt` (today) |
-  | TOML | `libs.versions.toml` | Taplo, oxfmt or dprint |
+  | TOML | `libs.versions.toml` | done (jpm-format's own) |
   | SQL | Flyway and Liquibase migrations | `dbeaverSql` (today) |
   | HTML, CSS, JavaScript, TypeScript | web front ends, Thymeleaf templates | Biome or oxfmt |
   | Shell | `mvnw`, `gradlew`, scripts | shfmt |

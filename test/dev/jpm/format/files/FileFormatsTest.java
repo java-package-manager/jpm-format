@@ -276,4 +276,51 @@ class FileFormatsTest {
         assertEquals("a=Grüße \\u0041 \\\\u00FC 😀\n",
                 PropertiesFormat.format("a=Gr\\u00fc\\u00DFe \\u0041 \\\\u00FC \\uD83D\\uDE00\n", 2, 0, 4, "UTF-8"));
     }
+
+    @Test
+    void tomlLikeIntelliJ() {
+        String in = """
+                # Versions
+                [versions]
+                junit="5.11.4"
+                  guava =   "33.4.0-jre"   # trailing comment
+
+
+                [libraries]
+                junit-api = {module="org.junit.jupiter:junit-jupiter-api",version.ref="junit"}
+                guava = { module = "com.google.guava:guava", version.ref = "guava" }
+                list = [
+                "a",
+                      "b",
+                ]
+                text = \"""
+                  keep   this
+                \"""
+                  [plugins]
+                x.y = 1
+                """;
+        String out = """
+                # Versions
+                [versions]
+                junit = "5.11.4"
+                guava = "33.4.0-jre"   # trailing comment
+
+
+                [libraries]
+                junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+                guava = { module = "com.google.guava:guava", version.ref = "guava" }
+                list = [
+                    "a",
+                    "b",
+                ]
+                text = \"""
+                  keep   this
+                \"""
+                [plugins]
+                x.y = 1
+                """;
+        assertEquals(out, TomlFormat.format(in, 4, 2));
+        assertEquals(out, TomlFormat.format(out, 4, 2), "idempotent");
+        assertEquals("a = \"open\n", TomlFormat.format("a = \"open\n", 4, 2), "does not lex: left alone");
+    }
 }

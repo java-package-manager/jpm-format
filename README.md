@@ -251,7 +251,7 @@ classpath, so unchanged files are skipped; restore that folder between CI runs t
 
 ## Other file types
 
-`.properties`, JSON and XML files are formatted out of the box, by jpm-format's own formatters (nothing is
+`.properties`, JSON, XML and TOML files are formatted out of the box, by jpm-format's own formatters (nothing is
 downloaded), as IntelliJ IDEA's default code style does, with a few differences that keep files the way they were
 meant:
 
@@ -259,6 +259,7 @@ meant:
 |---|---|---|
 | `*.properties` | `key=value` without spaces around `=` or `:`, no leading whitespace; values and continuation lines as written | blank lines are kept (up to 2) |
 | `*.json`, `*.jsonc` | indent 2; `"a": 1`, `[1, 2]`; a line one indent in from the line its object or array opens on; comments stay | line breaks are kept: IntelliJ puts every value on a line of its own |
+| `*.toml` (Gradle's `libs.versions.toml`) | `key = value`, `{ a = 1 }`, the lines of a multi-line array indented 4; strings and comments as written | |
 | `*.xml`, `*.xsd`, `*.xsl`, `*.xslt`, `*.wsdl`, `*.fxml` | indent 4; one child element per line; attributes one space apart, those on lines of their own lined up with the first | text, CDATA and `xml:space="preserve"` content are never changed, and long lines are not wrapped |
 
 A file that does not parse is left as it is.
@@ -285,10 +286,11 @@ one is asked for.
 | `java` | everything the top-level `formatter` takes, and `imports` and `linter` next to it |
 | `json` | `style`: `"keep"` keeps line breaks; `"compact"` puts an object or array that fits in `lineWidth` on one line (`{ "a": 1 }`, `[1, 2]`) and the rest one value per line; `"pretty"` puts every value on a line of its own. `indentWidth` (2), `maxBlankLines`, `lineWidth` |
 | `xml` | `indentWidth` (4), `maxBlankLines` |
+| `toml` | `indentWidth` (4), `maxBlankLines` |
 | `properties` | `wrap`: values longer than `lineWidth` go on over `\` continuation lines, `indentWidth` (4) in; `encoding`: `"ISO-8859-1"` writes characters outside ASCII as Unicode escapes, `"UTF-8"` writes those escapes as the characters; `maxBlankLines`, `lineWidth` |
 
 A `"files"` entry (below) that includes a file replaces these defaults, and one with `"steps": []` turns them off;
-the built-in steps are `properties`, `json` and `xml`, which take the options above (`indent` for `indentWidth`):
+the built-in steps are `properties`, `json`, `xml` and `toml`, which take the options above (`indent` for `indentWidth`):
 
 ```jsonc
 "files": [
