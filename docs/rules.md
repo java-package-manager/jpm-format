@@ -27,15 +27,15 @@ Comments stay as written: line comments are not wrapped and keep the text after 
 column stay there ("Line comment at first column"), a comment after the statements of a `case` stays indented with
 them, and the other lines of a block comment move as far as its first.
 
-With `formatter.style: "palantir"` it is jpm-format's fork of Palantir Java Format, which chooses the line breaks
-itself, wrapping at
-`formatter.lineWidth` (20 to 1000). Configure with `formatter.indentWidth` (1 to 16),
+`formatter.lineWidth` (20 to 1000) is where statement bodies move to the next line. Configure with
+`formatter.indentWidth` (1 to 16),
 `formatter.continuationIndentWidth` (1 to 32; twice `indentWidth` by default, as IntelliJ's 4 and 8) and
 `formatter.useTabs`. In the IntelliJ style a text block moves as a whole to one continuation indent in from the
 line it starts on, as in IntelliJ, which keeps its value; tabs never go into it. Turn the whole formatter off with
 `formatter.enabled: false`.
 
-`formatter.style` can also name a formatter release: `"palantir@<version>"` (Palantir Java Format),
+`formatter.style` can also name another formatter: `"palantir[@<version>]"` (Palantir Java Format, 2.103.0 without a
+version: the release jpm-format's own fork of it came from, before ADR 0006 removed the fork),
 `"google-java-format[@<version>]"` (its latest release without a version), in any version syntax jpm reads, or
 `"eclipse[@<version>]"`: Eclipse's JDT formatter, through Spotless's Eclipse step (Spotless 4.12.0, the Eclipse
 version Spotless picks without one), with the profile exported from Eclipse in `formatter.eclipseConfig`. jpm
@@ -64,20 +64,19 @@ Lambdas, anonymous classes, `switch` cases and array initializers keep `{}`. Run
 
 IntelliJ's "Minimum blank lines": one blank line around methods, nested classes and initializer blocks; none
 required between fields, after the class header or before its end. The blank line goes before the member's
-comments (its Javadoc, a line comment), which Palantir Java Format leaves out; when it has a Javadoc, right before
+comments (its Javadoc, a line comment); when it has a Javadoc, right before
 the Javadoc, as IntelliJ does not count other comments before it as the member's. Runs after `JavaFormat`; off with
 `formatter.style: "palantir"`.
 
 ### KeepBlankLines
 
 IntelliJ's "Keep maximum blank lines" (in declarations, in code and before `}`): blank lines the code already had
-stay, up to `formatter.maxBlankLines` (2 by default, 1 to 10). Palantir Java Format keeps one and none before a
-closing brace. Runs after `JavaFormat`; off with
+stay, up to `formatter.maxBlankLines` (2 by default, 1 to 10). Runs after `JavaFormat`; off with
 `formatter.style: "palantir"`.
 
 ### JavadocLayout
 
-IntelliJ's default Javadoc formatting, which Palantir Java Format does not do:
+IntelliJ's default Javadoc formatting:
 
 - "Align parameter descriptions" and "Align thrown exception descriptions": the descriptions of the `@param`
   tags start in one column, after the longest name, and so do those of the `@throws` and `@exception` tags; their
@@ -96,7 +95,7 @@ tags, are left as they are. Runs after `KeepBlankLines`; off with `formatter.sty
 ### LineCommentSpacing
 
 IntelliJ's "Add a space at line comment start", off by default: `//TODO` and `//$NON-NLS-1$` keep the text right
-after the slashes. Palantir Java Format adds a space. The space before a comment that ends a line of code stays as
+after the slashes. The space before a comment that ends a line of code stays as
 written too (`case 'a':// fall through`, `int x;  // why`). Runs after `JavadocLayout`; off with
 `formatter.style: "palantir"`.
 

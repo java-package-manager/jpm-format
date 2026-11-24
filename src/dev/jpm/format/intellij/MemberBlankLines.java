@@ -17,8 +17,7 @@ import javax.lang.model.element.Modifier;
 
 /**
  * IntelliJ's "Minimum blank lines": one blank line around methods, nested classes and initializer blocks, none
- * required around fields, after the class header or before its end. Palantir Java Format leaves it out when the next
- * member starts with a comment, such as its Javadoc. The blank line goes before the member's comments, which belong
+ * required around fields, after the class header or before its end. The blank line goes before the member's comments, which belong
  * to it; when it has a Javadoc, before the Javadoc, as other comments before that do not belong to it.
  */
 public final class MemberBlankLines implements IntelliJRule {

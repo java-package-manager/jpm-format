@@ -1,6 +1,7 @@
 # 0002. The layout engine first, then IntelliJ's rules
 
-Status: accepted
+Status: accepted. Since [0006](0006-intellij-style-without-palantir.md) the layout engine is `Layout`, and
+`"palantir"` is Palantir's own output, without jpm-format's widths.
 
 ## Decision
 

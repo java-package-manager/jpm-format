@@ -1,8 +1,8 @@
 # 0006. The IntelliJ style gets its own layout engine; Palantir leaves the codebase
 
-Status: accepted; the IntelliJ style runs on the new engine. Left: removing the fork, which `"palantir"` still runs
-on. Where [0002](0002-formatting-pipeline.md) says "the layout engine (the Palantir fork)", it is now `Layout` in
-the IntelliJ style.
+Status: accepted and done: the IntelliJ style runs on the new engine, and the fork is gone; `"palantir"` runs
+Palantir Java Format 2.103.0 from its own jar. Where [0002](0002-formatting-pipeline.md) says "the layout engine
+(the Palantir fork)", it is now `Layout`.
 
 ## Decision
 

@@ -1,33 +1,22 @@
 package dev.jpm.format.rules;
 
-import com.google.common.collect.Range;
 import dev.jpm.format.Comments;
-import dev.jpm.format.Exports;
 import dev.jpm.format.ExternalFormatter;
 import dev.jpm.format.FileContext;
-import dev.jpm.format.FormatException;
-import dev.jpm.format.Jdks;
 import dev.jpm.format.api.Context;
 import dev.jpm.format.api.Formatter;
 import dev.jpm.format.intellij.Layout;
-import dev.jpm.format.palantir.java.FormatterException;
-import dev.jpm.format.palantir.java.JavaFormatterOptions;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The layout of the code: indentation, line breaks and spacing. In the IntelliJ style the engine is jpm-format's own
- * ({@link Layout}, ADR 0006): IntelliJ's default Java code style, with the input's line breaks kept where IntelliJ
- * keeps them. In the Palantir style it is jpm-format's fork of Palantir Java Format ({@code dev.jpm.format.palantir}),
- * which chooses the line breaks itself, wrapping at the line width.
+ * The layout of the code: indentation, line breaks and spacing. In the default IntelliJ style the engine is
+ * jpm-format's own ({@link Layout}, ADR 0006): IntelliJ's default Java code style, with the input's line breaks kept
+ * where IntelliJ keeps them. The other styles ({@code palantir}, {@code google-java-format}, {@code eclipse} and
+ * formatters from a jar or a Git repository) run the formatter itself ({@link ExternalFormatter}).
  */
 public final class JavaFormat implements Formatter {
     public static final String ID = "JavaFormat";
-
-    private static final Map<List<Integer>, dev.jpm.format.palantir.java.Formatter> FORMATTERS =
-            new ConcurrentHashMap<>();
 
     @Override
     public String id() {
@@ -49,47 +38,15 @@ public final class JavaFormat implements Formatter {
         FileContext fc = (FileContext) ctx;
         var external = fc.settings().externalFormatter();
         if (external != null) return ExternalFormatter.format(external, fc);
-        if (fc.settings().intellijStyle()) return tabs(fc, Layout.format(fc));
-        try {
-            return tabs(fc, palantir(fc).formatSource(ctx.source()));
-        } catch (FormatterException e) {
-            throw new FormatException(ctx.path() + ": " + e.getMessage(), e);
-        }
+        return tabs(fc, Layout.format(fc));
     }
 
     /**
-     * Formats only the lines touching {@code [start, end)}.
+     * Formats only the lines touching {@code [start, end)}; other styles than IntelliJ's format the whole file.
      */
     public String formatRange(FileContext ctx, int start, int end) {
         if (ctx.settings().externalFormatter() != null) return format(ctx);
-        if (ctx.settings().intellijStyle()) return tabs(ctx, Layout.format(ctx, start, Math.max(start + 1, end)));
-        try {
-            return tabs(
-                    ctx,
-                    palantir(ctx)
-                            .formatSource(ctx.source(), List.of(Range.closedOpen(start, Math.max(start + 1, end)))));
-        } catch (FormatterException e) {
-            throw new FormatException(ctx.path() + ": " + e.getMessage(), e);
-        }
-    }
-
-    private static dev.jpm.format.palantir.java.Formatter palantir(FileContext ctx) {
-        if (!Jdks.formatterSupported()) throw new FormatException(Jdks.unsupportedMessage());
-        if (!Exports.open()) {
-            throw new FormatException(
-                    "the formatter needs javac's internals; run the JVM with " + String.join(" ", Exports.flags()));
-        }
-        var s = ctx.settings();
-        return FORMATTERS.computeIfAbsent(
-                List.of(s.lineWidth(), s.indentWidth(), s.continuationIndentWidth(), s.intellijStyle() ? 1 : 0),
-                k -> dev.jpm.format.palantir.java.Formatter.createFormatter(JavaFormatterOptions.builder()
-                        .style(JavaFormatterOptions.Style.PALANTIR)
-                        .maxLineLength(s.lineWidth())
-                        .indent(s.indentWidth())
-                        .continuationIndent(s.continuationIndentWidth())
-                        .formatJavadoc(false)
-                        .keepLineBreaks(s.intellijStyle())
-                        .build()));
+        return tabs(ctx, Layout.format(ctx, start, Math.max(start + 1, end)));
     }
 
     /**

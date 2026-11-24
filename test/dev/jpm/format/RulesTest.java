@@ -58,23 +58,26 @@ class RulesTest {
     }
 
     @Test
+    void palantirStyleIsPalantirsOutputAsItIs() {
+        String in = "class A {\n    void f() {}\n\n\n    int x;\n}\n";
+        var before = ExternalFormatter.stub;
+        List<String> asked = new java.util.ArrayList<>();
+        ExternalFormatter.stub = (spec, source) -> {
+            asked.add(spec.name() + "@" + spec.version());
+            return source.replace("\n\n\n", "\n\n");
+        };
+        try {
+            String out = RuleTester.withBuiltins().config("{\"formatter\": {\"style\": \"palantir\"}}").format(in);
+            assertEquals("class A {\n    void f() {}\n\n    int x;\n}\n", out, "no IntelliJ rule runs after it");
+            assertEquals("palantir@2.103.0", asked.getFirst());
+        } finally {
+            ExternalFormatter.stub = before;
+        }
+    }
+
+    @Test
     void javaFormatWithAnyWidthAndIndent() {
         String in = "class A { void f() { if (true) { call(aaaaaaaaaa, bbbbbbbbbb, cccccccccc, dddddddddd); } } }";
-        RuleTester palantir = RuleTester.of(new JavaFormat())
-                .config("{\"formatter\": {\"style\": \"palantir\", \"lineWidth\": 50, \"indentWidth\": 3}}");
-        palantir.assertFormats(in, """
-                class A {
-                   void f() {
-                      if (true) {
-                         call(
-                               aaaaaaaaaa,
-                               bbbbbbbbbb,
-                               cccccccccc,
-                               dddddddddd);
-                      }
-                   }
-                }
-                """);
         RuleTester intellij =
                 RuleTester.of(new JavaFormat()).config("{\"formatter\": {\"lineWidth\": 50, \"indentWidth\": 3}}");
         intellij.assertFormats(in, """

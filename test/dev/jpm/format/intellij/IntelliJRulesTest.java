@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The IntelliJ rules, each right after the layout engine as jpm format runs them.
@@ -503,16 +502,6 @@ class IntelliJRulesTest {
     void crlfFilesStayCrlf() {
         String out = intellij().format("class A {\r\n    void f() {}\r\n\r\n\r\n    int x;\r\n}\r\n");
         assertEquals("class A {\r\n    void f() {\r\n    }\r\n\r\n\r\n    int x;\r\n}\r\n", out);
-    }
-
-    @Test
-    void palantirStyleTurnsThemOff() {
-        String in = "class A {\n    void f() {}\n\n\n    int x;\n}\n";
-        String palantir = "{\"formatter\": {\"style\": \"palantir\"}}";
-        assertEquals(
-                RuleTester.of(new JavaFormat()).config(palantir).format(in),
-                RuleTester.withBuiltins().config(palantir).format(in));
-        assertTrue(RuleTester.withBuiltins().format(in).contains("void f() {\n    }"));
     }
 
     @Test

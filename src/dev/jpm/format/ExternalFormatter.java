@@ -22,7 +22,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A Java formatter picked by name in {@code formatter.style}: {@code palantir@<version>} (Palantir Java Format),
+ * A Java formatter picked by name in {@code formatter.style}: {@code palantir[@<version>]} (Palantir Java Format,
+ * {@value #PALANTIR} by default),
  * {@code google-java-format[@<version>]}, or {@code eclipse[@<version>]} (Eclipse JDT, through Spotless's step, with
  * the profile in {@code formatter.eclipseConfig}). jpm resolves the jars ({@code dependencies/resolve}, protocol
  * 1.2), and they run in a class loader of their own, so their Guava never meets jpm-format's. Palantir and
@@ -39,6 +40,17 @@ public final class ExternalFormatter {
     }
 
     static final String SPOTLESS = "4.12.0";
+
+    /**
+     * The Palantir Java Format {@code "palantir"} runs: the release jpm-format's fork of it came from, before the fork
+     * left (ADR 0006).
+     */
+    static final String PALANTIR = "2.103.0";
+
+    /**
+     * Formats in place of the real formatter, for tests: they cannot resolve its jars.
+     */
+    static volatile java.util.function.BiFunction<Spec, String, String> stub;
     private static final Map<String, String> KEYS = Map.of(
             "palantir", "com.palantir.javaformat:palantir-java-format",
             "google-java-format", "com.google.googlejavaformat:google-java-format",
@@ -49,11 +61,11 @@ public final class ExternalFormatter {
     }
 
     /**
-     * The formatter a {@code formatter.style} value names, or null for the built-in styles ({@code intellij},
-     * {@code palantir}). {@code config} is {@code formatter.eclipseConfig}, resolved against the project.
+     * The formatter a {@code formatter.style} value names, or null for the built-in {@code intellij}. {@code config} is
+     * {@code formatter.eclipseConfig}, resolved against the project.
      */
     public static Spec parse(String style, Path root, Path config) {
-        if (style.equals("intellij") || style.equals("palantir")) {
+        if (style.equals("intellij")) {
             if (config != null) throw new FormatException("formatter.eclipseConfig needs formatter.style \"eclipse\"");
             return null;
         }
@@ -64,14 +76,13 @@ public final class ExternalFormatter {
         }
         int at = style.indexOf('@');
         String name = at < 0 ? style : style.substring(0, at);
-        String version = at < 0 ? "latest" : style.substring(at + 1);
+        String version = at < 0 ? name.equals("palantir") ? PALANTIR : "latest" : style.substring(at + 1);
         String key = KEYS.get(name);
         if (key == null || version.isBlank()) {
-            throw new FormatException("formatter.style must be \"intellij\" (the default), \"palantir\", \"palantir@<version>\","
+            throw new FormatException("formatter.style must be \"intellij\" (the default), \"palantir[@<version>]\","
                     + " \"google-java-format[@<version>]\", \"eclipse[@<version>]\", the URL of a jar, or a Git repository such as"
                     + " \"github:author/formatter[@<version>|#<branch>]\", not \"" + style + "\"");
         }
-        if (name.equals("palantir") && at < 0) return null;
         if (config != null && !name.equals("eclipse")) {
             throw new FormatException("formatter.eclipseConfig needs formatter.style \"eclipse\"");
         }
@@ -106,6 +117,8 @@ public final class ExternalFormatter {
      */
     public static String format(Spec spec, FileContext ctx) {
         String source = ctx.source(), path = ctx.path();
+        var s = stub;
+        if (s != null) return s.apply(spec, source);
         Object f = FORMATTERS.computeIfAbsent(spec.name() + "@" + spec.key() + "@" + spec.version() + "@" + spec.config(), k -> create(spec));
         if (f instanceof RuleSetFormatters rs) return rs.format(ctx);
         try {

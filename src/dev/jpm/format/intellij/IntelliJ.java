@@ -4,7 +4,7 @@ import dev.jpm.format.api.Rules;
 
 /**
  * The IntelliJ rules, placed right after the layout engine ({@code JavaFormat}), in this order. Each one is one of
- * IntelliJ IDEA's default Java code style settings that Palantir Java Format does differently.
+ * IntelliJ IDEA's default Java code style settings that the layout engine leaves to the rules after it.
  */
 public final class IntelliJ {
     private IntelliJ() {

@@ -1,5 +1,8 @@
 # 0001. Decisions live in ADRs; the forked layout engine keeps its comments
 
+Status: accepted. The fork is gone ([0006](0006-intellij-style-without-palantir.md)), so the rule about comments
+now has no exception.
+
 Status: accepted
 
 ## Decision

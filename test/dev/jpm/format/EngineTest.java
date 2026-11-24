@@ -404,7 +404,7 @@ class EngineTest {
     void formattersByName() throws IOException {
         Path root = Path.of("/p");
         assertNull(ExternalFormatter.parse("intellij", root, null));
-        assertNull(ExternalFormatter.parse("palantir", root, null));
+        assertEquals("2.103.0", ExternalFormatter.parse("palantir", root, null).version());
         assertEquals(
                 new ExternalFormatter.Spec("palantir", "com.palantir.javaformat:palantir-java-format", "2.50.0", root, null),
                 ExternalFormatter.parse("palantir@2.50.0", root, null));
