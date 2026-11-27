@@ -346,6 +346,27 @@ class IntelliJRulesTest {
     }
 
     @Test
+    void nonSealedStaysOneWord() {
+        String code = """
+                sealed interface A permits B, C.X {
+                }
+
+                public non-sealed interface B extends A {
+                }
+
+                class C {
+                    public non-sealed static class X implements A {
+                    }
+
+                    int f(int non, int sealed) {
+                        return non - sealed;
+                    }
+                }
+                """;
+        intellij().assertFormats(code, code);
+    }
+
+    @Test
     void blankLinesAreKeptUpToTwo() {
         intellij().assertFormats("""
                 class A {

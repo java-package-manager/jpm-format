@@ -545,6 +545,7 @@ public final class Layout {
             Tokens.Token a = toks.get(ia), b = toks.get(ib);
             byte ra = syn.role[ia], rb = syn.role[ib];
             String x = a.text(), y = b.text();
+            if (nonSealed(ia) || nonSealed(ib)) return 0;
             boolean aop = a.kind() == Tokens.Kind.OP, bop = b.kind() == Tokens.Kind.OP;
             if (bop && y.equals("}") && syn.match[ib] >= 0
                     && (syn.brace[syn.match[ib]] == Syntax.ARRAY || syn.brace[syn.match[ib]] == Syntax.SIMPLE_ENUM)) {
@@ -617,6 +618,11 @@ public final class Layout {
             if (!aop && !bop) return 1;
             if (bop && y.equals("@")) return 1;
             return Math.min(1, b.start() - a.end());
+        }
+
+        private boolean nonSealed(int i) {
+            return toks.get(i).op("-") && syn.role[i] != Syntax.BIN && i > 0 && i + 1 < toks.size()
+                    && toks.get(i - 1).is("non") && toks.get(i + 1).is("sealed");
         }
 
         private boolean endsAnnotation(int i) {
