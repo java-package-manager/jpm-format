@@ -1,0 +1,38 @@
+class M {
+    void a() {
+    }
+    // end a
+
+    void b() {
+    }
+
+    // start c
+    void c() {
+    }
+    // end c
+
+    /**
+     * Doc.
+     */
+    void d() {
+    }
+    // end d
+
+    /**
+     * Doc.
+     */
+    void e() {
+    }
+
+    int f;
+    // after field
+
+    void g() {
+    }
+    // x
+    // y
+
+    // z
+    void h() {
+    }
+}

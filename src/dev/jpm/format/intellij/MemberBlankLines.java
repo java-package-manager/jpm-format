@@ -55,6 +55,7 @@ public final class MemberBlankLines implements IntelliJRule {
                     Tree prev = members.get(k - 1), next = members.get(k);
                     if (!spaced(prev) && !spaced(next)) continue;
                     int doc = javadocLine(ctx, src, next);
+                    if (doc < 0 && blankBetween(ctx, src, prev, ctx.line(ctx.start(next)))) continue;
                     int at = doc > 0 ? lineBefore(ctx, src, prev, doc) : insertionLine(ctx, src, prev, next);
                     if (at > 0) edits.add(new Fix.Edit(ctx.lineStart(at), ctx.lineStart(at), nl));
                 }
@@ -86,6 +87,18 @@ public final class MemberBlankLines implements IntelliJRule {
         if (line - 1 <= prevLine) return line - 1 == prevLine ? line : -1;
         int s = ctx.lineStart(line - 1), e = ctx.lineStart(line);
         return src.substring(s, Math.min(e, src.length())).isBlank() ? -1 : line;
+    }
+
+    /**
+     * Whether a blank line is already between {@code prev} and {@code line}, also among the comments before the next
+     * member: IntelliJ does not add another, unless the member has a Javadoc, which needs one right before it.
+     */
+    static boolean blankBetween(Context ctx, String src, Tree prev, int line) {
+        for (int l = ctx.line(ctx.end(prev) - 1) + 1; l < line; l++) {
+            int s = ctx.lineStart(l), e = ctx.lineStart(l + 1);
+            if (src.substring(s, Math.min(e, src.length())).isBlank()) return true;
+        }
+        return false;
     }
 
     /**
