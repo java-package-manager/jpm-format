@@ -20,7 +20,9 @@ import java.util.regex.Pattern;
  * {@code @param} or {@code @throws} name is joined onto the tag's line. Block tags are put in IntelliJ's order:
  * {@code @param}, {@code @return}, {@code @throws} ({@code @exception} becomes {@code @throws}), the other tags,
  * {@code @see}, {@code @since}, {@code @deprecated}; tags of one kind keep their order, and a tag keeps its
- * continuation lines.
+ * continuation lines. Lines lose their indentation outside {@code <pre>} and {@code {@snippet}}; from a line that
+ * starts a {@code <table>}, {@code <ol>}, {@code <ul>}, {@code <div>} or {@code <dl>} on, they keep it less the
+ * smallest one (IntelliJ's {@code JDParser}).
  *
  * <p>Text is not re-wrapped, and comments that do not have a {@code *} at the start of every line are left as they
  * are. A {@code <pre>} anywhere in a comment does not stop the rest of it from being formatted, as in IntelliJ.
@@ -119,6 +121,7 @@ public final class JavadocLayout implements IntelliJRule {
         boolean tagged = firstTag >= 0;
         if (!tagged) firstTag = body.size();
         List<String> lines = new ArrayList<>(body);
+        indents(lines, firstTag);
         paragraphs(lines, firstTag);
         boolean described = false;
         for (int k = 0; k < firstTag; k++) described |= !lines.get(k).isBlank();
@@ -132,7 +135,6 @@ public final class JavadocLayout implements IntelliJRule {
         reorder(lines, firstTag);
         align(lines, firstTag, "param");
         align(lines, firstTag, "throws");
-        unindent(lines, firstTag);
         if (lines.equals(body)) return null;
         StringBuilder sb = new StringBuilder("/**").append(nl);
         for (String l : lines)
@@ -268,21 +270,67 @@ public final class JavadocLayout implements IntelliJRule {
         }
     }
 
-    private static void unindent(List<String> lines, int firstTag) {
-        boolean inOther = false;
+    private static final Pattern PRE_START = Pattern.compile("<pre\\s*(\\w+\\s*=.*)?>");
+    private static final Pattern KEEP_INDENTS = Pattern.compile("^<(table|ol|ul|div|dl)[\\s>/]");
+
+    private static void indents(List<String> lines, int firstTag) {
+        indents(lines, 0, firstTag, false);
         for (int k = firstTag; k < lines.size(); k++) {
-            String l = lines.get(k);
-            if (l.startsWith("@")) {
-                Matcher m = TAG.matcher(l);
-                inOther = !m.matches();
-                continue;
-            }
-            if (l.isBlank()) {
-                inOther = false;
-                continue;
-            }
-            if (inOther) lines.set(k, l.strip());
+            if (!lines.get(k).startsWith("@")) continue;
+            int end = k + 1;
+            while (end < lines.size() && !lines.get(end).startsWith("@")) end++;
+            if (!TAG.matcher(lines.get(k)).matches()) indents(lines, k, end, true);
+            k = end - 1;
         }
+    }
+
+    private static void indents(List<String> lines, int from, int to, boolean tag) {
+        int keepFrom = -1, min = Integer.MAX_VALUE, pre = 0, snippet = 0;
+        for (int k = from; k < to; k++) {
+            String l = lines.get(k);
+            String text = tag && k == from ? tagText(l) : l;
+            if (keepFrom < 0 && KEEP_INDENTS.matcher(text.strip() + " ").find()) keepFrom = k;
+            if (keepFrom >= 0) min = Math.min(min, tag && k == from ? 0 : indent(l));
+            if (!(tag && k == from) && pre == 0 && keepFrom < 0 && snippet == 0) lines.set(k, l.strip());
+            if (snippet > 0) {
+                snippet += braces(l);
+            } else if (l.contains("{@snippet")) {
+                snippet = braces(l.substring(l.indexOf("{@snippet")));
+            }
+            Matcher m = PRE_START.matcher(l);
+            int open = -1;
+            while (m.find()) open = m.start();
+            int close = l.lastIndexOf("</pre>");
+            if (open >= 0 && close < open) pre++;
+            else if (close >= 0 && open < 0 && pre > 0) pre--;
+        }
+        if (keepFrom < 0 || min <= 0 || min == Integer.MAX_VALUE) return;
+        for (int k = Math.max(keepFrom, tag ? from + 1 : from); k < to; k++) {
+            String l = lines.get(k);
+            if (!l.isBlank() && l.length() > min) lines.set(k, l.substring(min));
+        }
+    }
+
+    private static String tagText(String tagLine) {
+        Matcher m = TAG.matcher(tagLine);
+        if (m.matches()) return m.group(4) == null ? "" : m.group(4);
+        int space = tagLine.indexOf(' ');
+        return space < 0 ? "" : tagLine.substring(space + 1);
+    }
+
+    private static int indent(String l) {
+        int i = 0;
+        while (i < l.length() && (l.charAt(i) == ' ' || l.charAt(i) == '\t')) i++;
+        return i == l.length() ? Integer.MAX_VALUE : i;
+    }
+
+    private static int braces(String l) {
+        int n = 0;
+        for (int i = 0; i < l.length(); i++) {
+            if (l.charAt(i) == '{') n++;
+            if (l.charAt(i) == '}') n--;
+        }
+        return n;
     }
 
     private static boolean inGroup(String tag, String group) {

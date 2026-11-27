@@ -66,6 +66,59 @@ class IntelliJRulesTest {
     }
 
     @Test
+    void javadocLinesLoseTheirIndentOutsidePreAndLists() {
+        intellij().assertFormats("""
+                class A {
+                    /**
+                     * Text.
+                     *  more text
+                     * <pre>
+                     *   kept
+                     *  </pre>
+                     *  after
+                     * <blockquote>
+                     *    quoted
+                     * </blockquote>
+                     *  <ul>
+                     *    <li>item
+                     *  </ul>
+                     *  last
+                     *
+                     * @return r
+                     *   more r
+                     */
+                    int f() {
+                        return 0;
+                    }
+                }
+                """, """
+                class A {
+                    /**
+                     * Text.
+                     * more text
+                     * <pre>
+                     *   kept
+                     *  </pre>
+                     * after
+                     * <blockquote>
+                     * quoted
+                     * </blockquote>
+                     * <ul>
+                     *   <li>item
+                     * </ul>
+                     * last
+                     *
+                     * @return r
+                     * more r
+                     */
+                    int f() {
+                        return 0;
+                    }
+                }
+                """);
+    }
+
+    @Test
     void blankLinesAreKeptUpToTwo() {
         intellij().assertFormats("""
                 class A {

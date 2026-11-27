@@ -85,6 +85,9 @@ IntelliJ's default Javadoc formatting:
   between block tags ("after parameter descriptions" and "after return tag", off); one space after `@return`
 - "Do not wrap one line comments", off: `/** Text. */` becomes three lines
 - "Indent continuation lines", off: continuation lines of the other block tags start under the tag
+- lines of the description and of block tags lose their indentation, as in IntelliJ: not inside `<pre>` or
+  `{@snippet}`, and from a line that starts a `<table>`, `<ol>`, `<ul>`, `<div>` or `<dl>` on, the lines keep
+  their indentation less the smallest one
 - "Generate `<p>` on empty lines": an empty line of the description that more text follows gets a `<p>`
 - a description written on the line after its `@param` or `@throws` name moves up to the tag
 - the parameter types of `{@link}`, `{@linkplain}` and `@see` references are separated by a comma and a space
