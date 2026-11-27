@@ -47,7 +47,7 @@ jobs:
   parity:
     runs-on: ubuntu-latest
     env:
-      IDEA_VERSION: "2026.1.5.1"
+      IDEA_VERSION: "2026.3"
     steps:
       - uses: actions/checkout@v7
 
