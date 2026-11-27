@@ -11,3 +11,4 @@ have no comments (see [0001](0001-decisions-live-in-adrs.md)).
 | [0004](0004-configuration-suppressions-cache.md) | Configuration, suppressions and the cache |
 | [0005](0005-rules.md) | Decisions in individual rules |
 | [0006](0006-intellij-style-without-palantir.md) | The IntelliJ style gets its own layout engine; Palantir leaves the codebase |
+| [0007](0007-formatted-code-as-intellij-broken-code-fixed.md) | Formatted code stays as IntelliJ has it; broken formatting may be fixed further |

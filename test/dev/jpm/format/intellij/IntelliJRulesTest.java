@@ -143,6 +143,50 @@ class IntelliJRulesTest {
     }
 
     @Test
+    void aDeclarationsModifiersTypeAndNameAreJoined() {
+        intellij().assertFormats("""
+                public
+                record
+                R(int a)
+                        implements Runnable {
+                    public static
+                    final class Two {
+                    }
+
+                    static final int A = 1,
+                            B = 2;
+
+                    void
+                    run() {
+                        final var
+                                x = 1;
+                    }
+
+                    R {
+                        if (a < 0) throw new IllegalArgumentException();
+                    }
+                }
+                """, """
+                public record R(int a)
+                        implements Runnable {
+                    public static final class Two {
+                    }
+
+                    static final int A = 1,
+                            B = 2;
+
+                    void run() {
+                        final var x = 1;
+                    }
+
+                    R {
+                        if (a < 0) throw new IllegalArgumentException();
+                    }
+                }
+                """);
+    }
+
+    @Test
     void blankLinesAreKeptUpToTwo() {
         intellij().assertFormats("""
                 class A {

@@ -422,6 +422,28 @@ final class Syntax {
             return -1;
         }
 
+        /**
+         * A class's, method's or variable's modifiers, keyword or type and name go on one line: a line break between them is
+         * never how formatted code has it, so it is joined (IntelliJ keeps it).
+         */
+        private void header(Tree t, ModifiersTree mods, int name) {
+            if (name < 0 || s(t) < 0) return;
+            int from = code(mods == null || s(mods) < 0 ? s(t) : Math.max(s(t), e(mods)));
+            if (mods != null && !mods.getFlags().isEmpty() && s(mods) >= 0) {
+                int first = code(s(mods));
+                for (AnnotationTree a : mods.getAnnotations()) if (s(a) >= 0 && code(s(a)) == first) first = code(e(a));
+                from = Math.min(from, first);
+            }
+            for (int k = from; k < name && k < tokens.size(); k++) {
+                Tokens.Token tk = tokens.get(k);
+                if (tk.op(",") || tk.op("=") || tk.op(";") || tk.op("{") || tk.op("}")) return;
+            }
+            for (int k = from + 1; k <= name && k < tokens.size(); k++) {
+                if (tokens.get(k).comment() || tokens.get(k - 1).comment()) continue;
+                joinBefore[at(k)] = true;
+            }
+        }
+
         private void body(StatementTree body, Tree owner) {
             if (body == null || body instanceof BlockTree) return;
             int i = code(s(body));
@@ -564,6 +586,7 @@ final class Syntax {
             if (!anon) {
                 annotations(t.getModifiers(), true);
                 int from = Math.max(s(t), e(t.getModifiers()));
+                header(t, t.getModifiers(), word(from, t.getSimpleName().toString()));
                 if (t.getKind() == Tree.Kind.RECORD) {
                     int p = find(from, "(");
                     if (p >= 0) align[at(p)] = true;
@@ -652,6 +675,12 @@ final class Syntax {
                     }
                 }
             }
+            if (s(t) >= 0 && !t.getName().isEmpty()) {
+                boolean typed = t.getType() != null && s(t.getType()) >= 0 && e(t.getType()) > s(t.getType());
+                int from = typed ? e(t.getType()) : Math.max(s(t), t.getModifiers() == null ? -1 : e(t.getModifiers()));
+                int name = word(from, t.getName().toString());
+                if (name >= 0 && at(name) < e(t)) header(t, t.getModifiers(), name);
+            }
             return super.visitVariable(t, v);
         }
 
@@ -662,6 +691,10 @@ final class Syntax {
             if (!t.getTypeParameters().isEmpty()) from = Math.max(from, e(t.getTypeParameters().getLast()));
             int p = find(from, "(");
             if (p >= 0) align[at(p)] = true;
+            if (p > 0 && (t.getBody() == null || at(p) < s(t.getBody()))
+                    && tokens.get(p - 1).kind() == Tokens.Kind.WORD) {
+                header(t, t.getModifiers(), p - 1);
+            }
             return super.visitMethod(t, v);
         }
 

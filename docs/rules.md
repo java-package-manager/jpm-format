@@ -14,7 +14,8 @@ jpm-format's own layout engine (ADR 0006), which keeps the input's line breaks, 
 reformatting: line breaks"): no line is joined, except that `{` moves up to the line it opens from, `else`,
 `catch`, `finally` and the `while` of a `do` move up after a `}`, and a switch rule's body moves up after its `->`
 when it fits; statements get a line each, block contents and the `}` lines of their own, and the annotations of
-classes, methods, fields and modules go on their own lines, except a type-use nullness annotation IntelliJ knows
+classes, methods, fields and modules go on their own lines, and the modifiers, keyword or type and name of a
+class, method or variable join one line (IntelliJ keeps a break between them, which formatted code never has); except a type-use nullness annotation IntelliJ knows
 (JSpecify's `@Nullable` and `@NonNull`, JetBrains' `@Nullable` and `@NotNull`) written right before the type on its
 line (`@Nullable String name()`). The body of an `if`, a loop or a switch rule that would end
 past `java.lineWidth` moves to the next line. A wrapped line is indented one continuation indent from the
