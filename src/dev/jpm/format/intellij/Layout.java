@@ -124,7 +124,12 @@ public final class Layout {
                 out.append(text.substring(toks.getLast().end()).replace("\r", ""));
             } else {
                 stripTrailing();
-                if (!toks.isEmpty()) out.append('\n');
+                if (!toks.isEmpty()) {
+                    out.append('\n');
+                    String tail = text.substring(Math.min(text.length(), toks.getLast().end()));
+                    int breaks = (int) tail.chars().filter(c -> c == '\n').count();
+                    out.append("\n".repeat(Math.max(0, Math.min(breaks - 1, maxBlank))));
+                }
             }
             String result = out.toString();
             return newline.equals("\n") ? result : result.replace("\n", newline);

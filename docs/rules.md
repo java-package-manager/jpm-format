@@ -69,8 +69,8 @@ Lambdas, anonymous classes, `switch` cases and array initializers keep `{}`. Run
 IntelliJ's "Minimum blank lines": one blank line around methods, nested classes and initializer blocks; none
 required between fields, after the class header or before its end. The blank line goes before the member's
 comments (its Javadoc, a line comment); when it has a Javadoc, right before
-the Javadoc, as IntelliJ does not count other comments before it as the member's. Runs after `JavaFormat`; off with
-`java.style: "palantir"`.
+the Javadoc, as IntelliJ does not count other comments before it as the member's, also when the member is the
+class's first. Runs after `JavaFormat`; off with `java.style: "palantir"`.
 
 ### KeepBlankLines
 
@@ -113,6 +113,13 @@ IntelliJ's "Add a space at line comment start", off by default: `//TODO` and `//
 after the slashes. The space before a comment that ends a line of code stays as
 written too (`case 'a':// fall through`, `int x;  // why`). Runs after `JavadocLayout`; off with
 `java.style: "palantir"`.
+
+### ImportBlankLines
+
+The blank lines between imports, as IntelliJ's formatter sets them from its import layout (`imports.groups`):
+none between imports of one group, one between imports of different groups, in the order they are written
+(`ImportOrder` sorts them). Imports with a comment between them are left alone. Runs after `LineCommentSpacing`;
+off with `java.style: "palantir"`.
 
 ### ImportOrder
 

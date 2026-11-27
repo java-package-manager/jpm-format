@@ -104,6 +104,13 @@ public final class ImportOrder implements Formatter {
     }
 
     /**
+     * The group (an index into {@code groups}) of an import.
+     */
+    public static int group(boolean isStatic, String name, List<List<String>> groups) {
+        return group(new Imp(isStatic, name), groups);
+    }
+
+    /**
      * The group of the most specific matching pattern; the last group if none matches.
      */
     static int group(Imp i, List<List<String>> groups) {

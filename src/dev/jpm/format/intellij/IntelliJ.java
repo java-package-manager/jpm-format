@@ -16,5 +16,6 @@ public final class IntelliJ {
         rules.addAfter(MemberBlankLines.ID, new KeepBlankLines());
         rules.addAfter(KeepBlankLines.ID, new JavadocLayout());
         rules.addAfter(JavadocLayout.ID, new LineCommentSpacing());
+        rules.addAfter(LineCommentSpacing.ID, new ImportBlankLines());
     }
 }

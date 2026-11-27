@@ -18,7 +18,8 @@ import javax.lang.model.element.Modifier;
 /**
  * IntelliJ's "Minimum blank lines": one blank line around methods, nested classes and initializer blocks, none
  * required around fields, after the class header or before its end. The blank line goes before the member's comments, which belong
- * to it; when it has a Javadoc, before the Javadoc, as other comments before that do not belong to it.
+ * to it; when it has a Javadoc, before the Javadoc, as other comments before that do not belong to it, also when
+ * the member is the first.
  */
 public final class MemberBlankLines implements IntelliJRule {
     public static final String ID = "MemberBlankLines";
@@ -43,6 +44,12 @@ public final class MemberBlankLines implements IntelliJRule {
                             && m instanceof VariableTree vt
                             && !vt.getModifiers().getFlags().contains(Modifier.STATIC)) continue;
                     members.add(m);
+                }
+                if (!members.isEmpty() && spaced(members.getFirst())) {
+                    int doc = javadocLine(ctx, src, members.getFirst());
+                    if (doc > 1 && afterComment(ctx, src, doc)) {
+                        edits.add(new Fix.Edit(ctx.lineStart(doc), ctx.lineStart(doc), nl));
+                    }
                 }
                 for (int k = 1; k < members.size(); k++) {
                     Tree prev = members.get(k - 1), next = members.get(k);
@@ -79,6 +86,16 @@ public final class MemberBlankLines implements IntelliJRule {
         if (line - 1 <= prevLine) return line - 1 == prevLine ? line : -1;
         int s = ctx.lineStart(line - 1), e = ctx.lineStart(line);
         return src.substring(s, Math.min(e, src.length())).isBlank() ? -1 : line;
+    }
+
+    /**
+     * Whether the line before {@code line} is the end of a comment: IntelliJ puts a blank line between it and the
+     * Javadoc of a first method, class or initializer as well.
+     */
+    static boolean afterComment(Context ctx, String src, int line) {
+        int s = ctx.lineStart(line - 1), e = ctx.lineStart(line);
+        String text = src.substring(s, Math.min(e, src.length())).strip();
+        return text.startsWith("//") || text.endsWith("*/");
     }
 
     /**

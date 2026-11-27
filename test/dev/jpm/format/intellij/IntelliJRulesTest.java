@@ -19,7 +19,8 @@ class IntelliJRulesTest {
                 new MemberBlankLines(),
                 new KeepBlankLines(),
                 new JavadocLayout(),
-                new LineCommentSpacing());
+                new LineCommentSpacing(),
+                new ImportBlankLines());
     }
 
     @Test
@@ -278,6 +279,70 @@ class IntelliJRulesTest {
                     }
                 }
                 """);
+    }
+
+    @Test
+    void blankLinesBetweenImportsFollowTheImportLayout() {
+        intellij().assertFormats("""
+                import a.A;
+
+                import a.B;
+                import java.util.List;
+
+
+                import javax.X;
+                import org.Y;
+                import static a.A.f;
+                import java.util.Map;
+
+                class A {
+                }
+                """, """
+                import a.A;
+                import a.B;
+
+                import java.util.List;
+                import javax.X;
+
+                import org.Y;
+
+                import static a.A.f;
+
+                import java.util.Map;
+
+                class A {
+                }
+                """);
+    }
+
+    @Test
+    void aFirstMethodsJavadocAfterACommentGetsABlankLine() {
+        intellij().assertFormats("""
+                class A {
+                    // Section
+                    /**
+                     * Doc.
+                     */
+                    void m() {
+                    }
+                }
+                """, """
+                class A {
+                    // Section
+
+                    /**
+                     * Doc.
+                     */
+                    void m() {
+                    }
+                }
+                """);
+    }
+
+    @Test
+    void blankLinesAtTheEndOfAFileAreKeptUpToTheMaximum() {
+        intellij().assertFormats("class A {\n}\n\n", "class A {\n}\n\n");
+        intellij().assertFormats("class A {\n}\n  \n\n\n\n", "class A {\n}\n\n\n");
     }
 
     @Test
