@@ -68,6 +68,8 @@ final class SpotlessSteps {
             Map.entry("jsonSimple", Set.of("indent")),
             Map.entry("jacksonYaml", Set.of()),
             Map.entry("dbeaverSql", Set.of("config")),
+            Map.entry("flexmark", Set.of()),
+            Map.entry("gherkinUtils", Set.of("indent")),
             Map.entry("trimTrailingWhitespace", Set.of()),
             Map.entry("endWithNewline", Set.of()),
             Map.entry("removeSemicolons", Set.of()),
@@ -331,6 +333,20 @@ final class SpotlessSteps {
                 case "dbeaverSql" -> {
                     File config = file(root, s, "config");
                     yield staticCall(loader, "sql.DBeaverSQLFormatterStep", new Class<?>[]{Iterable.class}, config == null ? List.of() : List.of(config));
+                }
+                case "flexmark" -> {
+                    Class<?> c = loader.loadClass("com.diffplug.spotless.markdown.FlexmarkConfig");
+                    Object config = c.getConstructor().newInstance();
+                    yield s.version() == null
+                            ? staticCall(loader, "markdown.FlexmarkStep", new Class<?>[]{prov, c}, provisioner, config)
+                            : staticCall(loader, "markdown.FlexmarkStep", new Class<?>[]{String.class, prov, c}, s.version(), provisioner, config);
+                }
+                case "gherkinUtils" -> {
+                    Class<?> c = loader.loadClass("com.diffplug.spotless.gherkin.GherkinUtilsConfig");
+                    Class<?> gherkin = loader.loadClass("com.diffplug.spotless.gherkin.GherkinUtilsStep");
+                    Object config = c.getConstructor(int.class).newInstance(number(s, "indent", (int) c.getMethod("defaultIndentSpaces").invoke(null)));
+                    String v = s.version() != null ? s.version() : (String) gherkin.getMethod("defaultVersion").invoke(null);
+                    yield gherkin.getMethod("create", c, String.class, prov).invoke(null, config, v, provisioner);
                 }
                 case "trimTrailingWhitespace" ->
                         staticCall(loader, "generic.TrimTrailingWhitespaceStep", new Class<?>[0]);

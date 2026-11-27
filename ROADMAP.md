@@ -21,7 +21,7 @@ Parity is measured against IntelliJ's own formatter on real projects (`checks/Pa
 The goal: every file type that is common in a Java project is formatted by `jpm format` out of the box, chosen
 by its extension, with no `"files"` entry needed; `"files"` still overrides the defaults. Out of the box today:
 `.properties`, JSON, XML, YAML and TOML (jpm-format's own formatters); listed by hand in `"files"`, the Spotless steps that run
-on a JVM: Kotlin, Scala, JSON, YAML, SQL, Groovy's semicolons and plain text.
+on a JVM: Kotlin, Scala, JSON, YAML, SQL, Markdown, Gherkin, Groovy's semicolons and plain text.
 
 - [ ] **Native formatters, downloaded by jpm**: a binary per platform, pinned by version and SHA-256, with no npm
       or Node needed. Candidates:
@@ -53,7 +53,8 @@ on a JVM: Kotlin, Scala, JSON, YAML, SQL, Groovy's semicolons and plain text.
   | Protobuf, gRPC | `.proto` | buf or clang-format |
   | GraphQL | schemas | Biome |
   | Gherkin | Cucumber `.feature` | Spotless `gherkinUtils` |
-- [ ] **Spotless steps whose configs have many options:** Flexmark, SortPom and Gherkin.
+- [ ] **Spotless steps whose configs have many options:** SortPom, and Flexmark's options (`flexmark` runs with
+      its defaults today).
 - [ ] **Prettier and ESLint** with their plugins, for projects that already use them; these need npm.
 
 ## Lint

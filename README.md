@@ -326,6 +326,8 @@ would change.
 | `jacksonJson`, `jsonSimple` | JSON | `jsonSimple`: `indent` (default 4) |
 | `jacksonYaml` | YAML | |
 | `dbeaverSql` | SQL, with DBeaver's formatter | `config`: a DBeaver properties file |
+| `flexmark[@<version>]` | Markdown, with Flexmark | |
+| `gherkinUtils[@<version>]` | Cucumber `.feature` files | `indent` (default 2) |
 | `trimTrailingWhitespace`, `endWithNewline` | any text | |
 | `indent` | any text | `type`: `"space"` (default) or `"tab"`, `width` (default 4) |
 | `removeSemicolons` | Groovy | |
