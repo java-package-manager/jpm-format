@@ -61,12 +61,16 @@ Opinionated defaults; nearly everything can be overridden. The shape follows Bio
 names. It lives in `project.jsonc` under `extensions.format`, or in a separate `jpm-format.jsonc` at the
 project root (not both). In a workspace, a module's own `project.jsonc` applies to the files under it.
 
+Files git ignores are not formatted or checked: jpm-format reads the `.gitignore` files from the repository's root
+down (and `.git/info/exclude`) by git's rules, so the `build/` folders of a multi-module build are skipped while a
+`!src/main/**/build/` keeps a package named `build`. git does not need to be installed.
+
 ```jsonc
 {
   "extensions": {
     "format": {
       "extends": ["config/format.jsonc"],          // shared configs, merged in order, then this one
-      "ignore": ["src/generated/**"],              // .cache, dist, build, target, .git … are always ignored
+      "ignore": ["src/generated/**"],              // besides what .gitignore ignores; .cache, dist, build, target, .git … always are
       "java": {
         "enabled": true,
         "style": "intellij",                       // or "palantir", "palantir@<version>", "google-java-format[@<version>]",

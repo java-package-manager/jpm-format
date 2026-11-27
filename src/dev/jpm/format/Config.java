@@ -124,6 +124,7 @@ public final class Config {
     }
 
     public final Path root;
+    private final GitIgnore gitIgnore;
     private final Map<String, Object> rootConfig;
     private final List<Scoped> modules;
     private final List<PathMatcher> ignores = new ArrayList<>();
@@ -137,6 +138,7 @@ public final class Config {
 
     private Config(Path root, Map<String, Object> rootConfig, List<Scoped> modules, Rules rules, String extraHash) {
         this.root = root;
+        this.gitIgnore = new GitIgnore(root);
         this.rootConfig = rootConfig;
         this.modules = modules;
         this.rules = rules;
@@ -314,12 +316,12 @@ public final class Config {
     }
 
     /**
-     * True if the file (relative to the root) is ignored.
+     * True if the file (relative to the root) is ignored: by {@code "ignore"}, the folders that always are, or git.
      */
     public boolean ignored(String rel) {
         Path p = Path.of(rel);
         for (PathMatcher m : ignores) if (m.matches(p)) return true;
-        return false;
+        return gitIgnore.ignored(rel, false);
     }
 
     /**
