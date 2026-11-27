@@ -111,7 +111,21 @@ final class SpotlessSteps {
             Map.entry("fxml", "xml"),
             Map.entry("toml", "toml"),
             Map.entry("yml", "yaml"),
-            Map.entry("yaml", "yaml"));
+            Map.entry("yaml", "yaml"),
+            Map.entry("md", "flexmark"),
+            Map.entry("markdown", "flexmark"),
+            Map.entry("feature", "gherkinUtils"));
+
+    /**
+     * jpm-format's defaults for Flexmark, under the step's own options: YAML front matter (changesets, static sites)
+     * stays front matter, code blocks keep their indentation, so formatting never changes code, and a file ends
+     * with one line break.
+     */
+    static final List<String> FLEXMARK_EXTENSIONS = List.of("YamlFrontMatter");
+    static final Map<String, String> FLEXMARK_OPTIONS = Map.of(
+            "FENCED_CODE_MINIMIZE_INDENT", "false",
+            "INDENTED_CODE_MINIMIZE_INDENT", "false",
+            "MAX_TRAILING_BLANK_LINES", "0");
 
     private static final Set<String> NO_VERSION = Set.of("jsonSimple", "jacksonJson", "jacksonYaml", "dbeaverSql", "trimTrailingWhitespace",
             "endWithNewline", "removeSemicolons", "indent", "properties", "json", "xml", "toml", "yaml");
@@ -258,6 +272,11 @@ final class SpotlessSteps {
             Fn fn = MADE.computeIfAbsent(root + "\n" + s, k -> factory.apply(root, s));
             try {
                 String next = fn.format(cur, file);
+                for (int again = 0; again < 2 && next != null && s.name().equals("flexmark"); again++) {
+                    String more = fn.format(next, file);
+                    if (more == null || more.equals(next)) break;
+                    next = more;
+                }
                 if (next != null) cur = next;
             } catch (FormatException e) {
                 throw e;
@@ -350,20 +369,22 @@ final class SpotlessSteps {
                             throw new FormatException("\"emulationProfile\" of flexmark must be a string");
                         c.getMethod("setEmulationProfile", String.class).invoke(config, p);
                     }
-                    for (String option : List.of("pegdownExtensions", "extensions")) {
-                        if (s.options().containsKey(option)) {
-                            String setter = "set" + Character.toUpperCase(option.charAt(0)) + option.substring(1);
-                            c.getMethod(setter, List.class).invoke(config, strings(s, option));
-                        }
+                    if (s.options().containsKey("pegdownExtensions")) {
+                        c.getMethod("setPegdownExtensions", List.class).invoke(config, strings(s, "pegdownExtensions"));
                     }
+                    List<String> extensions = new ArrayList<>(FLEXMARK_EXTENSIONS);
+                    if (s.options().containsKey("extensions")) {
+                        for (String e : strings(s, "extensions")) if (!extensions.contains(e)) extensions.add(e);
+                    }
+                    c.getMethod("setExtensions", List.class).invoke(config, extensions);
+                    Map<String, String> options = new LinkedHashMap<>(FLEXMARK_OPTIONS);
                     if (s.options().containsKey("formatterOptions")) {
                         if (!(s.options().get("formatterOptions") instanceof Map<?, ?> m))
                             throw new FormatException("\"formatterOptions\" of flexmark must be an object");
-                        Map<String, String> options = new LinkedHashMap<>();
                         m.forEach((k, v) -> options.put(String.valueOf(k), v instanceof Number n && n.doubleValue() == n.intValue()
                                 ? String.valueOf(n.intValue()) : String.valueOf(v)));
-                        c.getMethod("setFormatterOptions", Map.class).invoke(config, options);
                     }
+                    c.getMethod("setFormatterOptions", Map.class).invoke(config, options);
                     yield s.version() == null
                             ? staticCall(loader, "markdown.FlexmarkStep", new Class<?>[]{prov, c}, provisioner, config)
                             : staticCall(loader, "markdown.FlexmarkStep", new Class<?>[]{String.class, prov, c}, s.version(), provisioner, config);

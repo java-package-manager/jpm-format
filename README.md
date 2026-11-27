@@ -14,14 +14,14 @@ It is a jpm extension: jpm runs `jpm format` as `jpm-format`. It works like Spot
 
 ## Commands
 
-| Command | |
-|---|---|
-| `jpm format [paths…]` | Formats every file and applies every safe fix, such as removing unused imports. Lint findings that remain are printed. |
-| `jpm format --check [paths…]` | Changes nothing. Reports formatting differences and lint findings together and exits 1 if there are any. |
-| `jpm format --stdin <path>` | Formats standard input as if it were `<path>` and prints the result (for editor integrations). |
-| `jpm format lsp` | Runs the language server over stdio (also `jpm-format lsp`). |
-| `jpm format test [--update]` | Runs the rule tests in `rules/test/` (see [Testing rules](#testing-rules)). |
-| `jpm format rules` | Lists every rule, its category and level. |
+|            Command            |                                                                                                                        |
+|-------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| `jpm format [paths…]`         | Formats every file and applies every safe fix, such as removing unused imports. Lint findings that remain are printed. |
+| `jpm format --check [paths…]` | Changes nothing. Reports formatting differences and lint findings together and exits 1 if there are any.               |
+| `jpm format --stdin <path>`   | Formats standard input as if it were `<path>` and prints the result (for editor integrations).                         |
+| `jpm format lsp`              | Runs the language server over stdio (also `jpm-format lsp`).                                                           |
+| `jpm format test [--update]`  | Runs the rule tests in `rules/test/` (see [Testing rules](#testing-rules)).                                            |
+| `jpm format rules`            | Lists every rule, its category and level.                                                                              |
 
 Options: `--reporter pretty|json|sarif|github`, `--debug` (runs every formatter twice and reports any whose
 output changes), `--no-cache`, `--threads <n>`.
@@ -112,26 +112,26 @@ merging imports into a wildcard can make names ambiguous.
 
 ## Rules
 
-| Rule | Category | Kind | |
-|---|---|---|---|
-| `JavaFormat` | format | formatter | Layout (IntelliJ's default Java code style) |
-| `EmptyBodies` | format | formatter | IntelliJ: empty bodies on two lines |
-| `MemberBlankLines` | format | formatter | IntelliJ: a blank line around methods, classes and initializers |
-| `KeepBlankLines` | format | formatter | IntelliJ: blank lines kept, up to `maxBlankLines` |
-| `JavadocLayout` | format | formatter | IntelliJ: aligned `@param` and `@throws` descriptions, a blank line before the tags, `<p>` |
-| `LineCommentSpacing` | format | formatter | IntelliJ: `//comment` keeps its text right after the slashes |
-| `ImportOrder` | format | formatter | Import groups and order |
-| `LicenseHeader` | format | formatter | Header from `java.licenseHeader` |
-| `UnusedImport` | style | formatter | Unused, redundant and duplicate imports |
-| `UnnecessaryModifier` | style | formatter | Modifiers the language implies, such as `public` on interface methods |
-| `MissingOverrideAnnotation` | style | lint, needs types | Overriding methods without `@Override` |
-| `NonJavadocComment` | style | lint, off by default | `//` and `/* */` comments |
-| `StringEquality` | correctness | lint, needs types | Strings compared with `==` |
-| `UnusedLocalVariable` | correctness | lint | Unused locals and private-method parameters |
-| `UnusedPrivateMember` | correctness | lint | Unused private fields and methods |
-| `PointlessBooleanExpression` | complexity | lint | `x == true`, `x && true` … |
-| `EmptyCatchBlock` | suspicious | lint | Catch blocks that hide the exception |
-| 149 IntelliJ inspections | all | lint | IntelliJ's default Java inspections, by their IntelliJ names: [docs/inspections.md](docs/inspections.md) |
+|             Rule             |  Category   |         Kind         |                                                                                                          |
+|------------------------------|-------------|----------------------|----------------------------------------------------------------------------------------------------------|
+| `JavaFormat`                 | format      | formatter            | Layout (IntelliJ's default Java code style)                                                              |
+| `EmptyBodies`                | format      | formatter            | IntelliJ: empty bodies on two lines                                                                      |
+| `MemberBlankLines`           | format      | formatter            | IntelliJ: a blank line around methods, classes and initializers                                          |
+| `KeepBlankLines`             | format      | formatter            | IntelliJ: blank lines kept, up to `maxBlankLines`                                                        |
+| `JavadocLayout`              | format      | formatter            | IntelliJ: aligned `@param` and `@throws` descriptions, a blank line before the tags, `<p>`               |
+| `LineCommentSpacing`         | format      | formatter            | IntelliJ: `//comment` keeps its text right after the slashes                                             |
+| `ImportOrder`                | format      | formatter            | Import groups and order                                                                                  |
+| `LicenseHeader`              | format      | formatter            | Header from `java.licenseHeader`                                                                         |
+| `UnusedImport`               | style       | formatter            | Unused, redundant and duplicate imports                                                                  |
+| `UnnecessaryModifier`        | style       | formatter            | Modifiers the language implies, such as `public` on interface methods                                    |
+| `MissingOverrideAnnotation`  | style       | lint, needs types    | Overriding methods without `@Override`                                                                   |
+| `NonJavadocComment`          | style       | lint, off by default | `//` and `/* */` comments                                                                                |
+| `StringEquality`             | correctness | lint, needs types    | Strings compared with `==`                                                                               |
+| `UnusedLocalVariable`        | correctness | lint                 | Unused locals and private-method parameters                                                              |
+| `UnusedPrivateMember`        | correctness | lint                 | Unused private fields and methods                                                                        |
+| `PointlessBooleanExpression` | complexity  | lint                 | `x == true`, `x && true` …                                                                               |
+| `EmptyCatchBlock`            | suspicious  | lint                 | Catch blocks that hide the exception                                                                     |
+| 149 IntelliJ inspections     | all         | lint                 | IntelliJ's default Java inspections, by their IntelliJ names: [docs/inspections.md](docs/inspections.md) |
 
 Details are in [docs/rules.md](docs/rules.md). Rule names match IntelliJ's inspection names, so existing
 `@SuppressWarnings` and `//noinspection` suppressions carry over.
@@ -260,15 +260,21 @@ classpath, so unchanged files are skipped; restore that folder between CI runs t
 downloaded), as IntelliJ IDEA's default code style does, with a few differences that keep files the way they were
 meant:
 
-| Files | Formatting | Unlike IntelliJ |
-|---|---|---|
-| `*.properties` | `key=value` without spaces around `=` or `:`, no leading whitespace; values and continuation lines as written | blank lines are kept (up to 2) |
-| `*.json`, `*.jsonc` | indent 2; `"a": 1`, `[1, 2]`; a line one indent in from the line its object or array opens on; comments stay | line breaks are kept: IntelliJ puts every value on a line of its own |
-| `*.yml`, `*.yaml` | each level 2 in, a sequence under a key one level in, one space after `key:` and `-`; a block scalar moves with its key | flow collections (`[a, b]`) stay as written, where IntelliJ writes `[ a, b ]`; a file whose structure is not plain enough to be sure of (tabs, multi-line flow collections or quoted values, indentation indicators) is left as it is |
-| `*.toml` (Gradle's `libs.versions.toml`) | `key = value`, `{ a = 1 }`, the lines of a multi-line array 4 in; strings and comments as written | |
-| `*.xml`, `*.xsd`, `*.xsl`, `*.xslt`, `*.wsdl`, `*.fxml` | indent 4; one child element per line; attributes one space apart, those on lines of their own lined up with the first | text, CDATA and `xml:space="preserve"` content are never changed, and long lines are not wrapped |
+|                          Files                          |                                                       Formatting                                                        |                                                                                                            Unlike IntelliJ                                                                                                            |
+|---------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `*.properties`                                          | `key=value` without spaces around `=` or `:`, no leading whitespace; values and continuation lines as written           | blank lines are kept (up to 2)                                                                                                                                                                                                        |
+| `*.json`, `*.jsonc`                                     | indent 2; `"a": 1`, `[1, 2]`; a line one indent in from the line its object or array opens on; comments stay            | line breaks are kept: IntelliJ puts every value on a line of its own                                                                                                                                                                  |
+| `*.yml`, `*.yaml`                                       | each level 2 in, a sequence under a key one level in, one space after `key:` and `-`; a block scalar moves with its key | flow collections (`[a, b]`) stay as written, where IntelliJ writes `[ a, b ]`; a file whose structure is not plain enough to be sure of (tabs, multi-line flow collections or quoted values, indentation indicators) is left as it is |
+| `*.toml` (Gradle's `libs.versions.toml`)                | `key = value`, `{ a = 1 }`, the lines of a multi-line array 4 in; strings and comments as written                       |                                                                                                                                                                                                                                       |
+| `*.xml`, `*.xsd`, `*.xsl`, `*.xslt`, `*.wsdl`, `*.fxml` | indent 4; one child element per line; attributes one space apart, those on lines of their own lined up with the first   | text, CDATA and `xml:space="preserve"` content are never changed, and long lines are not wrapped                                                                                                                                      |
 
 A file that does not parse is left as it is.
+
+Markdown (`*.md`, `*.markdown`) and Cucumber's `*.feature` files are formatted out of the box too, by Spotless's
+`flexmark` and `gherkinUtils` steps, which jpm downloads the first time. Flexmark runs with jpm-format's defaults:
+YAML front matter stays front matter, code blocks keep their indentation (formatting never changes code), tables are
+aligned, and a file ends with one line break; its options (`"files"`, below) go on top of these. A `"files"` entry
+that includes a file replaces its default, and `"steps": []` turns it off.
 
 ### Settings per file type
 
@@ -284,15 +290,15 @@ a section named after a type sets that type's settings, and its own options:
 }
 ```
 
-| Section | Settings (default) |
-|---|---|
-| `default` | `lineWidth`, `indentWidth`, `continuationIndentWidth`, `maxBlankLines`, `useTabs`: each type takes those it has |
-| `java` | `enabled`, `style`, `eclipseConfig`, `lineWidth`, `indentWidth` (4), `continuationIndentWidth`, `maxBlankLines`, `useTabs`, `licenseHeader` (see [Configuration](#configuration)) |
-| `json` | `style`: `"keep"` keeps line breaks; `"compact"` puts an object or array that fits in `lineWidth` on one line (`{ "a": 1 }`, `[1, 2]`) and the rest one value per line; `"pretty"` puts every value on a line of its own. `indentWidth` (2), `maxBlankLines`, `lineWidth` |
-| `xml` | `indentWidth` (4), `maxBlankLines` |
-| `yaml` | `indentWidth` (2), `maxBlankLines` |
-| `toml` | `indentWidth` (4), `maxBlankLines` |
-| `properties` | `wrap`: values longer than `lineWidth` go on over `\` continuation lines, `indentWidth` (4) in; `encoding`: `"ISO-8859-1"` writes characters outside ASCII as Unicode escapes, `"UTF-8"` writes those escapes as the characters; `maxBlankLines`, `lineWidth` |
+|   Section    |                                                                                                                            Settings (default)                                                                                                                             |
+|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `default`    | `lineWidth`, `indentWidth`, `continuationIndentWidth`, `maxBlankLines`, `useTabs`: each type takes those it has                                                                                                                                                           |
+| `java`       | `enabled`, `style`, `eclipseConfig`, `lineWidth`, `indentWidth` (4), `continuationIndentWidth`, `maxBlankLines`, `useTabs`, `licenseHeader` (see [Configuration](#configuration))                                                                                         |
+| `json`       | `style`: `"keep"` keeps line breaks; `"compact"` puts an object or array that fits in `lineWidth` on one line (`{ "a": 1 }`, `[1, 2]`) and the rest one value per line; `"pretty"` puts every value on a line of its own. `indentWidth` (2), `maxBlankLines`, `lineWidth` |
+| `xml`        | `indentWidth` (4), `maxBlankLines`                                                                                                                                                                                                                                        |
+| `yaml`       | `indentWidth` (2), `maxBlankLines`                                                                                                                                                                                                                                        |
+| `toml`       | `indentWidth` (4), `maxBlankLines`                                                                                                                                                                                                                                        |
+| `properties` | `wrap`: values longer than `lineWidth` go on over `\` continuation lines, `indentWidth` (4) in; `encoding`: `"ISO-8859-1"` writes characters outside ASCII as Unicode escapes, `"UTF-8"` writes those escapes as the characters; `maxBlankLines`, `lineWidth`             |
 
 A `"files"` entry (below) that includes a file replaces these defaults, and one with `"steps": []` turns them off;
 the built-in steps are `properties`, `json`, `xml`, `yaml` and `toml`, which take the options above (`indent` for `indentWidth`):
@@ -323,22 +329,22 @@ would change.
 ]
 ```
 
-| Step | Formats | Options |
-|---|---|---|
-| `ktfmt[@<version>]` | Kotlin, with ktfmt | |
-| `ktlint[@<version>]` | Kotlin, with ktlint | |
-| `scalafmt[@<version>]` | Scala, with scalafmt | `config`: a `.scalafmt.conf` |
-| `jacksonJson`, `jsonSimple` | JSON | `jsonSimple`: `indent` (default 4) |
-| `jacksonYaml` | YAML | |
-| `dbeaverSql` | SQL, with DBeaver's formatter | `config`: a DBeaver properties file |
-| `flexmark[@<version>]` | Markdown, with Flexmark | `emulationProfile` (`"COMMONMARK"`, ...), `extensions` (`["Tables", "YamlFrontMatter"]`), `pegdownExtensions`, `formatterOptions`: Flexmark `Formatter` options with integer, boolean or string values (`{"RIGHT_MARGIN": 100}`) |
-| `gherkinUtils[@<version>]` | Cucumber `.feature` files | `indent` (default 2) |
-| `sortPom[@<version>]` | `pom.xml`, with SortPom | SortPom's options by their names in Spotless (`nrOfIndentSpace`, `expandEmptyElements`, `predefinedSortOrder`, `sortOrderFile`, `sortDependencies`, `sortPlugins`, `sortProperties`, ...) |
-| `trimTrailingWhitespace`, `endWithNewline` | any text | |
-| `indent` | any text | `type`: `"space"` (default) or `"tab"`, `width` (default 4) |
-| `greclipse[@<version>]` | Groovy and Gradle, with Groovy-Eclipse | `config`: an Eclipse formatter preferences file |
-| `removeSemicolons` | Groovy | |
-| `properties`, `json`, `xml` | jpm-format's own, on by default ([Other file types](#other-file-types)) | `maxBlankLines`; `json`, `xml`: `indent` |
+|                    Step                    |                                 Formats                                 |                                                                                                             Options                                                                                                              |
+|--------------------------------------------|-------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ktfmt[@<version>]`                        | Kotlin, with ktfmt                                                      |                                                                                                                                                                                                                                  |
+| `ktlint[@<version>]`                       | Kotlin, with ktlint                                                     |                                                                                                                                                                                                                                  |
+| `scalafmt[@<version>]`                     | Scala, with scalafmt                                                    | `config`: a `.scalafmt.conf`                                                                                                                                                                                                     |
+| `jacksonJson`, `jsonSimple`                | JSON                                                                    | `jsonSimple`: `indent` (default 4)                                                                                                                                                                                               |
+| `jacksonYaml`                              | YAML                                                                    |                                                                                                                                                                                                                                  |
+| `dbeaverSql`                               | SQL, with DBeaver's formatter                                           | `config`: a DBeaver properties file                                                                                                                                                                                              |
+| `flexmark[@<version>]`                     | Markdown, with Flexmark                                                 | `emulationProfile` (`"COMMONMARK"`, ...), `extensions` (`["Tables", "YamlFrontMatter"]`), `pegdownExtensions`, `formatterOptions`: Flexmark `Formatter` options with integer, boolean or string values (`{"RIGHT_MARGIN": 100}`) |
+| `gherkinUtils[@<version>]`                 | Cucumber `.feature` files                                               | `indent` (default 2)                                                                                                                                                                                                             |
+| `sortPom[@<version>]`                      | `pom.xml`, with SortPom                                                 | SortPom's options by their names in Spotless (`nrOfIndentSpace`, `expandEmptyElements`, `predefinedSortOrder`, `sortOrderFile`, `sortDependencies`, `sortPlugins`, `sortProperties`, ...)                                        |
+| `trimTrailingWhitespace`, `endWithNewline` | any text                                                                |                                                                                                                                                                                                                                  |
+| `indent`                                   | any text                                                                | `type`: `"space"` (default) or `"tab"`, `width` (default 4)                                                                                                                                                                      |
+| `greclipse[@<version>]`                    | Groovy and Gradle, with Groovy-Eclipse                                  | `config`: an Eclipse formatter preferences file                                                                                                                                                                                  |
+| `removeSemicolons`                         | Groovy                                                                  |                                                                                                                                                                                                                                  |
+| `properties`, `json`, `xml`                | jpm-format's own, on by default ([Other file types](#other-file-types)) | `maxBlankLines`; `json`, `xml`: `indent`                                                                                                                                                                                         |
 
 A step takes its formatter's version after `@` (or as `"version"`), else Spotless's default. Globs starting with
 `**/` match at the project root too. Java files are always formatted by jpm-format itself.

@@ -10,17 +10,18 @@ Parity is measured against IntelliJ's own formatter on real projects (`checks/Pa
 
 - [ ] **IntelliJ's code style options.**
 - [ ] **A `#branch` of Palantir or google-java-format** as `formatter.style`; they build with Gradle and Maven,
-      not jpm.
+  not jpm.
 
 ## Other file types
 
 The goal: every file type that is common in a Java project is formatted by `jpm format` out of the box, chosen
 by its extension, with no `"files"` entry needed; `"files"` still overrides the defaults. Out of the box today:
-`.properties`, JSON, XML, YAML and TOML (jpm-format's own formatters); listed by hand in `"files"`, the Spotless steps that run
+`.properties`, JSON, XML, YAML and TOML (jpm-format's own formatters), Markdown and Gherkin (Spotless); listed by hand in `"files"`, the Spotless steps that run
 on a JVM: Kotlin, Scala, JSON, YAML, SQL, Markdown, Gherkin, Groovy, `pom.xml` sorting and plain text.
 
 - [ ] **Native formatters, downloaded by jpm**: a binary per platform, pinned by version and SHA-256, with no npm
-      or Node needed. Candidates:
+  or Node needed. Candidates:
+
   - [Biome](https://biomejs.dev/internals/language-support): one binary for JavaScript, TypeScript, JSX, JSON,
     JSONC, CSS and GraphQL; HTML, Vue, Svelte and Astro still experimental.
   - [oxfmt](https://oxc.rs/docs/guide/usage/formatter/language-support.html): Prettier-compatible, JavaScript and
@@ -30,25 +31,27 @@ on a JVM: Kotlin, Scala, JSON, YAML, SQL, Markdown, Gherkin, Groovy, `pom.xml` s
   Which of Biome and oxfmt is the default for which language is open. Another way, to check: dprint's Wasm
   plugins (TOML, Markdown, Dockerfile, CSS, HTML, YAML) on a Wasm runtime in Java, which needs no binary per
   platform.
+
 - [ ] **Defaults by file type**:
 
-  | Files | Where they come from in a Java project | Candidate |
-  |---|---|---|
-  | XML | `pom.xml`, Spring, logback, Android, JAXB | done (jpm-format's own); `sortPom` for `pom.xml` in `"files"` |
-  | `.properties` | Spring, i18n bundles, `gradle.properties` | done (jpm-format's own) |
-  | YAML | Spring, CI, Kubernetes, OpenAPI | done (jpm-format's own; flow collections as written) |
-  | JSON, JSONC | config, test data, `project.jsonc` | done (jpm-format's own, line breaks kept) |
-  | Markdown | `README.md`, docs | `flexmark` in `"files"` (today), oxfmt or dprint |
-  | Groovy, Gradle | `build.gradle`, Spock tests | `greclipse` in `"files"` (today) |
-  | Kotlin, `.kts` | Kotlin code, `build.gradle.kts` | `ktfmt` (today) |
-  | TOML | `libs.versions.toml` | done (jpm-format's own) |
-  | SQL | Flyway and Liquibase migrations | `dbeaverSql` (today) |
-  | HTML, CSS, JavaScript, TypeScript | web front ends, Thymeleaf templates | Biome or oxfmt |
-  | Shell | `mvnw`, `gradlew`, scripts | shfmt |
-  | Dockerfile | containers | dprint |
-  | Protobuf, gRPC | `.proto` | buf or clang-format |
-  | GraphQL | schemas | Biome |
-  | Gherkin | Cucumber `.feature` | `gherkinUtils` in `"files"` (today) |
+  |               Files               |  Where they come from in a Java project   |                           Candidate                           |
+  |-----------------------------------|-------------------------------------------|---------------------------------------------------------------|
+  | XML                               | `pom.xml`, Spring, logback, Android, JAXB | done (jpm-format's own); `sortPom` for `pom.xml` in `"files"` |
+  | `.properties`                     | Spring, i18n bundles, `gradle.properties` | done (jpm-format's own)                                       |
+  | YAML                              | Spring, CI, Kubernetes, OpenAPI           | done (jpm-format's own; flow collections as written)          |
+  | JSON, JSONC                       | config, test data, `project.jsonc`        | done (jpm-format's own, line breaks kept)                     |
+  | Markdown                          | `README.md`, docs                         | done (`flexmark`, by default)                                 |
+  | Groovy, Gradle                    | `build.gradle`, Spock tests               | `greclipse` in `"files"` (today)                              |
+  | Kotlin, `.kts`                    | Kotlin code, `build.gradle.kts`           | `ktfmt` (today)                                               |
+  | TOML                              | `libs.versions.toml`                      | done (jpm-format's own)                                       |
+  | SQL                               | Flyway and Liquibase migrations           | `dbeaverSql` (today)                                          |
+  | HTML, CSS, JavaScript, TypeScript | web front ends, Thymeleaf templates       | Biome or oxfmt                                                |
+  | Shell                             | `mvnw`, `gradlew`, scripts                | shfmt                                                         |
+  | Dockerfile                        | containers                                | dprint                                                        |
+  | Protobuf, gRPC                    | `.proto`                                  | buf or clang-format                                           |
+  | GraphQL                           | schemas                                   | Biome                                                         |
+  | Gherkin                           | Cucumber `.feature`                       | done (`gherkinUtils`, by default)                             |
+
 - [ ] **Prettier and ESLint** with their plugins, for projects that already use them; these need npm.
 
 ## Lint
@@ -58,7 +61,7 @@ on a JVM: Kotlin, Scala, JSON, YAML, SQL, Markdown, Gherkin, Groovy, `pom.xml` s
 ## Running
 
 - [ ] **Native binary.** jpm starts extensions on a JVM today. `jpm build --native` builds `dist/jpm-format` (42 MB,
-      26 s with GraalVM 21.0.2), but it fails on the first file, inside javac:
+  26 s with GraalVM 21.0.2), but it fails on the first file, inside javac:
   - javac's file manager reads `java.home`, which a native image does not set (NullPointerException in
     `BaseFileManager.createLocations`); `-Djava.home=<a JDK>` gets past it, so the binary would need a JDK anyway;
   - javac's message bundles and classes such as `Log$DeferredDiagnosticHandler` are missing from the image. The

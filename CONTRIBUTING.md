@@ -59,7 +59,6 @@ runs them.
   jpm changeset add --empty -m "..."                                  # a change that needs no release (CI, docs)
   jpm changeset status                                                # what is pending, and the version it gives
   ```
-
 - On `main`, CI ([changeset-action](https://github.com/java-package-manager/changeset-action)) keeps a
   "Version packages" pull request with the bumped version and `CHANGELOG.md`. Merging it releases: CI tags the
   commit with the version (`jpm changeset publish`), pushes the tag and creates a GitHub release with the

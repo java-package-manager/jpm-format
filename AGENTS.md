@@ -5,15 +5,15 @@ Facts for AI agents working on jpm-format. Reasons are in [CONTRIBUTING.md](CONT
 
 ## Commands
 
-| What | Command |
-|---|---|
-| Tests | `jpm test` |
-| Build | `jpm build` |
-| Self-check (formatting and lint of jpm-format's own code, among them: no `//` or `/* */` comments) | `jpm start -- --check` |
-| Format files | `jpm start -- <files>` |
-| Changeset (every change has one; `--minor`, `--major` or `--empty` instead of `--patch`) | `jpm changeset add --patch -m "<summary>"` |
-| jpm's checks (among them: every change has a changeset), then the tests | `jpm check` |
-| IntelliJ parity (lines that differ from IntelliJ's formatter; may only go down) | `jpm build --bundle && java checks/Parity.java --idea <IntelliJ home> [--show 10] [--update]` |
+|                                                What                                                |                                            Command                                            |
+|----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| Tests                                                                                              | `jpm test`                                                                                    |
+| Build                                                                                              | `jpm build`                                                                                   |
+| Self-check (formatting and lint of jpm-format's own code, among them: no `//` or `/* */` comments) | `jpm start -- --check`                                                                        |
+| Format files                                                                                       | `jpm start -- <files>`                                                                        |
+| Changeset (every change has one; `--minor`, `--major` or `--empty` instead of `--patch`)           | `jpm changeset add --patch -m "<summary>"`                                                    |
+| jpm's checks (among them: every change has a changeset), then the tests                            | `jpm check`                                                                                   |
+| IntelliJ parity (lines that differ from IntelliJ's formatter; may only go down)                    | `jpm build --bundle && java checks/Parity.java --idea <IntelliJ home> [--show 10] [--update]` |
 
 ## Where things live
 

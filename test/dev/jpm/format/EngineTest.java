@@ -535,7 +535,9 @@ class EngineTest {
                 ws.engine.run("pom.xml", "<project>\r\n<a/>\r\n</project>\r\n", Engine.Mode.FORMAT).output());
         Engine.Result check = ws.engine.run("pom.xml", "<project>\n<a/>\n</project>\n", Engine.Mode.CHECK);
         assertEquals("Not formatted by xml", check.findings().get(0).message());
-        assertEquals(List.of(), SpotlessSteps.stepsFor(List.of(), "README.md"));
+        assertEquals(List.of("flexmark"), SpotlessSteps.stepsFor(List.of(), "README.md").stream().map(SpotlessSteps.Step::name).toList());
+        assertEquals(List.of("gherkinUtils"), SpotlessSteps.stepsFor(List.of(), "a.feature").stream().map(SpotlessSteps.Step::name).toList());
+        assertEquals(List.of(), SpotlessSteps.stepsFor(List.of(), "build.gradle"));
     }
 
     @Test
