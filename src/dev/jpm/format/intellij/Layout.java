@@ -577,6 +577,10 @@ public final class Layout {
             int original = toks.get(i).start() - prev.end();
             if (b.comment()) return original;
             if (prev.comment()) {
+                if (prev.kind() != Tokens.Kind.LINE_COMMENT
+                        && !(b.kind() == Tokens.Kind.OP && spaced(b.text(), folded(i, syn.role[i])))) {
+                    return original;
+                }
                 if (original > 0) return 1;
                 return prevCode >= 0 ? rule(prevCode, i) : 0;
             }
