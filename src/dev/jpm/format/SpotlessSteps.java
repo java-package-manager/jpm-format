@@ -68,7 +68,7 @@ final class SpotlessSteps {
             Map.entry("jsonSimple", Set.of("indent")),
             Map.entry("jacksonYaml", Set.of()),
             Map.entry("dbeaverSql", Set.of("config")),
-            Map.entry("flexmark", Set.of()),
+            Map.entry("flexmark", Set.of("emulationProfile", "pegdownExtensions", "extensions", "formatterOptions")),
             Map.entry("gherkinUtils", Set.of("indent")),
             Map.entry("sortPom", Set.of("encoding", "lineSeparator", "expandEmptyElements", "spaceBeforeCloseEmptyElement",
                     "keepBlankLines", "endWithNewline", "nrOfIndentSpace", "indentBlankLines", "indentSchemaLocation",
@@ -261,7 +261,9 @@ final class SpotlessSteps {
             } catch (FormatException e) {
                 throw e;
             } catch (Exception e) {
-                throw new FormatException(rel + ": the " + s.name() + " step failed: " + (e.getMessage() == null ? e.toString() : e.getMessage()), e);
+                Throwable cause = e;
+                while (cause.getCause() != null && cause.getCause() != cause) cause = cause.getCause();
+                throw new FormatException(rel + ": the " + s.name() + " step failed: " + (cause.getMessage() == null ? cause.toString() : cause.getMessage()), e);
             }
         }
         String out = crlf ? cur.replace("\n", "\r\n") : cur;
@@ -341,6 +343,26 @@ final class SpotlessSteps {
                 case "flexmark" -> {
                     Class<?> c = loader.loadClass("com.diffplug.spotless.markdown.FlexmarkConfig");
                     Object config = c.getConstructor().newInstance();
+                    Object profile = s.options().get("emulationProfile");
+                    if (profile != null) {
+                        if (!(profile instanceof String p))
+                            throw new FormatException("\"emulationProfile\" of flexmark must be a string");
+                        c.getMethod("setEmulationProfile", String.class).invoke(config, p);
+                    }
+                    for (String option : List.of("pegdownExtensions", "extensions")) {
+                        if (s.options().containsKey(option)) {
+                            String setter = "set" + Character.toUpperCase(option.charAt(0)) + option.substring(1);
+                            c.getMethod(setter, List.class).invoke(config, strings(s, option));
+                        }
+                    }
+                    if (s.options().containsKey("formatterOptions")) {
+                        if (!(s.options().get("formatterOptions") instanceof Map<?, ?> m))
+                            throw new FormatException("\"formatterOptions\" of flexmark must be an object");
+                        Map<String, String> options = new LinkedHashMap<>();
+                        m.forEach((k, v) -> options.put(String.valueOf(k), v instanceof Number n && n.doubleValue() == n.intValue()
+                                ? String.valueOf(n.intValue()) : String.valueOf(v)));
+                        c.getMethod("setFormatterOptions", Map.class).invoke(config, options);
+                    }
                     yield s.version() == null
                             ? staticCall(loader, "markdown.FlexmarkStep", new Class<?>[]{prov, c}, provisioner, config)
                             : staticCall(loader, "markdown.FlexmarkStep", new Class<?>[]{String.class, prov, c}, s.version(), provisioner, config);
@@ -405,6 +427,12 @@ final class SpotlessSteps {
             if (!(value instanceof String v)) throw new FormatException("\"" + name + "\" of sortPom must be a string");
             field.set(config, name.equals("sortOrderFile") ? root.resolve(v).toAbsolutePath().toString() : v);
         }
+    }
+
+    private static List<String> strings(Step s, String option) {
+        if (!(s.options().get(option) instanceof List<?> list) || !list.stream().allMatch(String.class::isInstance))
+            throw new FormatException("\"" + option + "\" of " + s.name() + " must be a list of strings");
+        return list.stream().map(String.class::cast).toList();
     }
 
     private static Object versioned(ClassLoader loader, String cls, Step s, Class<?> prov, Object provisioner) throws ReflectiveOperationException {

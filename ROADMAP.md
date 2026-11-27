@@ -53,7 +53,6 @@ on a JVM: Kotlin, Scala, JSON, YAML, SQL, Markdown, Gherkin, Groovy's semicolons
   | Protobuf, gRPC | `.proto` | buf or clang-format |
   | GraphQL | schemas | Biome |
   | Gherkin | Cucumber `.feature` | Spotless `gherkinUtils` |
-- [ ] **Flexmark's options**: `flexmark` runs with its defaults today.
 - [ ] **Prettier and ESLint** with their plugins, for projects that already use them; these need npm.
 
 ## Lint

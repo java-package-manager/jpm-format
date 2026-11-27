@@ -326,7 +326,7 @@ would change.
 | `jacksonJson`, `jsonSimple` | JSON | `jsonSimple`: `indent` (default 4) |
 | `jacksonYaml` | YAML | |
 | `dbeaverSql` | SQL, with DBeaver's formatter | `config`: a DBeaver properties file |
-| `flexmark[@<version>]` | Markdown, with Flexmark | |
+| `flexmark[@<version>]` | Markdown, with Flexmark | `emulationProfile` (`"COMMONMARK"`, ...), `extensions` (`["Tables", "YamlFrontMatter"]`), `pegdownExtensions`, `formatterOptions`: Flexmark `Formatter` options with integer, boolean or string values (`{"RIGHT_MARGIN": 100}`) |
 | `gherkinUtils[@<version>]` | Cucumber `.feature` files | `indent` (default 2) |
 | `sortPom[@<version>]` | `pom.xml`, with SortPom | SortPom's options by their names in Spotless (`nrOfIndentSpace`, `expandEmptyElements`, `predefinedSortOrder`, `sortOrderFile`, `sortDependencies`, `sortPlugins`, `sortProperties`, ...) |
 | `trimTrailingWhitespace`, `endWithNewline` | any text | |
