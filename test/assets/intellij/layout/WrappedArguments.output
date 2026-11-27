@@ -85,4 +85,50 @@ class WrappedArguments {
                         + y,
                 b);
     }
+
+    void wrappedChain() {
+        return command.then(Commands.argument("options", new CommandOptionsArgument(
+                        Set.of("--confirm", "--schedule")
+                )).executes(this))
+                .executes(this::confirmationNeeded);
+        return command.then(Commands.argument("options", foo(
+                        Set.of("--confirm", "--schedule")
+                )))
+                .executes(this::confirmationNeeded);
+        return command.then(foo(
+                        Set.of("--confirm", "--schedule")
+                ))
+                .executes(this::confirmationNeeded);
+        return command.then(
+                        Set.of("--confirm", "--schedule")
+                )
+                .executes(this::confirmationNeeded);
+        return command.then(foo(
+                        Set.of("--confirm", "--schedule")))
+                .executes(this::confirmationNeeded);
+        return command.then(a, foo(
+                        Set.of("--confirm", "--schedule")
+                ))
+                .executes(this::confirmationNeeded);
+        return command.then(foo(x -> {
+                    bar();
+                }))
+                .executes(this::confirmationNeeded);
+        return command.then(foo(x,
+                        y
+                ))
+                .executes(this::confirmationNeeded);
+        return a.b().then(foo(
+                        Set.of("--confirm", "--schedule")
+                ))
+                .executes(this::confirmationNeeded);
+        command.then(foo(
+                        Set.of("--confirm", "--schedule")
+                ))
+                .executes(this::confirmationNeeded);
+        x = command.then(foo(
+                        Set.of("--confirm", "--schedule")
+                ))
+                .executes(this::confirmationNeeded);
+    }
 }
