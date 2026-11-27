@@ -71,6 +71,9 @@ public final class Layout {
         boolean enumBody;
         int opener = -1;
         boolean shiftItems;
+        boolean wrapsItems;
+        boolean closeOnOwnLine;
+        boolean onOpenerLine = true;
     }
 
     private static final class Run {
@@ -244,6 +247,7 @@ public final class Layout {
             if (itemStart(i, f)) f.itemIndent = current;
             if (f.kind == PAREN || f.kind == BRACKET || f.kind == ARRAY) {
                 f.expectItem = t.op(",") || (f.kind == PAREN && t.op(";"));
+                if (t.op(",") && i + 1 < toks.size() && lines[i + 1] > 0) f.onOpenerLine = false;
             }
             if (t.kind() == Tokens.Kind.OP) {
                 switch (t.text()) {
@@ -253,6 +257,8 @@ public final class Layout {
                         p.kind = t.is("(") ? PAREN : BRACKET;
                         p.base = t.is("(") ? parenBase(i, f) : current;
                         p.shiftItems = t.is("(") && wrappedChain(i);
+                        p.wrapsItems = t.is("(") && itemsWrap(i);
+                        p.closeOnOwnLine = t.is("(") && syn.match[i] > 0 && lines[syn.match[i]] > 0;
                         p.opener = i;
                         p.align = syn.align[i] ? PENDING : -1;
                         p.itemIndent = current;
@@ -294,13 +300,45 @@ public final class Layout {
                     inside = false;
                     if (binary >= 0) return lineIndent[binary];
                     if (f.opener >= 0 && tokenLine[call] != tokenLine[f.opener]) return lineIndent[call];
-                    if (f.kind == PAREN && f.opener >= 0) return f.base;
+                    if (f.kind == PAREN && f.opener >= 0) return f.base + (frameShift(f) ? continuation : 0);
                 }
                 if (st == 0 || lines[st] > 0) return lineIndent[binary >= 0 ? binary : st];
                 if (syn.nodeBinary[n]) binary = st;
             }
             if (binary >= 0) return lineIndent[binary];
             return call >= 0 ? lineIndent[call] : current;
+        }
+
+        /**
+         * Whether a later argument of the call opened at {@code i} starts a line. IntelliJ then puts the arguments
+         * on the line of the {@code (} at the arguments' indent too: their continuation lines and text blocks are
+         * one continuation in from there, and so are the calls and blocks they open, which a {@code )} on a line
+         * of its own shifts as well.
+         */
+        private boolean itemsWrap(int i) {
+            int close = syn.match[i];
+            if (close < 0) return false;
+            int depth = 0;
+            for (int k = i + 1; k < close; k++) {
+                Tokens.Token t = toks.get(k);
+                if (t.op("(") || t.op("[") || t.op("{")) depth++;
+                else if (t.op(")") || t.op("]") || t.op("}")) depth--;
+                else if (depth == 0 && t.op(",")) {
+                    int n = k + 1;
+                    while (n < close && toks.get(n).comment()) n++;
+                    if (n < close && lines[n] > 0) return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean continuationShift(Frame f) {
+            return f != null && f.kind == PAREN && f.wrapsItems && f.onOpenerLine && f.align < 0 && !f.shiftItems;
+        }
+
+        private boolean frameShift(Frame f) {
+            return f != null && f.kind == PAREN && (f.wrapsItems || f.closeOnOwnLine) && f.onOpenerLine && f.align < 0
+                    && !f.shiftItems;
         }
 
         private boolean wrappedChain(int i) {
@@ -351,6 +389,7 @@ public final class Layout {
             boolean expression = b == Syntax.LAMBDA || b == Syntax.ANONYMOUS || b == Syntax.SWITCH_EXPRESSION
                     || b == Syntax.ARRAY || f.kind == PAREN || f.kind == BRACKET || f.kind == ARRAY;
             n.base = expression ? current : f.itemIndent;
+            if (expression && frameShift(f) && tokenLine[i] == tokenLine[f.opener]) n.base = f.base + continuation;
             if (b == Syntax.ANONYMOUS) {
                 int k = newOf(i);
                 if (k >= 0) n.base = lineIndent[k];
@@ -436,7 +475,8 @@ public final class Layout {
                     }
                     int a = lineStartingAncestor(i, f.opener);
                     if (a >= 0) yield lineIndent[a] + continuation;
-                    yield f.align >= 0 ? f.align + continuation : f.base + continuation + (f.shiftItems ? continuation : 0);
+                    yield f.align >= 0 ? f.align + continuation
+                            : f.base + continuation + (f.shiftItems || continuationShift(f) ? continuation : 0);
                 }
             };
         }
@@ -511,7 +551,9 @@ public final class Layout {
                 if (p.substring(0, lead).indexOf('\t') >= 0) min = -1;
                 if (min >= 0) min = Math.min(min, lead);
             }
-            int delta = min < 0 ? 0 : current + continuation - min;
+            Frame f = frames.peek();
+            int from = continuationShift(f) && line == tokenLine[f.opener] ? f.base + continuation : current;
+            int delta = min < 0 ? 0 : from + continuation - min;
             for (int k = 1; k < parts.length; k++) {
                 String p = parts[k];
                 b.append('\n');

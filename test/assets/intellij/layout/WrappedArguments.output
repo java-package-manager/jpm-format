@@ -1,0 +1,88 @@
+class WrappedArguments {
+    void a() {
+        foo(a, bar(
+                x,
+                y
+        ));
+        foo(bar(
+                x,
+                y
+        ), a);
+        foo(a, b, bar(
+                x
+        ));
+        foo(a, () -> {
+            x();
+        });
+        foo(a, new Object() {
+            int f;
+        });
+        foo(a, """
+                text
+                """);
+        foo(a, bar(x)
+                .baz());
+    }
+
+    void b() {
+        foo(a, bar(
+                        x,
+                        y
+                )
+        );
+        foo(bar(
+                        x
+                ), a
+        );
+        foo(a, () -> {
+                    x();
+                }
+        );
+        foo(a, """
+                text
+                """
+        );
+        foo(a, bar(x)
+                .baz()
+        );
+        foo(a, () -> {
+                    x();
+                },
+                b);
+        foo(
+                a, bar(
+                        x
+                )
+        );
+    }
+
+    void c() {
+        foo(bar(x)
+                .baz()
+        );
+        foo(bar(x)
+                        .baz(),
+                b);
+        foo(a, bar(x)
+                        .baz(),
+                b);
+        foo("""
+                text
+                """
+        );
+        foo(a, """
+                        text
+                        """,
+                b);
+        foo("""
+                        text
+                        """,
+                b);
+        foo(x
+                        + y,
+                b);
+        foo(a, x
+                        + y,
+                b);
+    }
+}
