@@ -65,6 +65,9 @@ on a JVM: Kotlin, Scala, JSON, YAML, SQL, Markdown, Gherkin, Groovy, `pom.xml` s
 ## Lint
 
 - [ ] IntelliJ's default inspections for null checks and data flow.
+- [ ] **Imports that are only referred to via Javadoc are not unused**: `UnusedImport` sees `{@link Foo}`,
+  `@see Foo` and `@throws Foo`, but still removes imports used only in a member reference's parameter types
+  (`{@link #m(Map)}`, `{@link String#join(CharSequence, Set)}`) or in Markdown doc comments (`/// [File]`).
 
 ## Running
 
