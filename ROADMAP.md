@@ -8,6 +8,10 @@ What jpm-format does not do yet. jpm's own plan is in its
 Parity is measured against IntelliJ's own formatter on real projects (`checks/Parity.java`, see
 [CONTRIBUTING.md](CONTRIBUTING.md)); rules go in `src/dev/jpm/format/intellij/`.
 
+- [ ] **Wrapping long declarations**: IntelliJ wraps record components and parameters past the line width ("wrap
+  if long"); jpm-format never adds line breaks (ADR 0006). About 200 of the lines that still differ in Paper.
+- [ ] **Smaller differences found in Paper** (about 130 lines): indents, spacing and Javadoc shapes; compare
+  with IntelliJ's output on a clone of Paper.
 - [ ] **IntelliJ's code style options.**
 - [ ] **A `#branch` of Palantir or google-java-format** as `formatter.style`; they build with Gradle and Maven,
   not jpm.
@@ -19,9 +23,13 @@ by its extension, with no `"files"` entry needed; `"files"` still overrides the 
 `.properties`, JSON, XML, YAML and TOML (jpm-format's own formatters), Markdown and Gherkin (Spotless); listed by hand in `"files"`, the Spotless steps that run
 on a JVM: Kotlin, Scala, JSON, YAML, SQL, Markdown, Gherkin, Groovy, `pom.xml` sorting and plain text.
 
+- [ ] **oxfmt first, for Markdown**: its own Rust engine formats Markdown (and JavaScript, TypeScript, CSS, YAML,
+  TOML, HTML, GraphQL), and its standalone binary needs no Node for those. Once jpm can download it (below), it
+  replaces `flexmark` as the Markdown default, and with it the Flexmark settings jpm-format maintains (front matter,
+  code-block indents, trailing blank lines, running until stable). To check: YAML front matter, and
+  `"embeddedLanguageFormatting": "off"` so code blocks are left alone.
 - [ ] **Native formatters, downloaded by jpm**: a binary per platform, pinned by version and SHA-256, with no npm
   or Node needed. Candidates:
-
   - [Biome](https://biomejs.dev/internals/language-support): one binary for JavaScript, TypeScript, JSX, JSON,
     JSONC, CSS and GraphQL; HTML, Vue, Svelte and Astro still experimental.
   - [oxfmt](https://oxc.rs/docs/guide/usage/formatter/language-support.html): Prettier-compatible, JavaScript and
