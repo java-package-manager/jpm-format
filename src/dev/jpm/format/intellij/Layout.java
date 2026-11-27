@@ -71,6 +71,7 @@ public final class Layout {
         boolean enumBody;
         int opener = -1;
         boolean shiftItems;
+        boolean shifted;
         boolean wrapsItems;
         boolean closeOnOwnLine;
         boolean onOpenerLine = true;
@@ -257,6 +258,9 @@ public final class Layout {
                         p.kind = t.is("(") ? PAREN : BRACKET;
                         p.base = t.is("(") ? parenBase(i, f) : current;
                         p.shiftItems = t.is("(") && wrappedChain(i);
+                        p.shifted = p.shiftItems || f.kind == PAREN && f.shifted && p.base == f.base
+                                && tokenLine[i] == tokenLine[f.opener];
+                        if (p.shiftItems) p.base += continuation;
                         p.wrapsItems = t.is("(") && itemsWrap(i);
                         p.closeOnOwnLine = t.is("(") && syn.match[i] > 0 && lines[syn.match[i]] > 0;
                         p.opener = i;
@@ -390,6 +394,7 @@ public final class Layout {
                     || b == Syntax.ARRAY || f.kind == PAREN || f.kind == BRACKET || f.kind == ARRAY;
             n.base = expression ? current : f.itemIndent;
             if (expression && frameShift(f) && tokenLine[i] == tokenLine[f.opener]) n.base = f.base + continuation;
+            if (expression && f.kind == PAREN && f.shifted && tokenLine[i] == tokenLine[f.opener]) n.base = f.base;
             if (b == Syntax.ANONYMOUS) {
                 int k = newOf(i);
                 if (k >= 0) n.base = lineIndent[k];
@@ -471,12 +476,12 @@ public final class Layout {
                 };
                 default -> {
                     if (f.expectItem) {
-                        yield f.align >= 0 ? f.align : f.base + continuation + (f.shiftItems ? continuation : 0);
+                        yield f.align >= 0 ? f.align : f.base + continuation;
                     }
                     int a = lineStartingAncestor(i, f.opener);
                     if (a >= 0) yield lineIndent[a] + continuation;
                     yield f.align >= 0 ? f.align + continuation
-                            : f.base + continuation + (f.shiftItems || continuationShift(f) ? continuation : 0);
+                            : f.base + continuation + (continuationShift(f) ? continuation : 0);
                 }
             };
         }
