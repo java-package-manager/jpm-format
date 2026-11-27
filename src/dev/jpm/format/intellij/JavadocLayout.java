@@ -1,10 +1,17 @@
 package dev.jpm.format.intellij;
 
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.tree.VariableTree;
 import dev.jpm.format.Source;
 import dev.jpm.format.api.Context;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,6 +48,7 @@ public final class JavadocLayout implements IntelliJRule {
     public String format(Context ctx) {
         String src = ctx.source();
         String nl = Source.newline(src);
+        Set<Integer> owners = owners(ctx);
         StringBuilder out = new StringBuilder(src.length() + 64);
         int i = 0, copied = 0, n = src.length();
         while (i < n) {
@@ -53,7 +61,8 @@ public final class JavadocLayout implements IntelliJRule {
                 int end = src.indexOf("*/", i + 2);
                 if (end < 0) break;
                 end += 2;
-                if (src.startsWith("/**", i) && !src.startsWith("/**/", i)) {
+                if (src.startsWith("/**", i) && !src.startsWith("/**/", i)
+                        && (owners == null || owners.contains(nextCode(src, end)))) {
                     String formatted = javadoc(src.substring(i, end), column(src, i), nl);
                     if (formatted != null) {
                         out.append(src, copied, i).append(formatted);
@@ -67,6 +76,53 @@ public final class JavadocLayout implements IntelliJRule {
         }
         if (copied == 0) return src;
         return out.append(src, copied, n).toString();
+    }
+
+    /**
+     * Where the declarations start whose Javadoc IntelliJ formats: the package, the module, top-level types and the
+     * fields, methods and classes of the classes among them, not those of local or anonymous classes, nor
+     * initializers or local variables. Null without a tree, and then every comment is formatted.
+     */
+    private static Set<Integer> owners(Context ctx) {
+        CompilationUnitTree cu;
+        try {
+            cu = ctx.tree();
+        } catch (RuntimeException e) {
+            return null;
+        }
+        if (cu == null) return null;
+        Set<Integer> out = new HashSet<>();
+        if (cu.getPackage() != null) out.add(ctx.start(cu.getPackage()));
+        if (cu.getModule() != null) out.add(ctx.start(cu.getModule()));
+        for (Tree t : cu.getTypeDecls()) if (t instanceof ClassTree c) members(ctx, c, out);
+        return out;
+    }
+
+    private static void members(Context ctx, ClassTree c, Set<Integer> out) {
+        out.add(ctx.start(c));
+        for (Tree m : c.getMembers()) {
+            if (m instanceof ClassTree inner) members(ctx, inner, out);
+            else if (m instanceof MethodTree || m instanceof VariableTree) out.add(ctx.start(m));
+        }
+    }
+
+    private static int nextCode(String src, int i) {
+        int n = src.length();
+        while (i < n) {
+            char c = src.charAt(i);
+            if (Character.isWhitespace(c)) {
+                i++;
+            } else if (src.startsWith("//", i)) {
+                while (i < n && src.charAt(i) != '\n') i++;
+            } else if (src.startsWith("/*", i)) {
+                int end = src.indexOf("*/", i + 2);
+                if (end < 0) return n;
+                i = end + 2;
+            } else {
+                return i;
+            }
+        }
+        return n;
     }
 
     private static int skipLiteral(String src, int i) {
@@ -105,11 +161,17 @@ public final class JavadocLayout implements IntelliJRule {
         String[] raw = text.split("\\r?\\n", -1);
         if (!raw[0].strip().equals("/**") || !raw[raw.length - 1].strip().equals("*/")) return null;
         List<String> body = new ArrayList<>();
+        boolean unspaced = false;
+        int inPre = 0;
         for (int k = 1; k < raw.length - 1; k++) {
             String l = raw[k].stripLeading();
             if (!l.startsWith("*")) return null;
             String rest = l.substring(1);
-            body.add(rest.startsWith(" ") ? rest.substring(1) : rest);
+            if (!rest.isEmpty() && !rest.startsWith(" ")) unspaced = true;
+            String line = rest.startsWith(" ") ? rest.substring(1) : rest;
+            if (inPre == 0 && line.startsWith(" ") && line.stripLeading().startsWith("@")) line = line.stripLeading();
+            body.add(line);
+            inPre = Math.max(0, inPre + preDepth(line));
         }
         int firstTag = -1, pre = 0;
         for (int k = 0; k < body.size(); k++) {
@@ -137,7 +199,7 @@ public final class JavadocLayout implements IntelliJRule {
         reorder(lines, firstTag);
         align(lines, firstTag, "param");
         align(lines, firstTag, "throws");
-        if (lines.equals(body)) return null;
+        if (lines.equals(body) && !unspaced) return null;
         StringBuilder sb = new StringBuilder("/**").append(nl);
         for (String l : lines)
             sb.append(indent).append(l.isEmpty() ? " *" : " * " + l).append(nl);
@@ -161,7 +223,7 @@ public final class JavadocLayout implements IntelliJRule {
     private static void reorder(List<String> lines, int firstTag) {
         if (firstTag >= lines.size()) return;
         List<String> tail = lines.subList(firstTag, lines.size());
-        for (String l : tail) if (l.contains("<pre>")) return;
+        for (String l : tail) if (PRE_START.matcher(l).find()) return;
         int end = tail.size();
         while (end > 0 && tail.get(end - 1).isBlank()) end--;
         List<List<String>> blocks = new ArrayList<>();
@@ -222,7 +284,7 @@ public final class JavadocLayout implements IntelliJRule {
         boolean pre = false, text = false;
         for (int k = 0; k < firstTag; k++) {
             String l = lines.get(k);
-            if (l.contains("<pre>")) pre = true;
+            if (PRE_START.matcher(l).find()) pre = true;
             if (l.contains("</pre>")) pre = false;
             if (!l.isBlank()) {
                 text = true;
@@ -242,7 +304,7 @@ public final class JavadocLayout implements IntelliJRule {
         boolean pre = false;
         for (int k = 0; k < lines.size(); k++) {
             String l = lines.get(k);
-            if (l.contains("<pre>")) pre = true;
+            if (PRE_START.matcher(l).find()) pre = true;
             if (pre) {
                 if (l.contains("</pre>")) pre = false;
                 continue;

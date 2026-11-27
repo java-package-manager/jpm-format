@@ -99,6 +99,11 @@ IntelliJ's default Javadoc formatting:
   `@see`, `@since`, `@deprecated`; tags of one kind keep their order and their continuation lines (not when a
   `<pre>` is among the tags)
 
+Only the Javadoc IntelliJ formats is formatted: that of the package, the module, top-level types and the fields,
+methods and classes of the classes among them, not that of local or anonymous classes' members, initializers or
+local variables. A line whose text starts with `@` is a block tag, also after more than one space; `<pre>` with
+attributes (`<pre class="code">`) counts as `<pre>`.
+
 Text is not re-wrapped. Comments without a `*` at the start of every line are left as they are; a `<pre>` in a
 comment does not stop the rest of it from being formatted. Runs after `KeepBlankLines`; off with `java.style: "palantir"`.
 

@@ -187,6 +187,74 @@ class IntelliJRulesTest {
     }
 
     @Test
+    void javadocOfLocalAndAnonymousClassesAndInitializersIsLeftAsWritten() {
+        String code = """
+                class A {
+                    /** Init. */
+                    static {
+                    }
+
+                    void m() {
+                        Object o = new Object() {
+                            /**
+                             * Anonymous.
+                             * @param a  the a
+                             */
+                            void n(int a) {
+                            }
+                        };
+                        class Local {
+                            /** Local. */
+                            int h;
+                        }
+                        /** Variable. */
+                        int x = 1;
+                    }
+                }
+                """;
+        intellij().assertFormats(code, code);
+    }
+
+    @Test
+    void javadocTagsIndentedOrAfterPreWithAttributesAndLinesWithoutASpace() {
+        intellij().assertFormats("""
+                class A {
+                    /**
+                     *Text.
+                     *
+                     * <pre class="code">
+                     * x
+                     *
+                     * y
+                     * </pre>
+                     *
+                     * @param a  the a
+                     *  @since 1
+                     */
+                    void f(int a) {
+                    }
+                }
+                """, """
+                class A {
+                    /**
+                     * Text.
+                     *
+                     * <pre class="code">
+                     * x
+                     *
+                     * y
+                     * </pre>
+                     *
+                     * @param a the a
+                     * @since 1
+                     */
+                    void f(int a) {
+                    }
+                }
+                """);
+    }
+
+    @Test
     void blankLinesAreKeptUpToTwo() {
         intellij().assertFormats("""
                 class A {
