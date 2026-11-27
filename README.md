@@ -328,6 +328,7 @@ would change.
 | `dbeaverSql` | SQL, with DBeaver's formatter | `config`: a DBeaver properties file |
 | `flexmark[@<version>]` | Markdown, with Flexmark | |
 | `gherkinUtils[@<version>]` | Cucumber `.feature` files | `indent` (default 2) |
+| `sortPom[@<version>]` | `pom.xml`, with SortPom | SortPom's options by their names in Spotless (`nrOfIndentSpace`, `expandEmptyElements`, `predefinedSortOrder`, `sortOrderFile`, `sortDependencies`, `sortPlugins`, `sortProperties`, ...) |
 | `trimTrailingWhitespace`, `endWithNewline` | any text | |
 | `indent` | any text | `type`: `"space"` (default) or `"tab"`, `width` (default 4) |
 | `removeSemicolons` | Groovy | |

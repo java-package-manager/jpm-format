@@ -38,7 +38,7 @@ on a JVM: Kotlin, Scala, JSON, YAML, SQL, Markdown, Gherkin, Groovy's semicolons
 
   | Files | Where they come from in a Java project | Candidate |
   |---|---|---|
-  | XML | `pom.xml`, Spring, logback, Android, JAXB | done (jpm-format's own); SortPom for `pom.xml` as a step |
+  | XML | `pom.xml`, Spring, logback, Android, JAXB | done (jpm-format's own); `sortPom` for `pom.xml` in `"files"` |
   | `.properties` | Spring, i18n bundles, `gradle.properties` | done (jpm-format's own) |
   | YAML | Spring, CI, Kubernetes, OpenAPI | done (jpm-format's own; flow collections as written) |
   | JSON, JSONC | config, test data, `project.jsonc` | done (jpm-format's own, line breaks kept) |
@@ -53,8 +53,7 @@ on a JVM: Kotlin, Scala, JSON, YAML, SQL, Markdown, Gherkin, Groovy's semicolons
   | Protobuf, gRPC | `.proto` | buf or clang-format |
   | GraphQL | schemas | Biome |
   | Gherkin | Cucumber `.feature` | Spotless `gherkinUtils` |
-- [ ] **Spotless steps whose configs have many options:** SortPom, and Flexmark's options (`flexmark` runs with
-      its defaults today).
+- [ ] **Flexmark's options**: `flexmark` runs with its defaults today.
 - [ ] **Prettier and ESLint** with their plugins, for projects that already use them; these need npm.
 
 ## Lint

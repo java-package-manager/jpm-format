@@ -70,6 +70,10 @@ final class SpotlessSteps {
             Map.entry("dbeaverSql", Set.of("config")),
             Map.entry("flexmark", Set.of()),
             Map.entry("gherkinUtils", Set.of("indent")),
+            Map.entry("sortPom", Set.of("encoding", "lineSeparator", "expandEmptyElements", "spaceBeforeCloseEmptyElement",
+                    "keepBlankLines", "endWithNewline", "nrOfIndentSpace", "indentBlankLines", "indentSchemaLocation",
+                    "indentAttribute", "predefinedSortOrder", "sortOrderFile", "sortDependencies", "sortDependencyManagement",
+                    "sortDependencyExclusions", "sortPlugins", "sortProperties", "sortModules", "sortExecutions")),
             Map.entry("trimTrailingWhitespace", Set.of()),
             Map.entry("endWithNewline", Set.of()),
             Map.entry("removeSemicolons", Set.of()),
@@ -348,6 +352,15 @@ final class SpotlessSteps {
                     String v = s.version() != null ? s.version() : (String) gherkin.getMethod("defaultVersion").invoke(null);
                     yield gherkin.getMethod("create", c, String.class, prov).invoke(null, config, v, provisioner);
                 }
+                case "sortPom" -> {
+                    Class<?> c = loader.loadClass("com.diffplug.spotless.pom.SortPomCfg");
+                    Object config = c.getConstructor().newInstance();
+                    if (s.version() != null) c.getField("version").set(config, s.version());
+                    c.getField("quiet").setBoolean(config, true);
+                    for (Map.Entry<String, Object> o : s.options().entrySet())
+                        sortPomOption(root, c.getField(o.getKey()), config, o.getValue());
+                    yield staticCall(loader, "pom.SortPomStep", new Class<?>[]{c, prov}, config, provisioner);
+                }
                 case "trimTrailingWhitespace" ->
                         staticCall(loader, "generic.TrimTrailingWhitespaceStep", new Class<?>[0]);
                 case "endWithNewline" -> staticCall(loader, "generic.EndWithNewlineStep", new Class<?>[0]);
@@ -371,6 +384,26 @@ final class SpotlessSteps {
             throw new FormatException("could not make the " + s.name() + " step: " + e.getCause(), e.getCause());
         } catch (ReflectiveOperationException | LinkageError e) {
             throw new FormatException("could not make the " + s.name() + " step: " + e, e);
+        }
+    }
+
+    /**
+     * Sets one of SortPom's options, which are the fields of Spotless's {@code SortPomCfg}, checked against the
+     * field's type; {@code sortOrderFile} is a path relative to the project root.
+     */
+    private static void sortPomOption(Path root, java.lang.reflect.Field field, Object config, Object value) throws IllegalAccessException {
+        String name = field.getName();
+        if (field.getType() == boolean.class) {
+            if (!(value instanceof Boolean b))
+                throw new FormatException("\"" + name + "\" of sortPom must be true or false");
+            field.setBoolean(config, b);
+        } else if (field.getType() == int.class) {
+            if (!(value instanceof Number n) || n.intValue() < 0)
+                throw new FormatException("\"" + name + "\" of sortPom must be a number");
+            field.setInt(config, n.intValue());
+        } else {
+            if (!(value instanceof String v)) throw new FormatException("\"" + name + "\" of sortPom must be a string");
+            field.set(config, name.equals("sortOrderFile") ? root.resolve(v).toAbsolutePath().toString() : v);
         }
     }
 
