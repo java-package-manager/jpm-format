@@ -17,7 +17,10 @@ import java.util.regex.Pattern;
  * continuation lines of other block tags start under the tag), and "Generate {@code <p>} on empty lines" (an empty
  * line of the description that more text follows gets a {@code <p>}, outside {@code <pre>}). The parameter types
  * of {@code {@link}} and {@code @see} references are separated by a comma and a space. A description written on the line after its
- * {@code @param} or {@code @throws} name is joined onto the tag's line.
+ * {@code @param} or {@code @throws} name is joined onto the tag's line. Block tags are put in IntelliJ's order:
+ * {@code @param}, {@code @return}, {@code @throws} ({@code @exception} becomes {@code @throws}), the other tags,
+ * {@code @see}, {@code @since}, {@code @deprecated}; tags of one kind keep their order, and a tag keeps its
+ * continuation lines.
  *
  * <p>Text is not re-wrapped, and comments that do not have a {@code *} at the start of every line are left as they
  * are. A {@code <pre>} anywhere in a comment does not stop the rest of it from being formatted, as in IntelliJ.
@@ -126,6 +129,7 @@ public final class JavadocLayout implements IntelliJRule {
         references(lines);
         join(lines, firstTag);
         tagBlankLines(lines, firstTag);
+        reorder(lines, firstTag);
         align(lines, firstTag, "param");
         align(lines, firstTag, "throws");
         unindent(lines, firstTag);
@@ -148,6 +152,41 @@ public final class JavadocLayout implements IntelliJRule {
             if (lines.get(k).startsWith("@return "))
                 lines.set(k, "@return " + lines.get(k).substring(8).stripLeading());
         }
+    }
+
+    private static void reorder(List<String> lines, int firstTag) {
+        if (firstTag >= lines.size()) return;
+        List<String> tail = lines.subList(firstTag, lines.size());
+        for (String l : tail) if (l.contains("<pre>")) return;
+        int end = tail.size();
+        while (end > 0 && tail.get(end - 1).isBlank()) end--;
+        List<List<String>> blocks = new ArrayList<>();
+        for (int k = 0; k < end; k++) {
+            String l = tail.get(k);
+            if (l.startsWith("@") || blocks.isEmpty()) blocks.add(new ArrayList<>());
+            blocks.getLast().add(l.startsWith("@exception ") ? "@throws " + l.substring(11) : l);
+        }
+        List<List<String>> sorted = new ArrayList<>(blocks);
+        sorted.sort(java.util.Comparator.comparingInt(b -> rank(b.getFirst())));
+        List<String> out = new ArrayList<>();
+        for (List<String> b : sorted) out.addAll(b);
+        out.addAll(tail.subList(end, tail.size()));
+        tail.clear();
+        tail.addAll(out);
+    }
+
+    private static int rank(String tagLine) {
+        int space = tagLine.indexOf(' ');
+        String tag = space < 0 ? tagLine : tagLine.substring(0, space);
+        return switch (tag) {
+            case "@param" -> 0;
+            case "@return" -> 1;
+            case "@throws", "@exception" -> 2;
+            case "@see" -> 4;
+            case "@since" -> 5;
+            case "@deprecated" -> 6;
+            default -> 3;
+        };
     }
 
     private static void align(List<String> lines, int firstTag, String group) {

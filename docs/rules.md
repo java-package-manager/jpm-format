@@ -88,6 +88,9 @@ IntelliJ's default Javadoc formatting:
 - "Generate `<p>` on empty lines": an empty line of the description that more text follows gets a `<p>`
 - a description written on the line after its `@param` or `@throws` name moves up to the tag
 - the parameter types of `{@link}`, `{@linkplain}` and `@see` references are separated by a comma and a space
+- block tags in IntelliJ's order: `@param`, `@return`, `@throws` (`@exception` becomes `@throws`), the other tags,
+  `@see`, `@since`, `@deprecated`; tags of one kind keep their order and their continuation lines (not when a
+  `<pre>` is among the tags)
 
 Text is not re-wrapped. Comments without a `*` at the start of every line are left as they are; a `<pre>` in a
 comment does not stop the rest of it from being formatted. Runs after `KeepBlankLines`; off with `java.style: "palantir"`.

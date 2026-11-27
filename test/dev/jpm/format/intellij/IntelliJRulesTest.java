@@ -23,6 +23,49 @@ class IntelliJRulesTest {
     }
 
     @Test
+    void javadocTagsAreInIntelliJsOrder() {
+        intellij().assertFormats("""
+                class A {
+                    /**
+                     * Method.
+                     *
+                     * @since 1
+                     * @see Object
+                     * @deprecated old
+                     *             reason
+                     * @exception IllegalStateException ise
+                     * @author me
+                     * @return r
+                     * @param b the b
+                     * @param a the a
+                     */
+                    int m(int a, int b) {
+                        return 0;
+                    }
+                }
+                """, """
+                class A {
+                    /**
+                     * Method.
+                     *
+                     * @param b the b
+                     * @param a the a
+                     * @return r
+                     * @throws IllegalStateException ise
+                     * @author me
+                     * @see Object
+                     * @since 1
+                     * @deprecated old
+                     * reason
+                     */
+                    int m(int a, int b) {
+                        return 0;
+                    }
+                }
+                """);
+    }
+
+    @Test
     void blankLinesAreKeptUpToTwo() {
         intellij().assertFormats("""
                 class A {
