@@ -1,5 +1,12 @@
 # jpm-format
 
+## 0.7.1
+
+### Patch Changes
+
+- UnusedImport keeps imports used only in the parameter types of a Javadoc reference ({@link #m(Map)}) or in Markdown doc comments (/// [File])
+- IntelliJ style: inside a call whose chain continues on the next line, nested calls, lambda bodies and the closing parenthesis are one continuation indent further in, as IntelliJ has them
+
 ## 0.7.0
 
 ### Minor Changes
