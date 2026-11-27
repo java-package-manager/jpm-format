@@ -255,6 +255,32 @@ class IntelliJRulesTest {
     }
 
     @Test
+    void oneBlankLineBeforeJavadocTags() {
+        intellij().assertFormats("""
+                class A {
+                    /**
+                     * Text.
+                     *
+                     *
+                     * @since 1
+                     */
+                    void f() {
+                    }
+                }
+                """, """
+                class A {
+                    /**
+                     * Text.
+                     *
+                     * @since 1
+                     */
+                    void f() {
+                    }
+                }
+                """);
+    }
+
+    @Test
     void blankLinesAreKeptUpToTwo() {
         intellij().assertFormats("""
                 class A {

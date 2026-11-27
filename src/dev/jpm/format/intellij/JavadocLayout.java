@@ -193,6 +193,10 @@ public final class JavadocLayout implements IntelliJRule {
             lines.add(firstTag, "");
             firstTag++;
         }
+        while (tagged && firstTag >= 2 && lines.get(firstTag - 1).isBlank() && lines.get(firstTag - 2).isBlank()) {
+            lines.remove(firstTag - 1);
+            firstTag--;
+        }
         references(lines);
         join(lines, firstTag);
         tagBlankLines(lines, firstTag);

@@ -85,7 +85,7 @@ IntelliJ's default Javadoc formatting:
 - "Align parameter descriptions" and "Align thrown exception descriptions": the descriptions of the `@param`
   tags start in one column, after the longest name, and so do those of the `@throws` and `@exception` tags; their
   continuation lines start under the description
-- "Blank lines: after description": a blank line between the description and the first block tag, and none
+- "Blank lines: after description": one blank line between the description and the first block tag, and none
   between block tags ("after parameter descriptions" and "after return tag", off); one space after `@return`
 - "Do not wrap one line comments", off: `/** Text. */` becomes three lines
 - "Indent continuation lines", off: continuation lines of the other block tags start under the tag
