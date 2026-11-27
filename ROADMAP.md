@@ -21,7 +21,7 @@ Parity is measured against IntelliJ's own formatter on real projects (`checks/Pa
 The goal: every file type that is common in a Java project is formatted by `jpm format` out of the box, chosen
 by its extension, with no `"files"` entry needed; `"files"` still overrides the defaults. Out of the box today:
 `.properties`, JSON, XML, YAML and TOML (jpm-format's own formatters); listed by hand in `"files"`, the Spotless steps that run
-on a JVM: Kotlin, Scala, JSON, YAML, SQL, Markdown, Gherkin, Groovy's semicolons and plain text.
+on a JVM: Kotlin, Scala, JSON, YAML, SQL, Markdown, Gherkin, Groovy, `pom.xml` sorting and plain text.
 
 - [ ] **Native formatters, downloaded by jpm**: a binary per platform, pinned by version and SHA-256, with no npm
       or Node needed. Candidates:
@@ -42,8 +42,8 @@ on a JVM: Kotlin, Scala, JSON, YAML, SQL, Markdown, Gherkin, Groovy's semicolons
   | `.properties` | Spring, i18n bundles, `gradle.properties` | done (jpm-format's own) |
   | YAML | Spring, CI, Kubernetes, OpenAPI | done (jpm-format's own; flow collections as written) |
   | JSON, JSONC | config, test data, `project.jsonc` | done (jpm-format's own, line breaks kept) |
-  | Markdown | `README.md`, docs | Flexmark (Spotless, JVM), oxfmt or dprint |
-  | Groovy, Gradle | `build.gradle`, Spock tests | greclipse (Spotless, JVM) |
+  | Markdown | `README.md`, docs | `flexmark` in `"files"` (today), oxfmt or dprint |
+  | Groovy, Gradle | `build.gradle`, Spock tests | `greclipse` in `"files"` (today) |
   | Kotlin, `.kts` | Kotlin code, `build.gradle.kts` | `ktfmt` (today) |
   | TOML | `libs.versions.toml` | done (jpm-format's own) |
   | SQL | Flyway and Liquibase migrations | `dbeaverSql` (today) |
@@ -52,7 +52,7 @@ on a JVM: Kotlin, Scala, JSON, YAML, SQL, Markdown, Gherkin, Groovy's semicolons
   | Dockerfile | containers | dprint |
   | Protobuf, gRPC | `.proto` | buf or clang-format |
   | GraphQL | schemas | Biome |
-  | Gherkin | Cucumber `.feature` | Spotless `gherkinUtils` |
+  | Gherkin | Cucumber `.feature` | `gherkinUtils` in `"files"` (today) |
 - [ ] **Prettier and ESLint** with their plugins, for projects that already use them; these need npm.
 
 ## Lint

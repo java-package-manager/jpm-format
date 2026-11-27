@@ -70,6 +70,7 @@ final class SpotlessSteps {
             Map.entry("dbeaverSql", Set.of("config")),
             Map.entry("flexmark", Set.of("emulationProfile", "pegdownExtensions", "extensions", "formatterOptions")),
             Map.entry("gherkinUtils", Set.of("indent")),
+            Map.entry("greclipse", Set.of("config")),
             Map.entry("sortPom", Set.of("encoding", "lineSeparator", "expandEmptyElements", "spaceBeforeCloseEmptyElement",
                     "keepBlankLines", "endWithNewline", "nrOfIndentSpace", "indentBlankLines", "indentSchemaLocation",
                     "indentAttribute", "predefinedSortOrder", "sortOrderFile", "sortDependencies", "sortDependencyManagement",
@@ -319,7 +320,7 @@ final class SpotlessSteps {
             default -> {
             }
         }
-        ClassLoader loader = ExternalFormatter.spotless(root);
+        ClassLoader loader = s.name().equals("greclipse") ? ExternalFormatter.spotlessExtra(root) : ExternalFormatter.spotless(root);
         Object provisioner = ExternalFormatter.provisioner(loader, root);
         Class<?> prov;
         try {
@@ -373,6 +374,16 @@ final class SpotlessSteps {
                     Object config = c.getConstructor(int.class).newInstance(number(s, "indent", (int) c.getMethod("defaultIndentSpaces").invoke(null)));
                     String v = s.version() != null ? s.version() : (String) gherkin.getMethod("defaultVersion").invoke(null);
                     yield gherkin.getMethod("create", c, String.class, prov).invoke(null, config, v, provisioner);
+                }
+                case "greclipse" -> {
+                    Class<?> p2 = loader.loadClass("com.diffplug.spotless.extra.P2Provisioner");
+                    Object builder = loader.loadClass("com.diffplug.spotless.extra.groovy.GrEclipseFormatterStep")
+                            .getMethod("createBuilder", prov, p2).invoke(null, provisioner, p2.getMethod("createDefault").invoke(null));
+                    Class<?> b = loader.loadClass("com.diffplug.spotless.extra.EquoBasedStepBuilder");
+                    if (s.version() != null) b.getMethod("setVersion", String.class).invoke(builder, s.version());
+                    File config = file(root, s, "config");
+                    if (config != null) b.getMethod("setPreferences", Iterable.class).invoke(builder, List.of(config));
+                    yield b.getMethod("build").invoke(builder);
                 }
                 case "sortPom" -> {
                     Class<?> c = loader.loadClass("com.diffplug.spotless.pom.SortPomCfg");

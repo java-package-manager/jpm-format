@@ -332,6 +332,16 @@ public final class ExternalFormatter {
                 "org.slf4j:slf4j-api", "^2.0"))));
     }
 
+    private static final Map<Path, ClassLoader> SPOTLESS_EXTRA_LOADERS = new ConcurrentHashMap<>();
+
+    /**
+     * The same with {@code spotless-lib-extra}, whose Eclipse-based steps download Eclipse: only those steps use it.
+     */
+    static ClassLoader spotlessExtra(Path root) {
+        return SPOTLESS_EXTRA_LOADERS.computeIfAbsent(root, r -> loader(resolve(r, Map.of("com.diffplug.spotless:spotless-lib-extra", SPOTLESS,
+                "org.slf4j:slf4j-api", "^2.0"))));
+    }
+
     private static void call(Object target, String name, Class<?> type, Object arg) throws ReflectiveOperationException {
         Method m = target.getClass().getMethod(name, type);
         m.setAccessible(true);

@@ -331,6 +331,7 @@ would change.
 | `sortPom[@<version>]` | `pom.xml`, with SortPom | SortPom's options by their names in Spotless (`nrOfIndentSpace`, `expandEmptyElements`, `predefinedSortOrder`, `sortOrderFile`, `sortDependencies`, `sortPlugins`, `sortProperties`, ...) |
 | `trimTrailingWhitespace`, `endWithNewline` | any text | |
 | `indent` | any text | `type`: `"space"` (default) or `"tab"`, `width` (default 4) |
+| `greclipse[@<version>]` | Groovy and Gradle, with Groovy-Eclipse | `config`: an Eclipse formatter preferences file |
 | `removeSemicolons` | Groovy | |
 | `properties`, `json`, `xml` | jpm-format's own, on by default ([Other file types](#other-file-types)) | `maxBlankLines`; `json`, `xml`: `indent` |
 
