@@ -119,6 +119,30 @@ class IntelliJRulesTest {
     }
 
     @Test
+    void anAnnotationInPreIsNotABlockTag() {
+        String javadoc = """
+                /**
+                 * Use it like this:
+                 * <pre>{@code
+                 * @Override
+                 * public void onEnable() {
+                 *     context.ready();
+                 * }
+                 *
+                 * @Override
+                 * public void onDisable() {
+                 * }
+                 * }</pre>
+                 *
+                 * @since 1
+                 */
+                class A {
+                }
+                """;
+        intellij().assertFormats(javadoc, javadoc);
+    }
+
+    @Test
     void blankLinesAreKeptUpToTwo() {
         intellij().assertFormats("""
                 class A {

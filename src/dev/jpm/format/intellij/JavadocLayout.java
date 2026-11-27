@@ -111,12 +111,14 @@ public final class JavadocLayout implements IntelliJRule {
             String rest = l.substring(1);
             body.add(rest.startsWith(" ") ? rest.substring(1) : rest);
         }
-        int firstTag = -1;
+        int firstTag = -1, pre = 0;
         for (int k = 0; k < body.size(); k++) {
-            if (body.get(k).startsWith("@")) {
+            String l = body.get(k);
+            if (pre == 0 && l.startsWith("@")) {
                 firstTag = k;
                 break;
             }
+            pre = Math.max(0, pre + preDepth(l));
         }
         boolean tagged = firstTag >= 0;
         if (!tagged) firstTag = body.size();
@@ -297,18 +299,22 @@ public final class JavadocLayout implements IntelliJRule {
             } else if (l.contains("{@snippet")) {
                 snippet = braces(l.substring(l.indexOf("{@snippet")));
             }
-            Matcher m = PRE_START.matcher(l);
-            int open = -1;
-            while (m.find()) open = m.start();
-            int close = l.lastIndexOf("</pre>");
-            if (open >= 0 && close < open) pre++;
-            else if (close >= 0 && open < 0 && pre > 0) pre--;
+            pre = Math.max(0, pre + preDepth(l));
         }
         if (keepFrom < 0 || min <= 0 || min == Integer.MAX_VALUE) return;
         for (int k = Math.max(keepFrom, tag ? from + 1 : from); k < to; k++) {
             String l = lines.get(k);
             if (!l.isBlank() && l.length() > min) lines.set(k, l.substring(min));
         }
+    }
+
+    private static int preDepth(String l) {
+        Matcher m = PRE_START.matcher(l);
+        int open = -1;
+        while (m.find()) open = m.start();
+        int close = l.lastIndexOf("</pre>");
+        if (open >= 0 && close < open) return 1;
+        return close >= 0 && open < 0 ? -1 : 0;
     }
 
     private static String tagText(String tagLine) {
