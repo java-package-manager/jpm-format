@@ -141,8 +141,9 @@ kept after the header. Only runs when a header is configured.
 ### UnusedImport
 
 Removes unused imports, redundant ones (`java.lang.*` and the file's own package) and duplicates. Names used
-only in Javadoc (`{@link}`, `{@linkplain}`, `{@value}`, `@see`, `@throws`) count as used. Wildcard imports are
-removed only when redundant or duplicated. Off with `imports.removeUnused: false`.
+only in Javadoc (`{@link}`, `{@linkplain}`, `{@value}`, `@see`, `@throws`, including the parameter types of
+`{@link #m(Map)}`) or in Markdown doc comments (`/// [File]`) count as used. Wildcard imports are removed only
+when redundant or duplicated. Off with `imports.removeUnused: false`.
 
 ### UnnecessaryModifier
 

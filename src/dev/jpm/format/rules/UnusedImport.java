@@ -17,12 +17,19 @@ import java.util.regex.Pattern;
 
 /**
  * Removes unused, redundant ({@code java.lang} and same-package) and duplicate imports. A name used only in
- * Javadoc ({@code {@link Foo}}, {@code @see}, {@code @throws}) counts as used. Wildcard imports are only
- * removed when redundant or duplicate, since without types it cannot be known what they bring in.
+ * Javadoc ({@code {@link Foo}}, {@code @see}, {@code @throws}, the parameter types of {@code {@link #m(Map)}}) or
+ * in a Markdown doc comment ({@code /// [Foo]}) counts as used. Wildcard imports are only removed when redundant
+ * or duplicate, since without types it cannot be known what they bring in.
  */
 public final class UnusedImport implements Formatter {
+    private static final String REFERENCE = "([\\w$.]*(?:#[\\w$]*(?:\\([^)]*\\))?)?)";
+
     private static final Pattern JAVADOC_REF = Pattern.compile(
-            "\\{@(?:link|linkplain|value)\\s+([A-Za-z_$][\\w$]*)|@(?:see|throws|exception)\\s+([A-Za-z_$][\\w$]*)");
+            "\\{@(?:link|linkplain|value)\\s+" + REFERENCE + "|@(?:see|throws|exception)\\s+" + REFERENCE);
+
+    private static final Pattern MARKDOWN_REF = Pattern.compile("\\[" + REFERENCE + "]");
+
+    private static final Pattern TYPE = Pattern.compile("(?:^|[(,])\\s*([A-Za-z_$][\\w$]*)");
 
     record Problem(ImportTree imp, String message) {
     }
@@ -71,9 +78,13 @@ public final class UnusedImport implements Formatter {
         String pkg = cu.getPackageName() == null ? "" : cu.getPackageName().toString();
         Set<String> used = Trees2.names(cu);
         for (Comments.Comment c : ((FileContext) ctx).parsed().comments()) {
-            if (!c.text().startsWith("/**")) continue;
+            boolean markdown = c.text().startsWith("///");
+            if (!markdown && !c.text().startsWith("/**")) continue;
             Matcher m = JAVADOC_REF.matcher(c.text());
-            while (m.find()) used.add(m.group(1) != null ? m.group(1) : m.group(2));
+            while (m.find()) referenced(m.group(1) != null ? m.group(1) : m.group(2), used);
+            if (!markdown) continue;
+            m = MARKDOWN_REF.matcher(c.text());
+            while (m.find()) referenced(m.group(1), used);
         }
         Set<String> seen = new HashSet<>();
         for (ImportTree imp : cu.getImports()) {
@@ -96,5 +107,18 @@ public final class UnusedImport implements Formatter {
             }
         }
         return out;
+    }
+
+    /**
+     * Adds the simple names a reference ({@code Foo}, {@code Foo.Bar}, {@code Foo#m(Bar, Baz...)}) needs imported:
+     * the first name of its type and of each parameter type.
+     */
+    private static void referenced(String reference, Set<String> used) {
+        int hash = reference.indexOf('#');
+        String type = hash < 0 ? reference : reference.substring(0, hash);
+        String params = hash < 0 ? "" : reference.substring(hash + 1);
+        int paren = params.indexOf('(');
+        Matcher m = TYPE.matcher(type + (paren < 0 ? "" : params.substring(paren)));
+        while (m.find()) used.add(m.group(1));
     }
 }

@@ -187,6 +187,27 @@ class RulesTest {
     }
 
     @Test
+    void importsReferredToInJavadocAreKept() {
+        String in = """
+                import java.io.File;
+                import java.nio.file.Path;
+                import java.util.Collection;
+                import java.util.List;
+                import java.util.Map;
+                import java.util.Set;
+
+                /**
+                 * {@link #m(Map, int[])} and {@link String#join(CharSequence, Set...)}.
+                 */
+                class A {
+                    /// Reads a [File], like [java.nio.file.Files#readString(Path)] and [the list][Collection].
+                    void m() {}
+                }
+                """;
+        RuleTester.of(new UnusedImport()).assertFormats(in, in.replace("import java.util.List;\n", ""));
+    }
+
+    @Test
     void unnecessaryModifiersAreRemoved() {
         RuleTester.of(new UnnecessaryModifier()).assertFormats("""
                 interface I {
