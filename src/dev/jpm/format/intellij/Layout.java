@@ -232,7 +232,7 @@ public final class Layout {
             lineIndent[i] = current;
             columns[i] = column;
             tokenLine[i] = line;
-            if (!t.comment() && f.kind == PAREN && f.align == PENDING) {
+            if (f.kind == PAREN && f.align == PENDING) {
                 f.align = lines[i] > 0 || t.op(";") ? -1 : column;
             }
             if (outside) {

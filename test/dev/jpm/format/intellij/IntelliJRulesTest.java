@@ -367,6 +367,27 @@ class IntelliJRulesTest {
     }
 
     @Test
+    void parametersAlignAfterACommentOnTheLineOfTheParenthesis() {
+        intellij().assertFormats("""
+                class A {
+                    void register( // why
+                        int a,
+                        int b
+                    ) {
+                    }
+                }
+                """, """
+                class A {
+                    void register( // why
+                                   int a,
+                                   int b
+                    ) {
+                    }
+                }
+                """);
+    }
+
+    @Test
     void blankLinesAreKeptUpToTwo() {
         intellij().assertFormats("""
                 class A {
