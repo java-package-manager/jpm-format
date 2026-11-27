@@ -1,0 +1,50 @@
+class Expressions {
+    void bodies(boolean b, Object context) {
+        if (b) ((Runnable) context).run();
+        while (b) (context).hashCode();
+    }
+
+    String text() {
+        return """
+                a
+                
+                b
+                """;
+    }
+
+    Object walk() {
+        return STACK_WALKER.walk(frames -> frames
+                        .map(StackWalker.StackFrame::getDeclaringClass)
+                        .filter(type -> type.getClassLoader() != null)
+                        .findFirst())
+                .orElse(Object.class)
+                .getClassLoader();
+    }
+
+    Object scheduler() {
+        return builder()
+                .projectName(plugin.getName())
+                .scheduler((task, initialDelay, period, unit) -> server.getScheduler().schedule(
+                        plugin, task, toTicks(initialDelay, unit), true
+                )::cancel)
+                .scheduler((task, initialDelay, period, unit) -> Sponge.asyncScheduler().submit(Task.builder()
+                        .delay(initialDelay, unit)
+                        .execute(task)
+                        .build())::cancel)
+                .build();
+    }
+
+    void anonymous() {
+        add(new List<Empty>(minecraft, this.width, height - 2,
+                HEIGHT, 1) {
+        });
+        add(a,
+                new List<Empty>(b) {
+                    int f;
+                });
+        Object o = new List<Empty>(a,
+                b) {
+            int f;
+        };
+    }
+}

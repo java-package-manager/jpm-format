@@ -15,6 +15,7 @@ import com.sun.source.tree.EmptyStatementTree;
 import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.ForLoopTree;
 import com.sun.source.tree.IfTree;
+import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.LabeledStatementTree;
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.MethodTree;
@@ -39,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
@@ -60,6 +62,8 @@ final class Syntax {
 
     static final byte STATEMENT = 1, CASE = 2, CASE_STATEMENT = 3, BODY = 4, ANNOTATED = 5, ENUM_CONSTANT = 6;
 
+    private static final Set<String> TYPE_USE_NULLNESS = Set.of("org.jspecify.annotations.Nullable",
+            "org.jspecify.annotations.NonNull", "org.jetbrains.annotations.Nullable", "org.jetbrains.annotations.NotNull");
     private static final Set<String> MODIFIERS = Set.of("public", "protected", "private", "static", "abstract",
             "final", "native", "synchronized", "transient", "volatile", "strictfp", "default", "sealed", "non");
 
@@ -187,6 +191,7 @@ final class Syntax {
         private final Context ctx;
         private final String text;
         private final List<Tokens.Token> tokens;
+        private final Set<String> nullnessNames = new HashSet<>();
         private final int[] starts;
         final byte[] role;
         final byte[] brace;
@@ -230,6 +235,15 @@ final class Syntax {
         }
 
         void scan(CompilationUnitTree cu) {
+            for (ImportTree i : cu.getImports()) {
+                if (i.isStatic()) continue;
+                String name = i.getQualifiedIdentifier().toString();
+                for (String known : TYPE_USE_NULLNESS) {
+                    String pkg = known.substring(0, known.lastIndexOf('.'));
+                    if (name.equals(known) || name.equals(pkg + ".*"))
+                        nullnessNames.add(known.substring(pkg.length() + 1));
+                }
+            }
             Tree previous = null;
             List<Tree> top = new ArrayList<>();
             if (cu.getPackage() != null) {
@@ -242,6 +256,13 @@ final class Syntax {
             top.addAll(cu.getImports());
             top.addAll(cu.getTypeDecls());
             if (cu.getModule() != null && !top.contains(cu.getModule())) top.add(cu.getModule());
+            if (cu.getModule() != null) {
+                for (AnnotationTree a : cu.getModule().getAnnotations()) {
+                    int next = code(e(a));
+                    if (next < tokens.size() && start[at(next)] == 0) start[at(next)] = ANNOTATED;
+                    if (next < tokens.size()) breakBefore[at(next)] = true;
+                }
+            }
             for (Tree t : top) {
                 statement(t, true);
                 boolean imports = previous != null && previous.getKind() == Tree.Kind.IMPORT
@@ -364,8 +385,24 @@ final class Syntax {
                 if (next >= tokens.size()) continue;
                 int at = at(next);
                 if (start[at] == 0) start[at] = ANNOTATED;
-                if (wrap && leading) breakBefore[at] = true;
+                if (wrap && leading && !(a == mods.getAnnotations().getLast() && typeUseNullness(a, next)
+                        && !lineBetween(e(a), at))) {
+                    breakBefore[at] = true;
+                }
             }
+        }
+
+        /**
+         * Whether IntelliJ keeps an annotation on the line of the type after it: one of the type-use nullness
+         * annotations it knows, by its qualified name or by a simple name the imports give one of them, right before
+         * the type.
+         */
+        private boolean typeUseNullness(AnnotationTree a, int next) {
+            Tokens.Token t = tokens.get(next);
+            if (t.kind() != Tokens.Kind.WORD || MODIFIERS.contains(t.text())
+                    || Set.of("class", "interface", "enum", "record").contains(t.text())) return false;
+            String name = a.getAnnotationType().toString();
+            return TYPE_USE_NULLNESS.contains(name) || nullnessNames.contains(name.substring(name.lastIndexOf('.') + 1));
         }
 
         private void brace(int i, byte kind) {

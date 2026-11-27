@@ -37,7 +37,8 @@ automatically.
 IntelliJ IDEA's default Java code style, from jpm-format's own layout engine (`src/dev/jpm/format/intellij/`,
 [ADR 0006](docs/adr/0006-intellij-style-without-palantir.md)). It keeps your line breaks as IntelliJ does and
 changes only whitespace: a line is joined or broken only where IntelliJ always does it (one statement per line,
-block contents on their own lines, annotations of declarations on their own lines, `{` at the end of the line,
+block contents on their own lines, annotations of declarations on their own lines (not a known type-use
+`@Nullable` before the type), `{` at the end of the line,
 `} else`, `} catch`, `} finally`), and a statement body that would end past `lineWidth` moves to the next line.
 Blocks are 4 in from the line they start on; a line that continues something is one continuation indent (8) in
 from the nearest enclosing statement, argument, chain or operand that starts a line; method parameters, `for`

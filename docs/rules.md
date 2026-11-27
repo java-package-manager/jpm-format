@@ -14,10 +14,13 @@ jpm-format's own layout engine (ADR 0006), which keeps the input's line breaks, 
 reformatting: line breaks"): no line is joined, except that `{` moves up to the line it opens from, `else`,
 `catch`, `finally` and the `while` of a `do` move up after a `}`, and a switch rule's body moves up after its `->`
 when it fits; statements get a line each, block contents and the `}` lines of their own, and the annotations of
-classes, methods and fields go on their own lines. The body of an `if`, a loop or a switch rule that would end
+classes, methods, fields and modules go on their own lines, except a type-use nullness annotation IntelliJ knows
+(JSpecify's `@Nullable` and `@NonNull`, JetBrains' `@Nullable` and `@NotNull`) written right before the type on its
+line (`@Nullable String name()`). The body of an `if`, a loop or a switch rule that would end
 past `java.lineWidth` moves to the next line. A wrapped line is indented one continuation indent from the
 nearest enclosing statement, argument, chain or operand that starts a line, not from every expression it is in
-(`foo(bar(a,` then `b))` puts `b` one continuation in), a block from the line it starts on, and a closing `)` on
+(`foo(bar(a,` then `b))` puts `b` one continuation in), a block from the line it starts on, an anonymous class's
+body from the line its `new` is on, and a closing `)` on
 its own line under the line with its `(`. Method
 parameters, the parts of a `for` header and try resources line up ("Align when multiline"), array initializers are
 one continuation in and written `new int[]{1}`, and an `if` on its own line after an `else` and a comment is that

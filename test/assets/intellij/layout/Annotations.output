@@ -1,0 +1,55 @@
+import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
+
+import java.util.concurrent.Callable;
+
+class Annotations {
+    @Nullable ClassLoader loader() {
+        return null;
+    }
+
+    @Deprecated
+    @Nullable String afterAnother() {
+        return null;
+    }
+
+    @Nullable
+    String alreadySplit() {
+        return null;
+    }
+
+    @Nullable
+    public String beforeModifier() {
+        return null;
+    }
+
+    @Nullable
+    @Deprecated
+    String beforeAnother() {
+        return null;
+    }
+
+    @NotNull String jetbrains() {
+        return null;
+    }
+
+    @org.jspecify.annotations.NonNull String qualified() {
+        return null;
+    }
+
+    @javax.annotation.Nullable String notKnown() {
+        return null;
+    }
+
+    @Deprecated
+    String deprecated() {
+        return null;
+    }
+
+    @Nullable String field;
+
+    static void arrays(Callable<String @Nullable []> c, String @Nullable [] a, int @A(1) [] b, int[][] d) {
+        int[] x = new int[1];
+        int y = x[0];
+    }
+}

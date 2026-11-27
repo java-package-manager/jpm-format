@@ -1,0 +1,6 @@
+import org.jspecify.annotations.NullMarked;
+
+@NullMarked
+module a.b {
+    exports a.b;
+}

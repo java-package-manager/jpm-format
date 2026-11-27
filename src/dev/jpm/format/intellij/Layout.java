@@ -14,11 +14,13 @@ import java.util.Set;
  * The layout engine of the IntelliJ style (ADR 0006): IntelliJ IDEA's default Java code style, rewriting only the
  * whitespace between tokens. Line breaks stay where the code has them, except where IntelliJ always breaks or joins
  * lines: one statement or member per line, block contents on lines of their own, declaration annotations on lines
- * of their own, {@code {} at the end of the line it opens from, and {@code } else}, {@code } catch},
+ * of their own (not a type-use nullness annotation IntelliJ knows, right before the type on its line),
+ * {@code {} at the end of the line it opens from, and {@code } else}, {@code } catch},
  * {@code } finally} and {@code } while}.
  *
  * <p>Indents follow IntelliJ's model: a block's contents are one indent in from the line its statement starts on,
- * a lambda's, anonymous class's or array initializer's from the line the brace is on. A line that continues
+ * a lambda's or array initializer's from the line the brace is on, an anonymous class's from the line its
+ * {@code new} is on. A line that continues
  * something is one continuation indent in from the nearest enclosing expression or declaration that starts a line
  * (a statement, an argument, a chain or an operand of its own); arguments are one continuation indent in from the
  * call, or from the line its {@code .} starts. Method parameters, {@code for} headers, try resources and record
@@ -287,6 +289,7 @@ public final class Layout {
                     inside = false;
                     if (binary >= 0) return lineIndent[binary];
                     if (f.opener >= 0 && tokenLine[call] != tokenLine[f.opener]) return lineIndent[call];
+                    if (f.kind == PAREN && f.opener >= 0) return f.base;
                 }
                 if (st == 0 || lines[st] > 0) return lineIndent[binary >= 0 ? binary : st];
                 if (syn.nodeBinary[n]) binary = st;
@@ -343,10 +346,29 @@ public final class Layout {
             boolean expression = b == Syntax.LAMBDA || b == Syntax.ANONYMOUS || b == Syntax.SWITCH_EXPRESSION
                     || b == Syntax.ARRAY || f.kind == PAREN || f.kind == BRACKET || f.kind == ARRAY;
             n.base = expression ? current : f.itemIndent;
+            if (b == Syntax.ANONYMOUS) {
+                int k = newOf(i);
+                if (k >= 0) n.base = lineIndent[k];
+            }
             n.itemIndent = n.base + indent;
             n.expectItem = true;
             n.opener = i;
             frames.push(n);
+        }
+
+        private int newOf(int brace) {
+            int k = before(brace);
+            if (k >= 0 && toks.get(k).op(")") && syn.match[k] >= 0) k = before(syn.match[k]);
+            int depth = 0;
+            for (; k >= 0; k = before(k)) {
+                Tokens.Token t = toks.get(k);
+                if (t.op(">")) depth++;
+                else if (t.op("<")) depth--;
+                else if (t.op(">>")) depth += 2;
+                else if (depth == 0 && t.is("new")) return k;
+                else if (depth == 0 && t.kind() != Tokens.Kind.WORD && !t.op(".") && !t.op("@")) return -1;
+            }
+            return -1;
         }
 
         private void close(int a, int b, int c) {
@@ -409,7 +431,7 @@ public final class Layout {
                     }
                     int a = lineStartingAncestor(i, f.opener);
                     if (a >= 0) yield lineIndent[a] + continuation;
-                    yield (f.align >= 0 ? f.align : f.base) + continuation;
+                    yield f.align >= 0 ? f.align + continuation : f.base + continuation + (f.shiftItems ? continuation : 0);
                 }
             };
         }
@@ -488,7 +510,11 @@ public final class Layout {
             for (int k = 1; k < parts.length; k++) {
                 String p = parts[k];
                 b.append('\n');
-                if (p.isBlank() && k < parts.length - 1) continue;
+                if (p.isBlank() && k < parts.length - 1) {
+                    if (!p.isEmpty())
+                        b.append(min < 0 || p.indexOf('\t') >= 0 ? p : " ".repeat(Math.max(0, p.length() + delta)));
+                    continue;
+                }
                 if (min < 0) {
                     b.append(p);
                 } else {
@@ -532,7 +558,7 @@ public final class Layout {
             if (bop && y.equals("...")) return 0;
             if (aop && x.equals("...")) return 1;
             if (aop && x.equals("@")) return 0;
-            if (bop && y.equals("[")) return 0;
+            if (bop && y.equals("[")) return endsAnnotation(ia) ? 1 : 0;
             if (rb == Syntax.POSTFIX) return 0;
             if (rb == Syntax.CASE_COLON || rb == Syntax.LABEL_COLON) return 0;
             if (bop && y.equals("{")) {
@@ -556,6 +582,7 @@ public final class Layout {
                 if (rb == Syntax.PREFIX && merges(x, y)) return 1;
                 return 0;
             }
+            if (bop && y.equals("(") && syn.start[ib] == Syntax.BODY) return 1;
             if (bop && y.equals("(")) {
                 if (a.kind() == Tokens.Kind.WORD) {
                     if (SPACED_KEYWORDS.contains(x)) return 1;
@@ -585,6 +612,16 @@ public final class Layout {
             if (!aop && !bop) return 1;
             if (bop && y.equals("@")) return 1;
             return Math.min(1, b.start() - a.end());
+        }
+
+        private boolean endsAnnotation(int i) {
+            if (toks.get(i).op(")") && syn.match[i] > 0) i = syn.match[i] - 1;
+            while (i >= 0 && toks.get(i).kind() == Tokens.Kind.WORD) {
+                if (i > 0 && toks.get(i - 1).op("@")) return true;
+                if (i < 2 || !toks.get(i - 1).op(".")) return false;
+                i -= 2;
+            }
+            return false;
         }
 
         private byte folded(int i, byte role) {
