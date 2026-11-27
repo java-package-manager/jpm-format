@@ -1,5 +1,35 @@
 # jpm-format
 
+## 0.7.0
+
+### Minor Changes
+
+- New `flexmark` (Markdown) and `gherkinUtils` (Cucumber `.feature`, option `indent`) steps for `"files"`
+- `flexmark` takes `emulationProfile`, `extensions`, `pegdownExtensions` and `formatterOptions`; a failing step reports the cause instead of `InvocationTargetException`
+- Files that `.gitignore` ignores (read by git's rules, from the repository's root down, and `.git/info/exclude`) are not formatted or checked, so the `build/` folders of the modules of a multi-module build are skipped
+- New `greclipse` step for `"files"`: Groovy and Gradle files with Groovy-Eclipse, `config` for Eclipse preferences
+- New `sortPom` step for `"files"`: sorts `pom.xml` with SortPom, with SortPom's options by their names in Spotless
+- Markdown (`flexmark`) and Cucumber `.feature` files (`gherkinUtils`) are formatted by default; Flexmark keeps YAML front matter and the indentation of code blocks, ends a file with one line break, and runs until its output no longer changes
+
+### Patch Changes
+
+- IntelliJ style: empty lambda and anonymous class bodies go on two lines, as other empty bodies
+- Javadoc block tags are put in IntelliJ's order (`@param`, `@return`, `@throws`, other tags, `@see`, `@since`, `@deprecated`), and `@exception` becomes `@throws`
+- IntelliJ style: the `?` and `:` lines of a nested conditional expression are no longer aligned with its condition; they are one continuation in, as in IntelliJ
+- IntelliJ style: a space after an annotation before type parameters and varargs is kept; Javadoc lists in block tags and a wrapped `{@link}` parameter list are laid out as in IntelliJ, and an empty block tag takes the next line up
+- Javadoc: blank lines between the description and the first block tag become one, as in IntelliJ
+- IntelliJ style: a known type-use `@Nullable` stays before the type, `module` after an annotation is not indented, `if (b) ((T) x).m()` keeps its space, `String @Nullable []` keeps its space, whitespace-only text block lines keep their whitespace, and lambda bodies in wrapped chains and anonymous class bodies are indented as in IntelliJ
+- Javadoc lines lose their indentation as in IntelliJ: not inside `<pre>`, and inside lists and tables they keep it less the smallest one
+- IntelliJ style: the blank lines between imports follow the import layout (`ImportBlankLines`), a first method's Javadoc after a comment gets a blank line before it, and blank lines at the end of a file are kept up to `maxBlankLines`
+- IntelliJ style: the spaces after a block comment on a line stay as written, unless an operator IntelliJ always spaces follows
+- IntelliJ style: no blank line is added between members when one is already between them, among the comments before the next one (not when that one has a Javadoc)
+- IntelliJ style: `non-sealed` no longer becomes `non - sealed`, which did not parse and left the file unformatted
+- A line starting with `@` inside a Javadoc `<pre>` (such as `@Override` in an example) is no longer taken for a block tag
+- IntelliJ style: parameters line up after a comment on the line of their `(`, as in IntelliJ
+- Javadoc: only that of declarations IntelliJ formats is formatted (not that of local or anonymous classes' members, initializers or local variables), an indented `@` line is a block tag, `<pre class="...">` counts as `<pre>`, and a line without a space after its `*` gets one
+- IntelliJ style: when a call's arguments wrap, the arguments on the line of its `(` are indented as IntelliJ does: their continuation lines and text blocks one continuation further when a later argument starts a line, the calls and lambda bodies they open also when the `)` is on a line of its own
+- A line break between the modifiers, keyword or type and name of a class, method or variable is joined (`record` and its name on two lines), and the lines of such a header are no longer continuation lines
+
 ## 0.6.0
 
 ### Minor Changes
