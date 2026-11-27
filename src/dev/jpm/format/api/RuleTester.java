@@ -83,7 +83,8 @@ public final class RuleTester {
                 ? new Project(root, List.of(new Project.Module(root, List.of(), List.of())), null)
                 : Project.untyped(root, "RuleTester without withTypes()");
         Map<String, Object> cfg = Json.object(config, "RuleTester config");
-        return new Engine(project, Config.of(root, cfg, registry.rules), registry, true, w -> {});
+        return new Engine(project, Config.of(root, cfg, registry.rules), registry, true, w -> {
+        });
     }
 
     private String pathFor(String source) {

@@ -7,6 +7,7 @@ import com.sun.source.tree.DoWhileLoopTree;
 import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.ForLoopTree;
 import com.sun.source.tree.IfTree;
+import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.SynchronizedTree;
@@ -28,8 +29,9 @@ import java.util.List;
  * {@code void f() {}} and {@code if (x) {}} on one line.
  *
  * <p>Method and constructor bodies, named classes, initializer blocks and the blocks of {@code if}, {@code else},
- * loops, {@code try}, {@code catch}, {@code finally} and {@code synchronized}. Lambdas, anonymous classes,
- * {@code switch} cases and array initializers keep {@code {}}.
+ * loops, {@code try}, {@code catch}, {@code finally} and {@code synchronized}, and those of lambdas and anonymous
+ * classes, whose {@code }} goes under the line the lambda or the {@code new} starts on. {@code switch} cases and
+ * array initializers keep {@code {}}.
  */
 public final class EmptyBodies implements IntelliJRule {
     public static final String ID = "EmptyBodies";
@@ -76,8 +78,20 @@ public final class EmptyBodies implements IntelliJRule {
                 scan(n.getIdentifier(), v);
                 scan(n.getTypeArguments(), v);
                 scan(n.getArguments(), v);
-                if (n.getClassBody() != null) scan(n.getClassBody().getMembers(), v);
+                if (n.getClassBody() != null) {
+                    if (n.getClassBody().getMembers().stream().allMatch(m -> ctx.start(m) < 0)) {
+                        int end = ctx.end(n);
+                        if (end >= 2 && src.charAt(end - 1) == '}') braces.add(new int[]{end - 2, ctx.start(n)});
+                    }
+                    scan(n.getClassBody().getMembers(), v);
+                }
                 return null;
+            }
+
+            @Override
+            public Void visitLambdaExpression(LambdaExpressionTree l, Void v) {
+                block(l.getBody(), l);
+                return super.visitLambdaExpression(l, v);
             }
 
             @Override

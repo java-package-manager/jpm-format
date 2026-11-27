@@ -42,7 +42,8 @@ class EngineTest {
     }
 
     private Workspace open() {
-        return Workspace.open(dir, Project.untyped(dir, "test"), false, w -> {});
+        return Workspace.open(dir, Project.untyped(dir, "test"), false, w -> {
+        });
     }
 
     record Named(String id) implements Lint {
@@ -214,7 +215,8 @@ class EngineTest {
                 dir,
                 List.of(new Project.Module(dir, List.of(dir.resolve("src"), dir.resolve("test")), List.of())),
                 null);
-        Workspace ws = Workspace.open(dir, typed, false, w -> {});
+        Workspace ws = Workspace.open(dir, typed, false, w -> {
+        });
         PrintStream err = System.err;
         ByteArrayOutputStream captured = new ByteArrayOutputStream();
         try {

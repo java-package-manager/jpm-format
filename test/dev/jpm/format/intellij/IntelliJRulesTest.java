@@ -796,7 +796,7 @@ class IntelliJRulesTest {
     }
 
     @Test
-    void emptyBodiesGoOnTwoLinesExceptLambdasAndAnonymousClasses() {
+    void emptyBodiesGoOnTwoLinesExceptArrayInitializers() {
         intellij().assertFormats("""
                 class A {
                     A() {}
@@ -831,8 +831,10 @@ class IntelliJRulesTest {
                         }
                         synchronized (this) {
                         }
-                        Runnable r = () -> {};
-                        Object o = new Object() {};
+                        Runnable r = () -> {
+                        };
+                        Object o = new Object() {
+                        };
                         int[] none = {};
                     }
 
