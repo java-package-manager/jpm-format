@@ -14,3 +14,7 @@ Status: accepted
   it the first time: a file `jpm format` wrote must pass `jpm format --check`, so its output may not depend on
   whether the type's Javadoc was formatted already. This is 140 of the lines the parity check counts, in
   commons-lang3's `ObjectUtils`.
+- `JavadocLayout`: a block tag with nothing after its name and a list on the next line (`@return`, then `<ul>`)
+  takes the list up, and IntelliJ keeps the indentation of the lines after it; formatted again, it strips them,
+  as for a list on the tag's line. jpm-format gives the second result the first time, so its output passes
+  `--check`; 20 of the lines the parity check counts.

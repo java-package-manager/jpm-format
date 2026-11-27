@@ -44,6 +44,13 @@ class Annotations {
 
     @Nullable String field;
 
+    public @Nullable <V> V typeParameters() {
+        return null;
+    }
+
+    static void varargs(String @Nullable ... a) {
+    }
+
     static void arrays(Callable<String @Nullable []> c, String @Nullable [] a, int @A(1) [] b, int[][] d) {
         int[] x = new int[1];
         int y = x[0];

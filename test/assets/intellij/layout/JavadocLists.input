@@ -1,0 +1,60 @@
+class R {
+    /**
+     * Same line.
+     *
+     * @return <ul>
+     *     <li>one
+     *     <li>two
+     *     </ul>
+     */
+    int a() {
+        return 0;
+    }
+
+    /**
+     * Next line.
+     *
+     * @return
+     *  <ul>
+     *   <li>one
+     *   <li>two
+     *  </ul>
+     */
+    int b() {
+        return 0;
+    }
+
+    /**
+     * Text then list.
+     *
+     * @return the value
+     *     <ul>
+     *       <li>one
+     *     </ul>
+     */
+    int c() {
+        return 0;
+    }
+
+    /**
+     * Since.
+     *
+     * @since 1
+     *     <ul>
+     *       <li>one
+     *     </ul>
+     */
+    int d() {
+        return 0;
+    }
+
+    /**
+     * Description list.
+     *     <ul>
+     *       <li>one
+     *     </ul>
+     */
+    int e() {
+        return 0;
+    }
+}

@@ -1,0 +1,13 @@
+class L {
+    /**
+     * See {@link Player#kick(
+     *Component) kicking} and {@link Player#kick(Component,
+     * String) more}.
+     * Also {@link Player#kick(
+     *Component) unspaced}.
+     * Plain {@link
+     * Player} link.
+     */
+    void f() {
+    }
+}

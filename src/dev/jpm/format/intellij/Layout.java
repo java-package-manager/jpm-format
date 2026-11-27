@@ -561,7 +561,7 @@ public final class Layout {
             if (bop && (y.equals(")") || y.equals("]"))) return 0;
             if (aop && (x.equals("(") || x.equals("["))) return 0;
             if (aop && (x.equals(".") || x.equals("::")) || bop && (y.equals(".") || y.equals("::"))) return 0;
-            if (bop && y.equals("...")) return 0;
+            if (bop && y.equals("...")) return endsAnnotation(ia) ? 1 : 0;
             if (aop && x.equals("...")) return 1;
             if (aop && x.equals("@")) return 0;
             if (bop && y.equals("[")) return endsAnnotation(ia) ? 1 : 0;
@@ -599,6 +599,7 @@ public final class Layout {
                 if (aop && (x.equals(")") || x.equals(">") && ra != Syntax.BIN || x.equals("]"))) return 0;
             }
             if (ra == Syntax.TYPE_ARGS_CLOSE) return 0;
+            if (bop && y.equals("<") && rb != Syntax.BIN && endsAnnotation(ia)) return 1;
             if (bop && y.equals("<") && rb != Syntax.BIN) {
                 return a.kind() == Tokens.Kind.WORD && !KEYWORDS.contains(x) ? 0 : 1;
             }

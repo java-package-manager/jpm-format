@@ -167,7 +167,9 @@ public final class JavadocLayout implements IntelliJRule {
             String l = raw[k].stripLeading();
             if (!l.startsWith("*")) return null;
             String rest = l.substring(1);
-            if (!rest.isEmpty() && !rest.startsWith(" ")) unspaced = true;
+            if (!rest.isEmpty() && !rest.startsWith(" ") && (body.isEmpty() || !OPEN_LINK.matcher(body.getLast()).find())) {
+                unspaced = true;
+            }
             String line = rest.startsWith(" ") ? rest.substring(1) : rest;
             if (inPre == 0 && line.startsWith(" ") && line.stripLeading().startsWith("@")) line = line.stripLeading();
             body.add(line);
@@ -205,8 +207,12 @@ public final class JavadocLayout implements IntelliJRule {
         align(lines, firstTag, "throws");
         if (lines.equals(body) && !unspaced) return null;
         StringBuilder sb = new StringBuilder("/**").append(nl);
-        for (String l : lines)
-            sb.append(indent).append(l.isEmpty() ? " *" : " * " + l).append(nl);
+        String previous = "";
+        for (String l : lines) {
+            boolean tight = !l.isEmpty() && OPEN_LINK.matcher(previous).find();
+            sb.append(indent).append(l.isEmpty() ? " *" : tight ? " *" + l.stripLeading() : " * " + l).append(nl);
+            previous = l;
+        }
         return sb.append(indent).append(" */").toString();
     }
 
@@ -329,14 +335,27 @@ public final class JavadocLayout implements IntelliJRule {
 
     private static void join(List<String> lines, int firstTag) {
         for (int k = firstTag; k + 1 < lines.size(); k++) {
-            Matcher m = TAG.matcher(lines.get(k));
-            if (!m.matches() || m.group(4) != null && !m.group(4).isEmpty()) continue;
+            String l = lines.get(k);
+            if (!l.startsWith("@")) continue;
             String next = lines.get(k + 1);
-            if (next.isBlank() || next.strip().startsWith("@")) continue;
-            lines.set(k, "@" + m.group(1) + " " + m.group(2) + " " + next.strip());
+            if (next.isBlank() || next.strip().startsWith("@") || PRE_START.matcher(next).find()) continue;
+            Matcher m = TAG.matcher(l);
+            if (m.matches()) {
+                if (m.group(4) != null && !m.group(4).isEmpty()) continue;
+                lines.set(k, "@" + m.group(1) + " " + m.group(2) + " " + next.strip());
+            } else {
+                if (l.indexOf(' ') >= 0 || !l.matches("@[A-Za-z]+")) continue;
+                lines.set(k, l + " " + next.strip());
+            }
             lines.remove(k + 1);
         }
     }
+
+    /**
+     * A line that ends in the {@code (} of a {@code {@link}} reference: IntelliJ writes the next line right after its
+     * {@code *}.
+     */
+    private static final Pattern OPEN_LINK = Pattern.compile("\\{@link(?:plain)?\\s+[^}\\s(]*\\(\\s*$");
 
     private static final Pattern PRE_START = Pattern.compile("<pre\\s*(\\w+\\s*=.*)?>");
     private static final Pattern KEEP_INDENTS = Pattern.compile("^<(table|ol|ul|div|dl)[\\s>/]");
@@ -354,11 +373,15 @@ public final class JavadocLayout implements IntelliJRule {
 
     private static void indents(List<String> lines, int from, int to, boolean tag) {
         int keepFrom = -1, min = Integer.MAX_VALUE, pre = 0, snippet = 0;
+        boolean emptyTag = tag && tagText(lines.get(from)).isBlank();
         for (int k = from; k < to; k++) {
             String l = lines.get(k);
             String text = tag && k == from ? tagText(l) : l;
-            if (keepFrom < 0 && KEEP_INDENTS.matcher(text.strip() + " ").find()) keepFrom = k;
-            if (keepFrom >= 0) min = Math.min(min, tag && k == from ? 0 : indent(l));
+            if (keepFrom < 0 && !(tag && k == from) && !(emptyTag && k == from + 1)
+                    && KEEP_INDENTS.matcher(text.strip() + " ").find()) {
+                keepFrom = k;
+            }
+            if (keepFrom >= 0) min = Math.min(min, indent(l));
             if (!(tag && k == from) && pre == 0 && keepFrom < 0 && snippet == 0) lines.set(k, l.strip());
             if (snippet > 0) {
                 snippet += braces(l);
