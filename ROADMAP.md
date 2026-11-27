@@ -8,9 +8,6 @@ What jpm-format does not do yet. jpm's own plan is in its
 Parity is measured against IntelliJ's own formatter on real projects (`checks/Parity.java`, see
 [CONTRIBUTING.md](CONTRIBUTING.md)); rules go in `src/dev/jpm/format/intellij/`.
 
-- [ ] **IntelliJ leaves the Javadoc of some files alone.** It formats Javadocs with `<pre>` like the others, but in
-      `ObjectUtils.java` (commons-lang3, 140 of the lines that differ) it formats none of them; what decides it is
-      not known yet.
 - [ ] **The rest of IntelliJ's default Javadoc formatting.**
 - [ ] **IntelliJ's code style options.**
 - [ ] **A `#branch` of Palantir or google-java-format** as `formatter.style`; they build with Gradle and Maven,
