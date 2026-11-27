@@ -509,15 +509,6 @@ final class Syntax {
         public Void visitConditionalExpression(ConditionalExpressionTree t, Void v) {
             operatorAfter(t.getCondition());
             operatorAfter(t.getTrueExpression());
-            for (Tree branch : List.of(t.getTrueExpression(), t.getFalseExpression())) {
-                if (branch instanceof ConditionalExpressionTree c && c.getCondition() instanceof BinaryTree) {
-                    int first = at(code(s(c)));
-                    for (Tree part : List.of(c.getCondition(), c.getTrueExpression())) {
-                        int op = code(e(part));
-                        if (op < tokens.size()) alignTo[at(op)] = first;
-                    }
-                }
-            }
             return super.visitConditionalExpression(t, v);
         }
 

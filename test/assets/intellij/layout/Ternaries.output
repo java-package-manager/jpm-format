@@ -1,0 +1,40 @@
+class T {
+    Object a(int n) {
+        return n == 0 ? "zero"
+                : n == 1 ? "one"
+                : "many";
+    }
+
+    Object b(int n) {
+        return n == 0 ? "zero"
+                : n == 1
+                ? "one"
+                : "many";
+    }
+
+    Object c(int n) {
+        return n == 0
+                ? n == 1 ? "one"
+                : "two"
+                : "many";
+    }
+
+    Object d(int n) {
+        return n == 0
+                ? n == 1
+                ? "one"
+                : "two"
+                : "many";
+    }
+
+    Object e(boolean x, boolean y) {
+        return x ? "a"
+                : y ? "b"
+                : "c";
+    }
+
+    Object f(int n) {
+        return n == 0 ? "zero" : n == 1 ? "one"
+                : "many";
+    }
+}
