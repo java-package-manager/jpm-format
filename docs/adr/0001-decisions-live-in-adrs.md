@@ -9,7 +9,7 @@ Status: accepted
 
 - jpm-format's own Java sources and tests have no `//` or `/* */` comments, as in jpm (jpm's ADR 0001). A
   non-obvious decision goes into an ADR here; Javadoc is not a comment.
-- The lint is jpm-format's own rule `NonJavadocComment`, turned on as an error in `project.jsonc`, so the
+- The lint is jpm-format's own rule `NonJavadocComment`, turned on as an error in `jpm-format.jsonc`, so the
   self-check (`jpm start -- --check`, in CI) fails on a comment. It replaced `checks/Comments.java` and its
   baseline.
 - `src/dev/jpm/format/palantir/` is a fork of Palantir Java Format and is left out:

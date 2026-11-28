@@ -21,9 +21,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The format config: {@code "extensions": {"format": {...}}} in {@code project.jsonc}, or a separate
- * {@code jpm-format.jsonc} at the project root. A module's own {@code project.jsonc} applies to the files
- * under it, over the root's. The shape follows Biome, with Prettier's option names:
+ * The format config: {@code jpm-format.jsonc} at the project root, and in folders below it (up to 6 deep), each of
+ * which applies to the files under it, over the root's; {@code project.jsonc} configures no formatter. The shape
+ * follows Biome, with Prettier's option names:
  *
  * <pre>
  * {
@@ -153,11 +153,11 @@ public final class Config {
         this.files = SpotlessSteps.parse(rootConfig.get("files"));
         for (Scoped s : modules) {
             if (s.config().containsKey("files")) {
-                throw new FormatException(s.dir().resolve("project.jsonc") + ": \"files\" goes in the root config, which applies it to the whole project");
+                throw new FormatException(s.dir().resolve(FILE) + ": \"files\" goes in the root config, which applies it to the whole project");
             }
         }
         for (Scoped s : modules)
-            validate(s.config(), s.dir().resolve("project.jsonc").toString());
+            validate(s.config(), s.dir().resolve(FILE).toString());
     }
 
     /**
@@ -197,16 +197,13 @@ public final class Config {
         List<Scoped> mods = new ArrayList<>();
         try (var walk = Files.walk(root, 6)) {
             for (Path p : (Iterable<Path>) walk::iterator) {
-                if (!p.getFileName().toString().equals("project.jsonc")
-                        || p.getParent().equals(root)) continue;
+                if (!p.getFileName().toString().equals(FILE) || p.getParent().equals(root)) continue;
                 String rel = rel(root, p);
                 if (rel.startsWith(".")
                         || rel.contains("/.")
                         || rel.startsWith("dist/")
                         || rel.startsWith("node_modules/")) continue;
-                Map<String, Object> c = formatSection(read(p), p.toString());
-                if (c != null)
-                    mods.add(new Scoped(p.getParent(), resolveExtends(c, p.getParent(), new LinkedHashSet<>())));
+                mods.add(new Scoped(p.getParent(), resolveExtends(read(p), p.getParent(), new LinkedHashSet<>())));
             }
         } catch (IOException e) {
             throw new FormatException("Could not read " + root + ": " + e.getMessage());
@@ -223,37 +220,9 @@ public final class Config {
     }
 
     private static Map<String, Object> rootConfig(Path root) {
-        Path manifest = root.resolve("project.jsonc");
-        Map<String, Object> fromManifest = null;
-        String envManifest = System.getenv("JPM_MANIFEST");
-        String envConfig = System.getenv("JPM_CONFIG");
-        if (envConfig != null
-                && !envConfig.isBlank()
-                && envManifest != null
-                && Path.of(envManifest).toAbsolutePath().normalize().equals(manifest)) {
-            fromManifest = formatSection(Json.object(envConfig, "JPM_CONFIG"), "JPM_CONFIG");
-        } else if (Files.isRegularFile(manifest)) {
-            fromManifest = formatSection(read(manifest), manifest.toString());
-        }
         Path own = root.resolve(FILE);
-        Map<String, Object> fromFile = Files.isRegularFile(own) ? Json.object(readString(own), own.toString()) : null;
-        if (fromManifest != null && fromFile != null) {
-            throw new FormatException(
-                    "Both project.jsonc (\"extensions.format\") and " + FILE + " configure jpm format; keep one");
-        }
-        Map<String, Object> cfg =
-                fromFile != null ? fromFile : fromManifest != null ? fromManifest : new LinkedHashMap<>();
+        Map<String, Object> cfg = Files.isRegularFile(own) ? read(own) : new LinkedHashMap<>();
         return resolveExtends(cfg, root, new LinkedHashSet<>());
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> formatSection(Map<String, Object> manifest, String where) {
-        Object ext = manifest.get("extensions");
-        if (!(ext instanceof Map<?, ?> m)) return null;
-        Object f = m.get("format");
-        if (f == null) return null;
-        if (!(f instanceof Map)) throw new FormatException(where + ": \"extensions.format\" must be an object");
-        return (Map<String, Object>) f;
     }
 
     @SuppressWarnings("unchecked")
@@ -266,9 +235,7 @@ public final class Config {
             Path p = dir.resolve(str(o, "extends")).normalize();
             if (!seen.add(p)) throw new FormatException("\"extends\" loops through " + p);
             if (!Files.isRegularFile(p)) throw new FormatException("\"extends\": " + p + " does not exist");
-            Map<String, Object> other = Json.object(readString(p), p.toString());
-            Map<String, Object> sec = formatSection(other, p.toString());
-            base = merge(base, resolveExtends(sec != null ? sec : other, p.getParent(), seen));
+            base = merge(base, resolveExtends(read(p), p.getParent(), seen));
         }
         Map<String, Object> own = new LinkedHashMap<>(cfg);
         own.remove("extends");

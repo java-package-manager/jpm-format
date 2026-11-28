@@ -2,6 +2,7 @@ package dev.jpm.format.files;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 
@@ -11,7 +12,10 @@ import java.util.List;
  * {@code project.jsonc} inside out. A colon has a space after it and none before, a comma the same; a line is one
  * indent in from the line its object or array opens on, and a closing bracket that starts a line lines up with that
  * line. Inside braces and brackets on one line, a space stays where the file has one ({@code { "a": 1 }} and
- * {@code {"a": 1}} both stay), and empty ones become {@code {}} and {@code []}.
+ * {@code {"a": 1}} both stay), and empty ones become {@code {}} and {@code []}. A line that would end past the line
+ * width is split as IntelliJ's "chop down if long" does: the outermost object or array that starts or separates
+ * elements on it gets every element on a line of its own and its closing bracket too, and the lines that makes are
+ * measured again.
  *
  * <p>Comments ({@code //} and {@code /* *}{@code /}) stay where they are. Blank lines are kept, up to
  * {@code maxBlankLines} in a row. Text that does not lex as JSON, or whose brackets do not match, is left as it is.
@@ -44,17 +48,83 @@ public final class JsonFormat {
     }
 
     public static String format(String text, int indent, int maxBlankLines) {
+        return format(text, indent, maxBlankLines, Integer.MAX_VALUE);
+    }
+
+    /**
+     * The file with its line breaks kept, and the objects and arrays split that make a line end past {@code width}.
+     * {@code owner} is the object or array a token is in, for a closing bracket the one it closes. Each pass splits
+     * the outermost object or array of every line past the width that is not inside another one split in the same
+     * pass, so a file takes about as many passes as it nests, not one per object.
+     */
+    public static String format(String text, int indent, int maxBlankLines, int width) {
         List<Token> tokens = lex(text);
         if (tokens == null || !balanced(tokens)) return text;
+        int n = tokens.size();
+        int[] close = new int[n];
+        int[] owner = new int[n];
+        int[] depth = new int[n];
+        Deque<Integer> open = new ArrayDeque<>();
+        for (int i = 0; i < n; i++) {
+            Token t = tokens.get(i);
+            depth[i] = open.size();
+            if (t.closes()) {
+                int o = open.pop();
+                close[o] = i;
+                owner[i] = o;
+                continue;
+            }
+            owner[i] = open.isEmpty() ? -1 : open.peek();
+            if (t.opens()) open.push(i);
+        }
+        boolean[] chopped = new boolean[n];
+        int[] lineOf = new int[n];
+        while (true) {
+            String out = keep(text, tokens, close, owner, chopped, lineOf, indent, maxBlankLines);
+            String[] lines = out.split("\n", -1);
+            int[] best = new int[lines.length];
+            Arrays.fill(best, -1);
+            for (int i = 0; i + 1 < n; i++) {
+                Token t = tokens.get(i);
+                int row = lineOf[i];
+                if (lines[row].length() <= width || lineOf[i + 1] != row) continue;
+                int c = t.opens() && close[i] != i + 1 ? i : t.is(',') ? owner[i] : -1;
+                if (c < 0 || chopped[c] || tokens.get(i + 1).closes() && close[c] == i + 1) continue;
+                if (best[row] < 0 || depth[c] < depth[best[row]]) best[row] = c;
+            }
+            boolean[] chosen = new boolean[n];
+            for (int c : best) if (c >= 0) chosen[c] = true;
+            boolean changed = false;
+            for (int c : best) {
+                if (c < 0 || chopped[c]) continue;
+                boolean nested = false;
+                for (int a = owner[c]; a >= 0 && !nested; a = owner[a]) nested = chosen[a];
+                if (nested) continue;
+                chopped[c] = true;
+                changed = true;
+            }
+            if (!changed) return out;
+        }
+    }
+
+    private static String keep(String text, List<Token> tokens, int[] close, int[] owner, boolean[] chopped,
+                               int[] lineOf, int indent, int maxBlankLines) {
         StringBuilder out = new StringBuilder(text.length());
         Deque<Integer> bases = new ArrayDeque<>();
         int line = 0;
+        int row = 0;
+        boolean pending = false;
         for (int i = 0; i < tokens.size(); i++) {
             Token t = tokens.get(i);
             Token prev = i == 0 ? null : tokens.get(i - 1);
             String gap = prev == null ? "" : text.substring(prev.end(), t.start());
             int newlines = prev == null ? 0 : Math.min(count(gap, '\n'), maxBlankLines + 1);
             if (prev != null && prev.kind() == Kind.LINE_COMMENT) newlines = Math.max(newlines, 1);
+            boolean trailing = t.comment() && newlines == 0;
+            if (pending && !trailing) newlines = Math.max(newlines, 1);
+            if (t.closes() && owner[i] >= 0 && chopped[owner[i]] && close[owner[i]] != owner[i] + 1) {
+                newlines = Math.max(newlines, 1);
+            }
             if (t.closes() && !bases.isEmpty()) {
                 int base = bases.pop();
                 if (newlines > 0) line = base;
@@ -64,12 +134,21 @@ public final class JsonFormat {
             if (prev != null && newlines > 0) {
                 strip(out);
                 out.append("\n".repeat(newlines)).append(" ".repeat(line));
+                row += newlines;
             } else if (prev != null) {
                 out.append(" ".repeat(space(prev, t, gap.length())));
             }
+            lineOf[i] = row;
             int column = out.length() - out.lastIndexOf("\n") - 1;
-            out.append(t.kind() == Kind.BLOCK_COMMENT ? shift(t.text(), column - column(text, t.start())) : t.text());
+            String written = t.kind() == Kind.BLOCK_COMMENT ? shift(t.text(), column - column(text, t.start())) : t.text();
+            out.append(written);
+            row += count(written, '\n');
             if (t.opens()) bases.push(line);
+            if (t.opens() && chopped[i] && close[i] != i + 1 || t.is(',') && owner[i] >= 0 && chopped[owner[i]]) {
+                pending = true;
+            } else if (!t.comment()) {
+                pending = false;
+            }
         }
         strip(out);
         if (text.endsWith("\n") && !out.isEmpty()) out.append('\n');
@@ -85,7 +164,7 @@ public final class JsonFormat {
      * line it ends.
      */
     public static String format(String text, String style, int indent, int maxBlankLines, int width) {
-        if (style.equals("keep")) return format(text, indent, maxBlankLines);
+        if (style.equals("keep")) return format(text, indent, maxBlankLines, width);
         List<Token> tokens = lex(text);
         if (tokens == null || !balanced(tokens)) return text;
         boolean pretty = style.equals("pretty");

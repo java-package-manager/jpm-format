@@ -1,0 +1,7 @@
+// jpm-format's config for its own code (README.md, "Configuration")
+{
+  // decisions go into docs/adr and explanations into Javadoc (ADR 0001)
+  "linter": { "rules": { "style": { "NonJavadocComment": "error" } } },
+  // generated: by jpm-changeset and by `UPDATE_DOCS=1 jpm test`
+  "ignore": ["CHANGELOG.md", "docs/inspections.md"]
+}

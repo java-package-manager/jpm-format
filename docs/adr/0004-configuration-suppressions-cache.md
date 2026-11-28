@@ -4,8 +4,9 @@ Status: accepted
 
 ## Decision
 
-- Configuration comes from the root's `project.jsonc` and from module manifests below the root
-  (workspaces), up to 6 folders deep. For a file, the deepest module that contains it wins (`Config`).
+- Configuration comes from `jpm-format.jsonc` at the root and in folders below it, up to 6 deep; for a file,
+  the deepest folder that has one wins (`Config`). Amended: it used to come from `project.jsonc`
+  (`extensions.format`), which now configures no formatter, so jpm's manifest and the formatter's config stay apart.
 - A suppression covers the line it is on and all of the element that starts on that line, so
   reformatting cannot move code out of its reach (`Suppressions`).
 - Type attribution compiles a file as jpm does: a named module reads its dependencies from the module

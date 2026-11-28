@@ -50,7 +50,7 @@ public final class Main {
               --threads <n>       Files processed in parallel (default: one per CPU)
               --version, --help
 
-            Configuration: "extensions": { "format": { ... } } in project.jsonc, or jpm-format.jsonc.
+            Configuration: jpm-format.jsonc at the project root (and in folders below it, for the files there).
             Suppress a finding with // jpm-ignore lint/<category>/<rule>: <reason>, @SuppressWarnings("<rule>")
             or //noinspection <rule>; protect code from the formatter with // jpm-ignore format or
             // @formatter:off ... // @formatter:on.

@@ -53,7 +53,7 @@ public final class RuleTester {
     }
 
     /**
-     * The format config to test with, as in {@code "extensions": {"format": ...}}.
+     * The format config to test with, as in {@code jpm-format.jsonc}.
      */
     public RuleTester config(String jsonc) {
         this.config = jsonc;

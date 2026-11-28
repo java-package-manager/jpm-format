@@ -377,19 +377,19 @@ class EngineTest {
     }
 
     @Test
-    void configFromManifestWithExtendsOverridesAndIgnore() throws IOException {
+    void configWithExtendsOverridesAndIgnore() throws IOException {
         write("shared/format.jsonc", """
                 { "linter": { "rules": { "suspicious": { "EmptyCatchBlock": "error" } } } }
                 """);
         write("project.jsonc", """
+                { "name": "demo", "extensions": { "format": { "ignore": ["src/**"] } } }
+                """);
+        write("jpm-format.jsonc", """
                 {
-                  "name": "demo",
                   // comments and trailing commas are fine
-                  "extensions": { "format": {
-                    "extends": ["shared/format.jsonc"],
-                    "ignore": ["src/gen/**"],
-                    "overrides": [ { "include": ["test/**"], "linter": { "rules": { "suspicious": { "EmptyCatchBlock": "off" } } } } ],
-                  } },
+                  "extends": ["shared/format.jsonc"],
+                  "ignore": ["src/gen/**"],
+                  "overrides": [ { "include": ["test/**"], "linter": { "rules": { "suspicious": { "EmptyCatchBlock": "off" } } } } ],
                 }
                 """);
         String code = "class A { void f() { try {} catch (Exception e) {} } }\n";
@@ -404,15 +404,15 @@ class EngineTest {
         assertEquals(Severity.OFF, ws.config.settings("test/A.java").level(ecb, true));
         assertTrue(ws.config.ignored("src/gen/G.java"));
         assertTrue(ws.config.ignored("dist/x.java"));
+        assertFalse(ws.config.ignored("src/A.java"), "project.jsonc configures no formatter");
     }
 
     @Test
-    void separateConfigFileAndModuleConfigs() throws IOException {
+    void configFilesInFoldersApplyBelowThem() throws IOException {
         write("jpm-format.jsonc", "{ \"linter\": { \"recommended\": false } }");
         write("project.jsonc", "{ \"name\": \"root\", \"workspace\": [\"lib\"] }");
-        write(
-                "lib/project.jsonc",
-                "{ \"name\": \"lib\", \"extensions\": { \"format\": { \"linter\": { \"recommended\": true } } } }");
+        write("lib/project.jsonc", "{ \"name\": \"lib\" }");
+        write("lib/jpm-format.jsonc", "{ \"linter\": { \"recommended\": true } }");
         Workspace ws = open();
         Lint ecb = ws.registry.rules.get("EmptyCatchBlock");
         assertEquals(Severity.OFF, ws.config.settings("src/A.java").level(ecb, true));
@@ -457,7 +457,7 @@ class EngineTest {
         assertEquals("4.32", ExternalFormatter.parse("eclipse@4.32", root, root.resolve("e.xml")).version());
         assertThrows(FormatException.class, () -> ExternalFormatter.parse("intellij", root, root.resolve("e.xml")));
         assertThrows(FormatException.class, () -> ExternalFormatter.parse("google-java-format", root, root.resolve("e.xml")));
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"java\": { \"style\": \"google-java-format@1.24.0\" } } } }");
+        write("jpm-format.jsonc", "{ \"java\": { \"style\": \"google-java-format@1.24.0\" } }");
         Config.Settings s = open().config.settings("A.java");
         assertEquals("1.24.0", s.externalFormatter().version());
         assertFalse(s.intellijStyle());
@@ -507,13 +507,13 @@ class EngineTest {
             out.write("up.Upper\n".getBytes(StandardCharsets.UTF_8));
         }
         String sha = Hashing.sha256(Files.readAllBytes(jarFile));
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"java\": { \"style\": \"" + jarFile.toUri() + "#sha256=" + sha + "\" } } } }");
+        write("jpm-format.jsonc", "{ \"java\": { \"style\": \"" + jarFile.toUri() + "#sha256=" + sha + "\" } }");
         Config.Settings s = open().config.settings("A.java");
         assertFalse(s.intellijStyle());
         FileContext ctx = new FileContext(new Source("A.java", "class a {}\n"), null, Severity.ERROR, s, null, new java.util.ArrayList<>());
         assertEquals("class A {}\n", ExternalFormatter.format(s.externalFormatter(), ctx));
         assertTrue(Files.isDirectory(dir.resolve(".cache/format/formatters")), "the jar is kept in the cache");
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"java\": { \"style\": \"" + jarFile.toUri() + "#sha256=" + "0".repeat(64) + "\" } } } }");
+        write("jpm-format.jsonc", "{ \"java\": { \"style\": \"" + jarFile.toUri() + "#sha256=" + "0".repeat(64) + "\" } }");
         Config.Settings wrong = open().config.settings("A.java");
         FormatException e = assertThrows(FormatException.class, () -> ExternalFormatter.format(wrong.externalFormatter(), ctx));
         assertTrue(e.getMessage().contains("has SHA-256 " + sha), e.getMessage());
@@ -532,15 +532,15 @@ class EngineTest {
             };
         };
         try {
-            write("project.jsonc", "{ \"extensions\": { \"format\": { \"files\": ["
+            write("jpm-format.jsonc", "{ \"files\": ["
                     + " { \"include\": [\"**/*.kt\"], \"steps\": [\"ktfmt@0.53\", \"trimTrailingWhitespace\"] },"
-                    + " { \"include\": [\"**/*.kt\", \"**/*.md\"], \"steps\": [\"endWithNewline\"] } ] } } }");
+                    + " { \"include\": [\"**/*.kt\", \"**/*.md\"], \"steps\": [\"endWithNewline\"] } ] }");
             write("src/app/Main.kt", "fun main() {}  \r\nval x = 1");
             write("README.md", "# hi  \n");
             write("notes.txt", "left alone");
             Workspace ws = open();
             assertEquals(List.of("README.md", "src/app/Main.kt"), ws.files(List.of()).stream()
-                    .map(p -> Config.rel(dir, p)).filter(r -> !r.endsWith(".java") && !r.equals("project.jsonc")).toList());
+                    .map(p -> Config.rel(dir, p)).filter(r -> !r.endsWith(".java") && !r.equals(Config.FILE)).toList());
             Engine.Result check = ws.engine.run("src/app/Main.kt", "fun main() {}  \r\nval x = 1", Engine.Mode.CHECK);
             assertEquals(1, check.findings().size(), check.findings().toString());
             assertEquals("Not formatted by ktfmt, trimTrailingWhitespace, endWithNewline", check.findings().get(0).message());
@@ -557,15 +557,15 @@ class EngineTest {
 
     @Test
     void propertiesJsonAndXmlAreFormattedByDefault() throws IOException {
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"files\": ["
-                + " { \"include\": [\"legacy/**\"], \"steps\": [] } ] } } }");
+        write("jpm-format.jsonc", "{ \"files\": ["
+                + " { \"include\": [\"legacy/**\"], \"steps\": [] } ] }");
         write("src/app.properties", "a = 1\n");
         write("data.json", "{\"a\":1}\n");
         write("pom.xml", "<project>\n<a/>\n</project>\n");
         write("legacy/old.xml", "<x>\n<y/>\n</x>\n");
         write("notes.txt", "left alone");
         Workspace ws = open();
-        assertEquals(List.of("data.json", "pom.xml", "project.jsonc", "src/app.properties"),
+        assertEquals(List.of("data.json", "jpm-format.jsonc", "pom.xml", "src/app.properties"),
                 ws.files(List.of()).stream().map(p -> Config.rel(dir, p)).filter(r -> !r.endsWith(".java")).toList());
         assertEquals("a=1\n", ws.engine.run("src/app.properties", "a = 1\n", Engine.Mode.FORMAT).output());
         assertEquals("{\"a\": 1}\n", ws.engine.run("data.json", "{\"a\":1}\n", Engine.Mode.FORMAT).output());
@@ -585,27 +585,27 @@ class EngineTest {
         assertEquals("{\n  \"a\": [\n    1]\n}\n", plain.engine.run("d.json", "{\n\"a\": [\n1]\n}\n", Engine.Mode.FORMAT).output(),
                 "no default section: each type its own default");
         assertEquals("a:\n  b: 1\n", plain.engine.run("c.yml", "a:\n    b: 1\n", Engine.Mode.FORMAT).output());
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"default\": { \"indentWidth\": 3 },"
-                + " \"java\": { \"indentWidth\": 2 }, \"json\": { \"style\": \"pretty\" } } } }");
+        write("jpm-format.jsonc", "{ \"default\": { \"indentWidth\": 3 },"
+                + " \"java\": { \"indentWidth\": 2 }, \"json\": { \"style\": \"pretty\" } }");
         Workspace ws = open();
         assertEquals("class A {\n  int x;\n}\n", ws.engine.run("A.java", "class A {int x;}\n", Engine.Mode.FORMAT).output());
         assertEquals("{\n   \"a\": 1\n}\n", ws.engine.run("d.json", "{\"a\": 1}\n", Engine.Mode.FORMAT).output(),
                 "the default's indentWidth, the json section's style");
         assertEquals("<a>\n   <b/>\n</a>\n", ws.engine.run("x.xml", "<a>\n<b/>\n</a>\n", Engine.Mode.FORMAT).output());
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"json\": { \"tabs\": 1 } } } }");
+        write("jpm-format.jsonc", "{ \"json\": { \"tabs\": 1 } }");
         assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("unknown key \"tabs\""));
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"formatter\": { \"indentWidth\": 2 } } } }");
+        write("jpm-format.jsonc", "{ \"formatter\": { \"indentWidth\": 2 } }");
         assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("go in \"java\""));
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"default\": { \"style\": \"pretty\" } } } }");
+        write("jpm-format.jsonc", "{ \"default\": { \"style\": \"pretty\" } }");
         assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("unknown key \"style\""));
     }
 
     @Test
     void onlyOtherStylesNeedJavacsInternals() throws IOException {
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"linter\": { \"rules\": { \"style\": {} } } } } }");
+        write("jpm-format.jsonc", "{ \"linter\": { \"rules\": { \"style\": {} } } }");
         assertFalse(Config.otherStyle(dir));
-        write("sub/project.jsonc", "{ \"extensions\": { \"format\": { \"overrides\": [ { \"include\": [\"**\"],"
-                + " \"java\": { \"style\": \"palantir\" } } ] } } }");
+        write("sub/jpm-format.jsonc", "{ \"overrides\": [ { \"include\": [\"**\"],"
+                + " \"java\": { \"style\": \"palantir\" } } ] }");
         assertTrue(Config.otherStyle(dir));
     }
 
@@ -629,25 +629,18 @@ class EngineTest {
 
     @Test
     void configErrors() throws IOException {
-        write(
-                "project.jsonc",
-                "{ \"extensions\": { \"format\": { \"linter\": { \"rules\": { \"style\": { \"NoSuchRule\": \"warn\" } } } } } }");
+        write("jpm-format.jsonc", "{ \"linter\": { \"rules\": { \"style\": { \"NoSuchRule\": \"warn\" } } } }");
         assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("no rule named NoSuchRule"));
-        write(
-                "project.jsonc",
-                "{ \"extensions\": { \"format\": { \"linter\": { \"rules\": { \"style\": { \"EmptyCatchBlock\": \"warn\" } } } } } }");
+        write("jpm-format.jsonc", "{ \"linter\": { \"rules\": { \"style\": { \"EmptyCatchBlock\": \"warn\" } } } }");
         assertTrue(
                 assertThrows(FormatException.class, this::open).getMessage().contains("is in category \"suspicious\""));
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"java\": { \"tabs\": true } } } }");
+        write("jpm-format.jsonc", "{ \"java\": { \"tabs\": true } }");
         assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("unknown key \"tabs\""));
-        write("project.jsonc", "{ \"extensions\": { \"format\": { \"java\": { \"lineWidth\": 5 } } } }");
+        write("jpm-format.jsonc", "{ \"java\": { \"lineWidth\": 5 } }");
         Workspace ws = open();
         assertTrue(assertThrows(FormatException.class, () -> ws.config.settings("A.java"))
                 .getMessage()
                 .contains("java.lineWidth must be from 20 to 1000, not 5"));
-        write("project.jsonc", "{ \"extensions\": { \"format\": {} } }");
-        write("jpm-format.jsonc", "{}");
-        assertTrue(assertThrows(FormatException.class, this::open).getMessage().contains("keep one"));
     }
 
     @Test
@@ -673,9 +666,7 @@ class EngineTest {
 
     @Test
     void customRulesFromTheRulesFolder() throws IOException {
-        write(
-                "project.jsonc",
-                "{ \"name\": \"demo\", \"extensions\": { \"format\": { \"linter\": { \"rules\": { \"custom\": { \"NoPrintln\": \"error\" } } } } } }");
+        write("jpm-format.jsonc", "{ \"linter\": { \"rules\": { \"custom\": { \"NoPrintln\": \"error\" } } } }");
         write("rules/NoPrintln.java", """
                 import com.sun.source.tree.MemberSelectTree;
                 import com.sun.source.util.TreeScanner;

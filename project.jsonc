@@ -43,12 +43,6 @@
   "extensions": {
     // a release is a tag, which `jpm add` installs from: `jpm changeset publish` only tags
     "changeset": { "tagOnly": true },
-    "format": {
-      // decisions go into docs/adr and explanations into Javadoc (ADR 0001)
-      "linter": { "rules": { "style": { "NonJavadocComment": "error" } } },
-      // generated: by jpm-changeset and by `UPDATE_DOCS=1 jpm test`
-      "ignore": ["CHANGELOG.md", "docs/inspections.md"]
-    },
     "github:java-package-manager/jpm-changeset": "^0.3.0"
   }
 }

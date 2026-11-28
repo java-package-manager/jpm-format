@@ -2,7 +2,11 @@ package dev.jpm.format.files;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * jpm-format's own formatters for {@code .properties}, JSON and XML. Where they follow IntelliJ IDEA's default code
@@ -264,6 +268,54 @@ class FileFormatsTest {
                 }
                 """, compact);
         assertEquals(compact, JsonFormat.format(compact, "compact", 2, 2, 24), "idempotent");
+    }
+
+    @Test
+    void jsonSplitsWhatEndsPastTheLineWidth() {
+        String in = """
+                {
+                  "modules": ["annotations", "api", "auth", "server",
+                    // tools
+                    "build-tools"],
+                  "nested": { "short": [1, 2], "long": ["aaaaaaaa", "bbbbbbbb"] },
+                  "fits": ["a", "b"], // a comment
+                  "text": "a string longer than the line width"
+                }
+                """;
+        String out = """
+                {
+                  "modules": [
+                    "annotations",
+                    "api",
+                    "auth",
+                    "server",
+                    // tools
+                    "build-tools"
+                  ],
+                  "nested": {
+                    "short": [1, 2],
+                    "long": ["aaaaaaaa", "bbbbbbbb"]
+                  },
+                  "fits": ["a", "b"], // a comment
+                  "text": "a string longer than the line width"
+                }
+                """;
+        assertEquals(out, JsonFormat.format(in, "keep", 2, 2, 40));
+        assertEquals(out, JsonFormat.format(out, "keep", 2, 2, 40), "idempotent");
+        assertEquals(in, JsonFormat.format(in, "keep", 2, 2, 120), "lines within the width keep their breaks");
+    }
+
+    @Test
+    void jsonSplitsALargeFileInFewPasses() {
+        StringBuilder in = new StringBuilder("[\n");
+        for (int k = 0; k < 5000; k++) {
+            in.append("  {\"id\": ").append(k).append(", \"values\": [\"aaaaaaaaaaaaaaaa\", \"bbbbbbbbbbbbbbbb\"],")
+                    .append(" \"more\": [\"cccccccccccccccc\", \"dddddddddddddddd\"]}").append(k < 4999 ? ",\n" : "\n");
+        }
+        in.append("]\n");
+        String out = assertTimeout(Duration.ofSeconds(10), () -> JsonFormat.format(in.toString(), "keep", 2, 2, 80));
+        assertTrue(out.lines().allMatch(l -> l.length() <= 80));
+        assertEquals(out, JsonFormat.format(out, "keep", 2, 2, 80), "idempotent");
     }
 
     @Test

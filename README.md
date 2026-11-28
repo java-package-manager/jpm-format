@@ -59,8 +59,9 @@ groups and each pattern's imports sorted alphabetically. Javadoc is not reflowed
 ## Configuration
 
 Opinionated defaults; nearly everything can be overridden. The shape follows Biome, with Prettier's option
-names. It lives in `project.jsonc` under `extensions.format`, or in a separate `jpm-format.jsonc` at the
-project root (not both). In a workspace, a module's own `project.jsonc` applies to the files under it.
+names. It lives in `jpm-format.jsonc` at the project root; a `jpm-format.jsonc` in a folder below it (such as a
+module of a workspace) applies to the files under that folder, over the root's. `project.jsonc` configures no
+formatter.
 
 Files git ignores are not formatted or checked: jpm-format reads the `.gitignore` files from the repository's root
 down (and `.git/info/exclude`) by git's rules, so the `build/` folders of a multi-module build are skipped while a
@@ -68,42 +69,38 @@ down (and `.git/info/exclude`) by git's rules, so the `build/` folders of a mult
 
 ```jsonc
 {
-  "extensions": {
-    "format": {
-      "extends": ["config/format.jsonc"],          // shared configs, merged in order, then this one
-      "ignore": ["src/generated/**"],              // besides what .gitignore ignores; .cache, dist, build, target, .git … always are
-      "java": {
-        "enabled": true,
-        "style": "intellij",                       // or "palantir", "palantir@<version>", "google-java-format[@<version>]",
-                                                   // "eclipse[@<version>]" (with "eclipseConfig": "<profile>.xml")
-                                                   // a jar's URL ("…/f.jar#sha256=…") or "github:author/formatter[@<version>|#<branch>]"
-        "lineWidth": 120,                          // 20 to 1000; long statement bodies move to the next line past it
-        "indentWidth": 4,                          // 1 to 16
-        "continuationIndentWidth": 8,              // wrapped lines; twice indentWidth by default, as in IntelliJ
-        "maxBlankLines": 2,                        // blank lines kept in a row, 1 to 10
-        "useTabs": false,
-        "licenseHeader": "/* Copyright $YEAR Acme */"   // or { "file": "LICENSE_HEADER" }
-      },
-      "imports": {
-        "removeUnused": true,                      // unused, redundant and duplicate imports
-        "sort": true,                              // alphabetical, in groups
-        "groups": ["*", ["javax.*", "java.*"], "static *"],
-        "wildcardThreshold": 0                     // N > 0: N imports from one package become a wildcard
-      },
-      "linter": {
-        "enabled": true,
-        "recommended": true,
-        "rules": {
-          "correctness": { "UnusedPrivateMember": "error" },
-          "style": { "MissingOverrideAnnotation": "off" },
-          "custom": { "MyRule": { "level": "warn", "options": { "max": 3 } } }
-        }
-      },
-      "overrides": [
-        { "include": ["test/**"], "linter": { "rules": { "correctness": { "UnusedLocalVariable": "off" } } } }
-      ]
+  "extends": ["config/format.jsonc"],          // shared configs, merged in order, then this one
+  "ignore": ["src/generated/**"],              // besides what .gitignore ignores; .cache, dist, build, target, .git … always are
+  "java": {
+    "enabled": true,
+    "style": "intellij",                       // or "palantir", "palantir@<version>", "google-java-format[@<version>]",
+                                               // "eclipse[@<version>]" (with "eclipseConfig": "<profile>.xml")
+                                               // a jar's URL ("…/f.jar#sha256=…") or "github:author/formatter[@<version>|#<branch>]"
+    "lineWidth": 120,                          // 20 to 1000; long statement bodies move to the next line past it
+    "indentWidth": 4,                          // 1 to 16
+    "continuationIndentWidth": 8,              // wrapped lines; twice indentWidth by default, as in IntelliJ
+    "maxBlankLines": 2,                        // blank lines kept in a row, 1 to 10
+    "useTabs": false,
+    "licenseHeader": "/* Copyright $YEAR Acme */"   // or { "file": "LICENSE_HEADER" }
+  },
+  "imports": {
+    "removeUnused": true,                      // unused, redundant and duplicate imports
+    "sort": true,                              // alphabetical, in groups
+    "groups": ["*", ["javax.*", "java.*"], "static *"],
+    "wildcardThreshold": 0                     // N > 0: N imports from one package become a wildcard
+  },
+  "linter": {
+    "enabled": true,
+    "recommended": true,
+    "rules": {
+      "correctness": { "UnusedPrivateMember": "error" },
+      "style": { "MissingOverrideAnnotation": "off" },
+      "custom": { "MyRule": { "level": "warn", "options": { "max": 3 } } }
     }
-  }
+  },
+  "overrides": [
+    { "include": ["test/**"], "linter": { "rules": { "correctness": { "UnusedLocalVariable": "off" } } } }
+  ]
 }
 ```
 
@@ -264,7 +261,7 @@ meant:
 |                          Files                          |                                                       Formatting                                                        |                                                                                                            Unlike IntelliJ                                                                                                            |
 |---------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `*.properties`                                          | `key=value` without spaces around `=` or `:`, no leading whitespace; values and continuation lines as written           | blank lines are kept (up to 2)                                                                                                                                                                                                        |
-| `*.json`, `*.jsonc`                                     | indent 2; `"a": 1`, `[1, 2]`; a line one indent in from the line its object or array opens on; comments stay            | line breaks are kept: IntelliJ puts every value on a line of its own                                                                                                                                                                  |
+| `*.json`, `*.jsonc`                                     | indent 2; `"a": 1`, `[1, 2]`; a line one indent in from the line its object or array opens on; comments stay            | line breaks are kept, except that an object or array that makes a line end past `lineWidth` (120) gets every value on a line of its own; IntelliJ does that to every one                                                              |
 | `*.yml`, `*.yaml`                                       | each level 2 in, a sequence under a key one level in, one space after `key:` and `-`; a block scalar moves with its key | flow collections (`[a, b]`) stay as written, where IntelliJ writes `[ a, b ]`; a file whose structure is not plain enough to be sure of (tabs, multi-line flow collections or quoted values, indentation indicators) is left as it is |
 | `*.toml` (Gradle's `libs.versions.toml`)                | `key = value`, `{ a = 1 }`, the lines of a multi-line array 4 in; strings and comments as written                       |                                                                                                                                                                                                                                       |
 | `*.xml`, `*.xsd`, `*.xsl`, `*.xslt`, `*.wsdl`, `*.fxml` | indent 4; one child element per line; attributes one space apart, those on lines of their own lined up with the first   | text, CDATA and `xml:space="preserve"` content are never changed, and long lines are not wrapped                                                                                                                                      |
@@ -291,15 +288,15 @@ a section named after a type sets that type's settings, and its own options:
 }
 ```
 
-|   Section    |                                                                                                                            Settings (default)                                                                                                                             |
-|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `default`    | `lineWidth`, `indentWidth`, `continuationIndentWidth`, `maxBlankLines`, `useTabs`: each type takes those it has                                                                                                                                                           |
-| `java`       | `enabled`, `style`, `eclipseConfig`, `lineWidth`, `indentWidth` (4), `continuationIndentWidth`, `maxBlankLines`, `useTabs`, `licenseHeader` (see [Configuration](#configuration))                                                                                         |
-| `json`       | `style`: `"keep"` keeps line breaks; `"compact"` puts an object or array that fits in `lineWidth` on one line (`{ "a": 1 }`, `[1, 2]`) and the rest one value per line; `"pretty"` puts every value on a line of its own. `indentWidth` (2), `maxBlankLines`, `lineWidth` |
-| `xml`        | `indentWidth` (4), `maxBlankLines`                                                                                                                                                                                                                                        |
-| `yaml`       | `indentWidth` (2), `maxBlankLines`                                                                                                                                                                                                                                        |
-| `toml`       | `indentWidth` (4), `maxBlankLines`                                                                                                                                                                                                                                        |
-| `properties` | `wrap`: values longer than `lineWidth` go on over `\` continuation lines, `indentWidth` (4) in; `encoding`: `"ISO-8859-1"` writes characters outside ASCII as Unicode escapes, `"UTF-8"` writes those escapes as the characters; `maxBlankLines`, `lineWidth`             |
+|   Section    |                                                                                                                                                                                           Settings (default)                                                                                                                                                                                            |
+|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `default`    | `lineWidth`, `indentWidth`, `continuationIndentWidth`, `maxBlankLines`, `useTabs`: each type takes those it has                                                                                                                                                                                                                                                                                         |
+| `java`       | `enabled`, `style`, `eclipseConfig`, `lineWidth`, `indentWidth` (4), `continuationIndentWidth`, `maxBlankLines`, `useTabs`, `licenseHeader` (see [Configuration](#configuration))                                                                                                                                                                                                                       |
+| `json`       | `style`: `"keep"` keeps line breaks, but puts every value of an object or array that makes a line end past `lineWidth` on a line of its own (the outermost first); `"compact"` puts an object or array that fits in `lineWidth` on one line (`{ "a": 1 }`, `[1, 2]`) and the rest one value per line; `"pretty"` puts every value on a line of its own. `indentWidth` (2), `maxBlankLines`, `lineWidth` |
+| `xml`        | `indentWidth` (4), `maxBlankLines`                                                                                                                                                                                                                                                                                                                                                                      |
+| `yaml`       | `indentWidth` (2), `maxBlankLines`                                                                                                                                                                                                                                                                                                                                                                      |
+| `toml`       | `indentWidth` (4), `maxBlankLines`                                                                                                                                                                                                                                                                                                                                                                      |
+| `properties` | `wrap`: values longer than `lineWidth` go on over `\` continuation lines, `indentWidth` (4) in; `encoding`: `"ISO-8859-1"` writes characters outside ASCII as Unicode escapes, `"UTF-8"` writes those escapes as the characters; `maxBlankLines`, `lineWidth`                                                                                                                                           |
 
 A `"files"` entry (below) that includes a file replaces these defaults, and one with `"steps": []` turns them off;
 the built-in steps are `properties`, `json`, `xml`, `yaml` and `toml`, which take the options above (`indent` for `indentWidth`):

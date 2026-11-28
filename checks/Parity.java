@@ -37,17 +37,14 @@ public final class Parity {
     private static final Path ROOT = Path.of("").toAbsolutePath();
     private static final Path CACHE = ROOT.resolve(".cache/parity");
     private static final Path DEFAULT_BASELINE = ROOT.resolve("checks/parity/baseline.txt");
+    private static final String MANIFEST = """
+            { "name": "parity-corpus", "version": "0.0.0" }
+            """;
     private static final String CONFIG = """
             {
-              "name": "parity-corpus",
-              "version": "0.0.0",
-              "extensions": {
-                "format": {
-                  "java": { "style": "intellij" },
-                  "imports": { "removeUnused": false, "sort": false },
-                  "linter": { "enabled": false, "rules": { "style": { "UnnecessaryModifier": "off" } } }
-                }
-              }
+              "java": { "style": "intellij" },
+              "imports": { "removeUnused": false, "sort": false },
+              "linter": { "enabled": false, "rules": { "style": { "UnnecessaryModifier": "off" } } }
             }
             """;
 
@@ -90,7 +87,8 @@ public final class Parity {
         Path ours = Path.of(System.getProperty("java.io.tmpdir"), "jpm-format-parity");
         deleteTree(ours);
         copy(sources, ours);
-        Files.writeString(ours.resolve("project.jsonc"), CONFIG);
+        Files.writeString(ours.resolve("project.jsonc"), MANIFEST);
+        Files.writeString(ours.resolve("jpm-format.jsonc"), CONFIG);
         if (jpmFormat == null) {
             java.util.regex.Matcher v = java.util.regex.Pattern.compile("\"version\"\\s*:\\s*\"([^\"]+)\"")
                     .matcher(Files.readString(ROOT.resolve("project.jsonc")));
