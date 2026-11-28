@@ -12,7 +12,10 @@ import dev.jpm.format.rules.JavaFormat;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -80,8 +83,71 @@ public final class Engine {
     }
 
     public Result run(String rel, String text, Mode mode) {
+        Pending p = prepare(rel, text, mode);
+        return p.done() != null ? p.done() : finish(p, typesFor(p.cur()));
+    }
+
+    /**
+     * Runs several files, attributing them in as few javac tasks as {@link Project#batchKey} allows: the first rule
+     * that asks for types attributes every file of the batch that has the same key. javac is not thread-safe, so
+     * the files of one call run one after another on the calling thread.
+     */
+    public List<Result> runAll(List<Map.Entry<String, String>> files, Mode mode) {
+        List<Pending> pending = new ArrayList<>();
+        for (Map.Entry<String, String> f : files) pending.add(prepare(f.getKey(), f.getValue(), mode));
+        Map<String, Map<Path, String>> byKey = new HashMap<>();
+        if (project.typed()) {
+            for (Pending p : pending) {
+                if (p.done() != null) continue;
+                Path abs = project.root.resolve(p.cur().path).toAbsolutePath().normalize();
+                String key = project.batchKey(abs);
+                if (key != null) byKey.computeIfAbsent(key, k -> new LinkedHashMap<>()).put(abs, p.cur().text);
+            }
+        }
+        Map<String, Map<Path, TypeInfo>> attributed = new HashMap<>();
+        List<Result> out = new ArrayList<>();
+        for (Pending p : pending) {
+            if (p.done() != null) {
+                out.add(p.done());
+                continue;
+            }
+            Supplier<TypeInfo> single = typesFor(p.cur());
+            Path abs = project.root.resolve(p.cur().path).toAbsolutePath().normalize();
+            String key = project.typed() ? project.batchKey(abs) : null;
+            Map<Path, String> batch = key == null ? null : byKey.get(key);
+            Supplier<TypeInfo> types = single == null ? null : () -> {
+                if (batch == null || batch.size() < 2) return single.get();
+                TypeInfo t = attributed.computeIfAbsent(key, k -> project.attributeAll(batch)).get(abs);
+                return t != null ? t : single.get();
+            };
+            out.add(finish(p, types));
+        }
+        return out;
+    }
+
+    /**
+     * A file whose formatters have run and whose lint rules have not; {@code done} if nothing is left to run.
+     */
+    private record Pending(
+            String rel,
+            String text,
+            Mode mode,
+            Result done,
+            Source src,
+            Source cur,
+            Config.Settings settings,
+            List<Active> rules,
+            List<Finding> findings,
+            Pipeline formatted,
+            boolean clean) {
+        static Pending done(Result r) {
+            return new Pending(r.path(), r.original(), null, r, null, null, null, null, null, null, false);
+        }
+    }
+
+    private Pending prepare(String rel, String text, Mode mode) {
         List<SpotlessSteps.Step> steps = config.steps(rel);
-        if (!steps.isEmpty()) return SpotlessSteps.run(config.root, steps, rel, text, mode);
+        if (!steps.isEmpty()) return Pending.done(SpotlessSteps.run(config.root, steps, rel, text, mode));
         Source src = new Source(rel, text);
         Config.Settings settings = config.settings(rel);
         List<Finding> findings = new ArrayList<>();
@@ -90,7 +156,7 @@ public final class Engine {
                 findings.add(FileContext.finding(
                         src, Registry.PARSE_ERROR, "syntax", Severity.ERROR, e.start(), e.end(), e.message(), null));
             }
-            return new Result(rel, text, text, findings, true);
+            return Pending.done(new Result(rel, text, text, findings, true));
         }
         List<Active> rules = active(settings);
         Source cur = src;
@@ -99,7 +165,18 @@ public final class Engine {
         if (mode == Mode.FORMAT) cur = formatted.out();
         boolean clean = formatted.out().text.equals(src.text);
         if (clean) findings.addAll(piped);
-        Supplier<TypeInfo> types = typesFor(cur);
+        return new Pending(rel, text, mode, null, src, cur, settings, rules, findings, formatted, clean);
+    }
+
+    private Result finish(Pending p, Supplier<TypeInfo> types) {
+        String rel = p.rel(), text = p.text();
+        Mode mode = p.mode();
+        Source src = p.src(), cur = p.cur();
+        Config.Settings settings = p.settings();
+        List<Active> rules = p.rules();
+        List<Finding> findings = p.findings();
+        Pipeline formatted = p.formatted();
+        boolean clean = p.clean();
         List<int[]> protectedRegions = null;
         List<Finding> formatting = new ArrayList<>();
         for (Active a : rules) {

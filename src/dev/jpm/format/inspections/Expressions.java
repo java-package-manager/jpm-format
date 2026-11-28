@@ -1541,6 +1541,14 @@ final class Expressions {
                     return Scan.integer(b.getLeftOperand()) != null && Scan.integer(b.getRightOperand()) != null;
                 }
 
+                /**
+                 * A shift is not widened by its operands: its type is its left operand's, and its distance stays an
+                 * {@code int} even when it shifts a {@code long}.
+                 */
+                private static boolean shift(Tree.Kind k) {
+                    return k == Tree.Kind.LEFT_SHIFT || k == Tree.Kind.RIGHT_SHIFT || k == Tree.Kind.UNSIGNED_RIGHT_SHIFT;
+                }
+
                 private boolean longContext() {
                     TreePath p = getCurrentPath().getParentPath();
                     while (p != null && p.getLeaf() instanceof com.sun.source.tree.ParenthesizedTree)
@@ -1548,7 +1556,7 @@ final class Expressions {
                     if (p == null) return false;
                     Tree t = p.getLeaf();
                     TypeKind k = null;
-                    if (t instanceof BinaryTree pb && pb.getKind() != Tree.Kind.MULTIPLY && pb.getKind() != Tree.Kind.LEFT_SHIFT
+                    if (t instanceof BinaryTree pb && pb.getKind() != Tree.Kind.MULTIPLY && !shift(pb.getKind())
                             && !comparison(pb.getKind())) k = s.primitive(pb);
                     else if (t instanceof VariableTree var) k = s.primitive(var.getType());
                     else if (t instanceof AssignmentTree a) k = s.primitive(a.getVariable());

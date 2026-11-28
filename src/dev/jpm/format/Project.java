@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.tools.DiagnosticCollector;
@@ -224,14 +225,63 @@ public final class Project {
      * Attributes one file's text against its module's classpath; null if the file has no module.
      */
     public TypeInfo attribute(Path file, String text) {
+        Path abs = file.toAbsolutePath().normalize();
+        return attributeAll(Map.of(abs, text)).get(abs);
+    }
+
+    /**
+     * What decides how a file is attributed (its module's classpath and source folders), or null if it has no
+     * module: files with the same key can be attributed together, by {@link #attributeAll}.
+     */
+    public String batchKey(Path file) {
+        List<String> opts = options(file);
+        return opts == null ? null : String.join("\0", opts);
+    }
+
+    /**
+     * Attributes several files in one javac task, by absolute path; they must have the same {@link #batchKey}.
+     * javac then reads the classpath and enters the sources the files share once for all of them, not once per
+     * file. A file javac could not attribute is missing from the result; if javac fails, the result is empty.
+     */
+    public Map<Path, TypeInfo> attributeAll(Map<Path, String> texts) {
+        if (texts.isEmpty()) return Map.of();
+        List<String> opts = options(texts.keySet().iterator().next());
+        if (opts == null) return Map.of();
+        List<JavaFileObject> units = new ArrayList<>();
+        for (Map.Entry<Path, String> e : texts.entrySet())
+            units.add(Source.fileObject(e.getKey().toAbsolutePath().normalize(), e.getValue()));
+        DiagnosticCollector<JavaFileObject> diags = new DiagnosticCollector<>();
+        JavacTask task = (JavacTask)
+                Source.JAVAC.getTask(Source.quiet(), FILE_MANAGERS.get(), diags, opts, null, units);
+        try {
+            List<CompilationUnitTree> cus = new ArrayList<>();
+            for (CompilationUnitTree u : task.parse()) cus.add(u);
+            task.analyze();
+            Trees trees = Trees.instance(task);
+            Map<Path, TypeInfo> out = new HashMap<>();
+            for (CompilationUnitTree cu : cus) {
+                out.put(
+                        Path.of(cu.getSourceFile().toUri()),
+                        new TypeInfo(cu, trees, task.getTypes(), task.getElements()));
+            }
+            return out;
+        } catch (IOException | RuntimeException e) {
+            return Map.of();
+        }
+    }
+
+    /**
+     * javac's options for attributing a file, or null if the file has no module.
+     */
+    private List<String> options(Path file) {
         Module m = moduleOf(file);
         if (m == null) return null;
         List<String> opts = new ArrayList<>(List.of(
                 "-proc:none",
                 "-Xlint:none",
                 "-implicit:none",
-                "-XDshould-stop.ifError=FLOW",
-                "-XDshould-stop.ifNoError=FLOW"));
+                "-XDshould-stop.ifError=ATTR",
+                "-XDshould-stop.ifNoError=ATTR"));
         Path abs = file.toAbsolutePath().normalize();
         List<Path> srcs = m.sourceDirs().stream().filter(Files::isDirectory).toList();
         Path modular = srcs.stream()
@@ -254,17 +304,7 @@ public final class Project {
                 opts.add(join(plain));
             }
         }
-        DiagnosticCollector<JavaFileObject> diags = new DiagnosticCollector<>();
-        JavacTask task = (JavacTask) Source.JAVAC.getTask(
-                Source.quiet(), FILE_MANAGERS.get(), diags, opts, null, List.of(Source.fileObject(abs, text)));
-        try {
-            CompilationUnitTree cu = null;
-            for (CompilationUnitTree u : task.parse()) cu = u;
-            task.analyze();
-            return cu == null ? null : new TypeInfo(cu, Trees.instance(task), task.getTypes(), task.getElements());
-        } catch (IOException | RuntimeException e) {
-            return null;
-        }
+        return opts;
     }
 
     private static String join(List<Path> ps) {

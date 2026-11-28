@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
@@ -266,10 +267,11 @@ public final class Main {
         List<Engine.Result> results;
         ForkJoinPool pool = new ForkJoinPool(o.threads());
         try {
-            results = pool.submit(() -> files.parallelStream()
-                            .map(f -> process(ws, cache, f, mode))
-                            .toList())
+            List<List<Path>> chunks = chunks(ws, files);
+            Map<Path, Engine.Result> byFile = new ConcurrentHashMap<>();
+            pool.submit(() -> chunks.parallelStream().forEach(c -> byFile.putAll(process(ws, cache, c, mode))))
                     .get();
+            results = files.stream().map(byFile::get).toList();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return 130;
@@ -320,30 +322,69 @@ public final class Main {
         return false;
     }
 
-    private static Engine.Result process(Workspace ws, Cache cache, Path file, Engine.Mode mode) {
-        String rel = Config.rel(ws.root, file);
-        String text = Workspace.read(file);
-        if (cache != null) {
-            Cache.Entry e = cache.get(rel, text);
+    /**
+     * The files split into the units that run in parallel. Files that javac attributes alike ({@link Project#batchKey})
+     * stay together, in chunks of up to {@link #MAX_CHUNK} of equal size, so each javac task reads the classpath and
+     * enters the sources the files share once per chunk instead of once per file; files without types run one by one.
+     */
+    static List<List<Path>> chunks(Workspace ws, List<Path> files) {
+        Map<String, List<Path>> groups = new LinkedHashMap<>();
+        List<List<Path>> out = new ArrayList<>();
+        for (Path f : files) {
+            String key = ws.project.typed() ? ws.project.batchKey(f) : null;
+            if (key == null) out.add(List.of(f));
+            else groups.computeIfAbsent(key, k -> new ArrayList<>()).add(f);
+        }
+        for (List<Path> g : groups.values()) {
+            int parts = (g.size() + MAX_CHUNK - 1) / MAX_CHUNK;
+            for (int k = 0; k < parts; k++) out.add(g.subList(g.size() * k / parts, g.size() * (k + 1) / parts));
+        }
+        return out;
+    }
+
+    /**
+     * The most files attributed in one javac task. On a project of 1,664 files on 20 threads, chunks of 64 took 12.7 s
+     * and 4.9 GB of heap, of 512 7.4 s and 1.6 GB: javac tasks that run at once each hold the classpath and the
+     * shared sources, so fewer and larger ones save both, while more than this leaves threads idle.
+     */
+    static final int MAX_CHUNK = 512;
+
+    private static Map<Path, Engine.Result> process(
+            Workspace ws, Cache cache, List<Path> chunk, Engine.Mode mode) {
+        Map<Path, Engine.Result> out = new LinkedHashMap<>();
+        List<Path> todo = new ArrayList<>();
+        List<Map.Entry<String, String>> inputs = new ArrayList<>();
+        for (Path file : chunk) {
+            String rel = Config.rel(ws.root, file);
+            String text = Workspace.read(file);
+            Cache.Entry e = cache == null ? null : cache.get(rel, text);
             if (e != null && (mode == Engine.Mode.CHECK || e.formatted())) {
-                return new Engine.Result(rel, text, text, e.findings(), false);
+                out.put(file, new Engine.Result(rel, text, text, e.findings(), false));
+            } else {
+                todo.add(file);
+                inputs.add(Map.entry(rel, text));
             }
         }
-        Engine.Result r = ws.engine.run(rel, text, mode);
-        if (mode == Engine.Mode.FORMAT && r.changed()) {
-            try {
-                Files.writeString(file, r.output(), StandardCharsets.UTF_8);
-            } catch (IOException e) {
-                throw new FormatException("Could not write " + file + ": " + e.getMessage());
+        List<Engine.Result> results = ws.engine.runAll(inputs, mode);
+        for (int i = 0; i < todo.size(); i++) {
+            Path file = todo.get(i);
+            Engine.Result r = results.get(i);
+            if (mode == Engine.Mode.FORMAT && r.changed()) {
+                try {
+                    Files.writeString(file, r.output(), StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    throw new FormatException("Could not write " + file + ": " + e.getMessage());
+                }
             }
+            if (cache != null
+                    && !r.syntaxError()
+                    && r.findings().stream().noneMatch(f -> f.category().equals("internal"))) {
+                boolean formatted = mode == Engine.Mode.FORMAT || !hasFormatFinding(r, ws);
+                cache.put(r.path(), r.output(), formatted, r.findings());
+            }
+            out.put(file, r);
         }
-        if (cache != null
-                && !r.syntaxError()
-                && r.findings().stream().noneMatch(f -> f.category().equals("internal"))) {
-            boolean formatted = mode == Engine.Mode.FORMAT || !hasFormatFinding(r, ws);
-            cache.put(rel, r.output(), formatted, r.findings());
-        }
-        return r;
+        return out;
     }
 
     static int rules() {
