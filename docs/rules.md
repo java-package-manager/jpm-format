@@ -21,7 +21,11 @@ line (`@Nullable String name()`). The body of an `if`, a loop or a switch rule t
 past `java.lineWidth` moves to the next line, and so does a record component, as IntelliJ's "wrap if long" does: the
 first one whose line would end past `java.lineWidth` before its comma (for the last one, before the end of the line,
 a comment at its end included), lined up with the first component, or one continuation indent in if that is the one
-that moves. Method parameters and arguments are not wrapped, as in IntelliJ's default code style. A wrapped line is indented one continuation indent from the
+that moves. Method parameters and arguments are not wrapped, as in IntelliJ's default code style. A `//` comment
+after the annotations of a method or constructor whose modifiers are only annotations goes on a line of its own,
+and the comments between them and the type are one indent further in unless a Javadoc comment comes first; after
+any other annotation of a method, the comment goes on a line of its own only when its line would end past
+`java.lineWidth`. On a field, a class or anything else it stays. A wrapped line is indented one continuation indent from the
 nearest enclosing statement, argument, chain or operand that starts a line, not from every expression it is in
 (`foo(bar(a,` then `b))` puts `b` one continuation in), a block from the line it starts on, an anonymous class's
 body from the line its `new` is on, and a closing `)` on

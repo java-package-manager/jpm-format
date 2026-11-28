@@ -26,7 +26,8 @@ import java.util.Set;
  * call, or from the line its {@code .} starts. Method parameters, {@code for} headers, try resources and record
  * components line up after their parenthesis when the first one is on its line. Statement bodies without braces and
  * switch rule bodies move to the next line when they would end past {@code lineWidth}, and so do record components,
- * as IntelliJ's "wrap if long" does. Blank lines are kept up to
+ * as IntelliJ's "wrap if long" does, and line comments after a method's annotations ({@link Syntax#IF_LONG}). Blank
+ * lines are kept up to
  * {@code maxBlankLines}; the IntelliJ rules after the engine handle the rest.
  */
 public final class Layout {
@@ -268,6 +269,10 @@ public final class Layout {
                 if (body || syn.joinIfFits[i]) lines[i] = 1;
             }
             if (!outside && i > 0 && lines[i] == 0 && wrapsHere(i, f)) lines[i] = 1;
+            if (!outside && i > 0 && lines[i] == 0 && syn.annotationComment[i] == Syntax.IF_LONG
+                    && column + space(i) + t.text().length() > width) {
+                lines[i] = 1;
+            }
             if (!outside && (lines[i] > 0 || i == 0)) {
                 int ind = i == 0 && t.comment() ? 0 : indentFor(i);
                 if (i > 0) {
@@ -501,6 +506,7 @@ public final class Layout {
                 while (j < toks.size() && toks.get(j).comment()) j++;
                 if (j >= toks.size()) return child(f);
                 if (closes(toks.get(j), f)) return child(f);
+                if (syn.annotationComment[i] == Syntax.SHIFTED) return indentFor(j) + indent;
                 if (f.kind == SWITCH && syn.start[j] == Syntax.CASE && prevCode >= 0 && !toks.get(prevCode).op("{")
                         && (syn.role[prevCode] == Syntax.CASE_COLON
                         || originalColumn(t.start()) > originalColumn(toks.get(j).start()))) {
