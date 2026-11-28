@@ -60,7 +60,12 @@ final class Syntax {
     static final byte CODE = 1, LAMBDA = 2, CLASS = 3, ANONYMOUS = 4, ENUM = 5, SWITCH = 6, SWITCH_EXPRESSION = 7,
             ARRAY = 8, SIMPLE_ENUM = 9;
 
-    static final byte STATEMENT = 1, CASE = 2, CASE_STATEMENT = 3, BODY = 4, ANNOTATED = 5, ENUM_CONSTANT = 6;
+    /**
+     * Where a line starts. {@code CASE_LEVEL}: a statement of a {@code case} group at the label's indent, as
+     * IntelliJ puts a block of the group that is not on the label's line and every statement from a block on.
+     */
+    static final byte STATEMENT = 1, CASE = 2, CASE_STATEMENT = 3, BODY = 4, ANNOTATED = 5, ENUM_CONSTANT = 6,
+            CASE_LEVEL = 7;
 
     /**
      * What IntelliJ does with a line comment after a method's or constructor's annotation (on a field, a class or
@@ -833,12 +838,17 @@ final class Syntax {
                     int colon = find(s(c), ":");
                     if (colon >= 0) mark(colon, CASE_COLON);
                     boolean first = true;
+                    boolean level = false;
                     for (StatementTree st : c.getStatements()) {
                         int k = code(s(st));
                         if (k >= tokens.size()) continue;
                         int sat = at(k);
-                        start[sat] = CASE_STATEMENT;
-                        breakBefore[sat] = !(first && st instanceof BlockTree);
+                        boolean block = st instanceof BlockTree;
+                        if (block && first && colon >= 0 && k == colon + 1) joinBefore[sat] = true;
+                        else if (block) level = true;
+                        start[sat] = level ? CASE_LEVEL : CASE_STATEMENT;
+                        breakBefore[sat] = !(first && block);
+                        if (block) level = true;
                         first = false;
                     }
                 }

@@ -34,6 +34,9 @@ parameters, the parts of a `for` header and try resources line up ("Align when m
 one continuation in and written `new int[]{1}`, and an `if` on its own line after an `else` and a comment is that
 `else`'s statement. Modifiers keep the order they are written in, and the annotations and modifiers of a local
 variable or parameter join the line of its type. A wrapped `throws` list is one continuation in from the method.
+In a `case` group with a `:`, a block that is the group's first statement joins the label's line (`case 1: {`, not
+after a comment), its contents one indent in from the label; a block on a line of its own and the statements from
+a block on are at the label's indent, as IntelliJ puts them.
 Comments stay as written: line comments are not wrapped and keep the text after their `//`, comments at the first
 column stay there ("Line comment at first column"), a comment after the statements of a `case` stays indented with
 them, and the other lines of a block comment move as far as its first.
