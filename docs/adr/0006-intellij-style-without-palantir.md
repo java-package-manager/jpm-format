@@ -15,6 +15,12 @@ Palantir Java Format 2.103.0 from its own jar. Where [0002](0002-formatting-pipe
   statement per line, block contents on their own lines, `{` at the end of the line, `} else`) and where it
   moves a statement body past the line width to the next line. So the engine needs no line-breaking search,
   which is most of what Palantir is.
+- Amended: record components wrap where IntelliJ's default code style wraps them ("wrap if long"), the one list it
+  wraps by default; method parameters, arguments and `throws` lists it does not wrap. That is still no search:
+  IntelliJ wraps greedily, before the first component whose line would end past the line width before its comma
+  (for the last one, before the end of the line, a comment at its end included), and the engine does the same as it
+  writes the line. On Paper's own sources (3,096 files) record headers were 63 of the 301 lines that differed from
+  IntelliJ; after this, none.
 - javac stays the parser. Palantir used it too; it is not part of what leaves.
 - `"palantir"` and `"palantir@<version>"` stay as `java.style`, run as external formatters
   (`ExternalFormatter`) from Palantir's own jar, like `google-java-format`. Nothing of Palantir's code is

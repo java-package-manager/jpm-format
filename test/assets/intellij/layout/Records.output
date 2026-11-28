@@ -1,0 +1,70 @@
+package demo;
+
+import java.util.List;
+import java.util.Map;
+
+public class Records {
+    record Exactly(String alpha, String beta, String gamma, String delta, int exxxxxxxxxxxxxxxxxx) implements Runnable {
+        public void run() {
+        }
+    }
+
+    record OneOver(String alpha, String beta, String gamma, String delta,
+                   int exxxxxxxxxxxxxxxxxxx) implements Runnable {
+        public void run() {
+        }
+    }
+
+    record Single<T extends Comparable<T>, U extends Map<String, List<T>>>(
+            Map<String, List<U>> valuesByName) implements Runnable {
+        public void run() {
+        }
+    }
+
+    record Many(String first, String second, String third, String fourth, String fifth, String sixth, String seventh,
+                String eighth, String ninth, String tenth, String eleventh, String twelfth) {
+    }
+
+    record Comment(String alpha, String beta, String gamma, String delta,
+                   int exxxxxxxxxxxxxxxxxxxxxxxxxxxx) { // a comment that ends past the width
+    }
+
+    record Annotated(@Deprecated String first, @SuppressWarnings("unused") String second, @Deprecated String third) {
+    }
+
+    record Split(
+            String first, String second, String third, String fourth, String fifth, String sixth, String seventh,
+            String eighth,
+            String ninth
+    ) {
+    }
+
+    record Empty(String first, String second, String third, String fourth, String fifth, String sixth, String seventh) {
+    }
+
+    static class Outer {
+        static class Inner {
+            record Deep(String first, String second, String third, String fourth, String fifth,
+                        String sixth) implements Runnable {
+                public void run() {
+                }
+            }
+        }
+    }
+
+    record Generic(Map<String, List<Map<String, Integer>>> first, Map<String, List<Map<String, Integer>>> second,
+                   Map<String, Integer> third) {
+    }
+
+    record PerLine(Map<String, Integer> first,
+                   Map<String, List<Map<String, List<Map<String, List<Map<String, Integer>>>>>>> secondWithAVeryLongName,
+                   Map<String, Integer> third) {
+    }
+
+    void method(String first, String second, String third, String fourth, String fifth, String sixth, String seventh) {
+        call(first, second, third, fourth, fifth, sixth, seventh, first, second, third, fourth, fifth, sixth, seventh);
+    }
+
+    void call(String... values) {
+    }
+}

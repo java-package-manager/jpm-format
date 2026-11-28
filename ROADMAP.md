@@ -8,10 +8,12 @@ What jpm-format does not do yet. jpm's own plan is in its
 Parity is measured against IntelliJ's own formatter on real projects (`checks/Parity.java`, see
 [CONTRIBUTING.md](CONTRIBUTING.md)); rules go in `src/dev/jpm/format/intellij/`.
 
-- [ ] **Wrapping long declarations**: IntelliJ wraps record components and parameters past the line width ("wrap
-  if long"); jpm-format never adds line breaks (ADR 0006). About 200 of the lines that still differ in Paper.
-- [ ] **Smaller differences found in Paper** (about 130 lines): indents, spacing and Javadoc shapes; compare
-  with IntelliJ's output on a clone of Paper.
+- [ ] **Differences found in Paper** (238 lines in Paper's own 3,096 files, `paper-api` and `paper-server/src/main`):
+  - a `//` comment after a member's annotations goes on a line of its own in IntelliJ (`@Deprecated // Paper`
+    becomes two lines): 136 lines;
+  - `};` after an anonymous class or enum body becomes `}`, a blank line and `;`; `{}` of a record or a `case` with
+    a line before it becomes `{` and `}`; record patterns past the line width wrap after their `(`: about 20 lines;
+  - indents, spacing and Javadoc shapes: about 80 lines.
 - [ ] **IntelliJ's code style options.**
 - [ ] **A `#branch` of Palantir or google-java-format** as `formatter.style`; they build with Gradle and Maven,
   not jpm.
