@@ -17,9 +17,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Sorts imports into groups, IntelliJ's layout by default: all other imports, then {@code java.*} and
- * {@code javax.*}, then static imports; each group sorted alphabetically and separated from the next by a
- * blank line. With {@code imports.wildcardThreshold} set, that many imports from one package become a
+ * Sorts imports into groups, IntelliJ's layout by default: all other imports, then {@code javax.*} and
+ * {@code java.*}, then static imports; a group's imports in the order of its patterns, those of each pattern
+ * sorted alphabetically, and a blank line between groups. With {@code imports.wildcardThreshold} set, that many imports from one package become a
  * wildcard import. Imports with comments between them are left alone, so no comment is lost.
  */
 public final class ImportOrder implements Formatter {
@@ -92,7 +92,7 @@ public final class ImportOrder implements Formatter {
         List<String> parts = new ArrayList<>();
         for (List<Imp> b : buckets) {
             if (b.isEmpty()) continue;
-            b.sort(Comparator.comparing(Imp::name, ORDER));
+            b.sort(Comparator.comparingInt((Imp i) -> match(i, groups)[1]).thenComparing(Imp::name, ORDER));
             StringBuilder sb = new StringBuilder();
             for (Imp i : b) {
                 if (!sb.isEmpty()) sb.append(nl);
@@ -114,9 +114,17 @@ public final class ImportOrder implements Formatter {
      * The group of the most specific matching pattern; the last group if none matches.
      */
     static int group(Imp i, List<List<String>> groups) {
-        int best = -1, bestLen = -1;
+        return match(i, groups)[0];
+    }
+
+    /**
+     * The group and the index in it of the most specific matching pattern; the last group if none matches.
+     */
+    static int[] match(Imp i, List<List<String>> groups) {
+        int best = -1, bestPattern = 0, bestLen = -1;
         for (int g = 0; g < groups.size(); g++) {
-            for (String pat : groups.get(g)) {
+            for (int p = 0; p < groups.get(g).size(); p++) {
+                String pat = groups.get(g).get(p);
                 boolean st = pat.startsWith("static ");
                 String body = st ? pat.substring(7).strip() : pat.strip();
                 if (st != i.isStatic()) continue;
@@ -128,10 +136,11 @@ public final class ImportOrder implements Formatter {
                 else continue;
                 if (len > bestLen) {
                     best = g;
+                    bestPattern = p;
                     bestLen = len;
                 }
             }
         }
-        return best < 0 ? groups.size() - 1 : best;
+        return best < 0 ? new int[]{groups.size() - 1, 0} : new int[]{best, bestPattern};
     }
 }

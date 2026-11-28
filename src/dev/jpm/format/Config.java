@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   "ignore": ["src/generated/**"],
  *   "java": { "enabled": true, "lineWidth": 120, "indentWidth": 4, "continuationIndentWidth": 8, "useTabs": false,
  *                  "licenseHeader": "/* (c) $YEAR Me *&#47;" },
- *   "imports": { "removeUnused": true, "sort": true, "groups": ["*", ["java.*", "javax.*"], "static *"],
+ *   "imports": { "removeUnused": true, "sort": true, "groups": ["*", ["javax.*", "java.*"], "static *"],
  *                "wildcardThreshold": 0 },
  *   "linter": { "enabled": true, "recommended": true,
  *               "rules": { "style": { "MissingOverrideAnnotation": "error" },
@@ -56,10 +56,10 @@ public final class Config {
             "rules/test/**");
 
     /**
-     * IntelliJ's default layout: all other imports, then java.* and javax.*, then static imports.
+     * IntelliJ's default layout: all other imports, then javax.* and java.*, then static imports.
      */
     static final List<List<String>> DEFAULT_GROUPS =
-            List.of(List.of("*"), List.of("java.*", "javax.*"), List.of("static *"));
+            List.of(List.of("*"), List.of("javax.*", "java.*"), List.of("static *"));
 
     /**
      * A rule's level and options.

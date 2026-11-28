@@ -28,6 +28,8 @@ import com.sun.source.util.TreeScanner;
 import dev.jpm.format.Comments;
 import dev.jpm.format.api.Fix;
 
+import javax.lang.model.element.Modifier;
+import javax.lang.model.type.TypeKind;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,8 +38,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.type.TypeKind;
 
 /**
  * IntelliJ's inspections about declarations: modifiers, literals, classes, methods and fields.

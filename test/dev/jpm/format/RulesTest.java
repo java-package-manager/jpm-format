@@ -112,9 +112,9 @@ class RulesTest {
                 import com.google.Foo;
                 import org.Bar;
 
+                import javax.swing.JFrame;
                 import java.util.ArrayList;
                 import java.util.List;
-                import javax.swing.JFrame;
 
                 import static java.util.Objects.requireNonNull;
                 import static org.junit.Assert.assertTrue;
@@ -138,6 +138,16 @@ class RulesTest {
                         """,
                 t.format(
                         "import a.B;\nimport java.util.Map;\nimport static x.Y.z;\nimport java.util.List;\nclass A {}\n"));
+    }
+
+    @Test
+    void importOrderKeepsTheOrderOfAGroupsPatterns() {
+        RuleTester t = RuleTester.of(new ImportOrder()).config("""
+                { "imports": { "groups": [["org.*", "com.*"], "*"] } }
+                """);
+        assertEquals(
+                "import org.b.B;\nimport org.c.C;\nimport com.a.A;\n\nimport x.X;\nclass A {}\n",
+                t.format("import com.a.A;\nimport x.X;\nimport org.c.C;\nimport org.b.B;\nclass A {}\n"));
     }
 
     @Test

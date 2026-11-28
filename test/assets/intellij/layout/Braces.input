@@ -1,0 +1,59 @@
+package demo;
+
+import java.util.function.Consumer;
+
+public class Braces {
+    record R1(int a) {}
+
+    record R2(int a) { }
+
+    record R3(
+            int a
+    ) { }
+
+    class C1 {}
+
+    class C2 { }
+
+    interface I1 {}
+
+    enum E1 {}
+
+    void m1() {}
+
+    void m2() { }
+
+    Braces() {}
+
+    void lambdas() {
+        Runnable r1 = () -> {};
+        Runnable r2 = () -> { };
+        Object o1 = new Object() {};
+        Object o2 = new Object() { };
+        int[] a1 = {};
+        int[] a2 = { };
+        int[] a3 = new int[]{};
+        if (a1.length == 0) {}
+        while (a1.length == 1) { }
+        try { } catch (RuntimeException e) { }
+        synchronized (this) {}
+    }
+
+    void switches(int x) {
+        switch (x) {
+            case 1 -> {}
+            case 2 -> { }
+            default -> {
+            }
+        }
+        switch (x) {
+            case 1: {}
+            case 2: { }
+            default:
+        }
+        int y = switch (x) {
+            case 1 -> { yield 1; }
+            default -> 0;
+        };
+    }
+}

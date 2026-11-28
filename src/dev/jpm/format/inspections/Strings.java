@@ -19,16 +19,16 @@ import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
 import dev.jpm.format.api.Fix;
 
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * IntelliJ's inspections about strings, text, number objects and common library calls.

@@ -11,9 +11,9 @@ import dev.jpm.format.Source;
 import dev.jpm.format.api.Context;
 import dev.jpm.format.api.Fix;
 
+import javax.lang.model.element.Modifier;
 import java.util.ArrayList;
 import java.util.List;
-import javax.lang.model.element.Modifier;
 
 /**
  * IntelliJ's "Minimum blank lines": one blank line around methods, nested classes and initializer blocks, none

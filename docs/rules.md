@@ -133,8 +133,9 @@ off with `java.style: "palantir"`.
 
 ### ImportOrder
 
-Sorts imports into `imports.groups` (default: all other imports, then `java.*` and `javax.*`, then static
-imports), each group alphabetical and separated by a blank line. A pattern is `*`, a prefix like `java.*`,
+Sorts imports into `imports.groups` (default: all other imports, then `javax.*` and `java.*`, then static
+imports, as IntelliJ's default import layout), a blank line between groups; within a group, the imports of each
+pattern in the pattern's order, each alphabetical. A pattern is `*`, a prefix like `java.*`,
 or an exact name; prefix with `static ` for static imports; the most specific pattern wins. Duplicates are
 dropped. With `imports.wildcardThreshold` > 0, that many imports from one package become `package.*`.
 Imports with comments between them are left alone. Off with `imports.sort: false`.

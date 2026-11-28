@@ -3,6 +3,10 @@ package dev.jpm.format;
 import dev.jpm.format.api.Lint;
 import dev.jpm.format.api.RuleSet;
 
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticCollector;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -18,10 +22,6 @@ import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.tools.Diagnostic;
-import javax.tools.DiagnosticCollector;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
 
 /**
  * The project's own rules: one Java file per rule in {@code rules/} at the project root (tests for them go in

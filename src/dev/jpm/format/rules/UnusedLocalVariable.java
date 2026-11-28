@@ -9,9 +9,9 @@ import com.sun.source.util.TreeScanner;
 import dev.jpm.format.api.Context;
 import dev.jpm.format.api.Lint;
 
+import javax.lang.model.element.Modifier;
 import java.util.List;
 import java.util.Set;
-import javax.lang.model.element.Modifier;
 
 /**
  * Local variables never read or written after their declaration, and parameters of private methods that the

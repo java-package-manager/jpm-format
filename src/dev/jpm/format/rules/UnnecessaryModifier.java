@@ -11,10 +11,10 @@ import dev.jpm.format.api.Context;
 import dev.jpm.format.api.Fix;
 import dev.jpm.format.api.Formatter;
 
+import javax.lang.model.element.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import javax.lang.model.element.Modifier;
 
 /**
  * Removes modifiers the language already implies, which never changes behaviour: {@code public} and

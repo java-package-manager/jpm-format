@@ -196,7 +196,8 @@ public final class Main {
             boolean cache,
             int threads,
             String stdinPath,
-            List<Path> paths) {}
+            List<Path> paths) {
+    }
 
     static Options parse(List<String> args) {
         boolean check = false, debug = false, cache = true;
