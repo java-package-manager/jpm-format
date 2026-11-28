@@ -1,0 +1,126 @@
+package demo;
+
+import org.jetbrains.annotations.Nullable;
+
+@Deprecated // a class keeps its comment
+public class AnnotationComments {
+    @Deprecated // a field keeps its comment
+    int field;
+
+    @Deprecated
+    // already on its own line
+    int ownLine;
+
+    @SuppressWarnings("unused") // after an annotation that is not the last
+    @Deprecated
+        // after the last, no modifiers
+    void twoAnnotations() {
+    }
+
+    @Deprecated(since = "1", forRemoval = true) // a modifier follows
+    public void withModifier() {
+    }
+
+    @Deprecated
+        // more comments follow
+        // and another comment
+    void twoComments() {
+    }
+
+    @Deprecated
+        // a constructor
+    AnnotationComments() {
+    }
+
+    @Deprecated
+        // a generic method
+    <T> T generic() {
+        return null;
+    }
+
+    @Deprecated
+    @SuppressWarnings("x")
+        // two on one line, then no modifiers
+    void twoOnOneLine() {
+    }
+
+    @Deprecated
+        // already on its own line, no modifiers
+    void ownLineMethod() {
+    }
+
+    @Deprecated
+    // already on its own line, a modifier follows
+    public void ownLineWithModifier() {
+    }
+
+    @Nullable // a type-use nullness annotation
+    String nullable() {
+        return null;
+    }
+
+    void local(int a) {
+        @Deprecated // on a local
+        int local = a;
+    }
+
+    enum E {
+        @Deprecated // on a constant
+        A,
+        B
+    }
+
+    interface I {
+        /**
+         * Doc.
+         */
+        @Deprecated
+        // after Javadoc, no modifiers
+        void documented();
+
+        /**
+         * Doc.
+         */
+        @SuppressWarnings("x")
+        @Deprecated
+        // after Javadoc, the second annotation
+        void secondAnnotation();
+
+        /**
+         * Doc.
+         */
+        @Deprecated // after Javadoc, a default method
+        default void defaultMethod() {
+        }
+
+        /**
+         * Doc.
+         */
+        @Deprecated
+        // static, past the line width xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        static void longStatic() {
+        }
+
+        @Deprecated // static, exactly the line width xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        static void exactStatic() {
+        }
+
+        @Deprecated
+        @SuppressWarnings("y") // two on one line, past the width before they are split xxxxxxxxxxxxxxxxxxxxxxxxx
+        static void splitThenFits() {
+        }
+
+        @Deprecated
+        // past the width, another annotation follows xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        @SuppressWarnings("y")
+        static void thenAnnotation() {
+        }
+
+        /**
+         * Doc.
+         */
+        @Deprecated // a nested class past the width keeps it xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        class Nested {
+        }
+    }
+}

@@ -62,6 +62,13 @@ final class Syntax {
 
     static final byte STATEMENT = 1, CASE = 2, CASE_STATEMENT = 3, BODY = 4, ANNOTATED = 5, ENUM_CONSTANT = 6;
 
+    /**
+     * What IntelliJ does with a line comment after a method's or constructor's annotation (on a field, a class or
+     * anything else it stays): {@code IF_LONG}, it goes on a line of its own if its line would end past the line
+     * width; {@code SHIFTED}, it is on a line of its own one indent further in (where no Javadoc comes first).
+     */
+    static final byte IF_LONG = 1, SHIFTED = 2;
+
     private static final Set<String> TYPE_USE_NULLNESS = Set.of("org.jspecify.annotations.Nullable",
             "org.jspecify.annotations.NonNull", "org.jetbrains.annotations.Nullable", "org.jetbrains.annotations.NotNull");
     private static final Set<String> MODIFIERS = Set.of("public", "protected", "private", "static", "abstract",
@@ -75,6 +82,7 @@ final class Syntax {
      * The {@code (} of a record header: IntelliJ wraps its components where a line would end past the line width.
      */
     final boolean[] wrapIfLong;
+    final byte[] annotationComment;
     final byte[] start;
     final int[] owner;
     final boolean[] breakBefore;
@@ -95,6 +103,7 @@ final class Syntax {
         brace = new byte[n];
         align = new boolean[n];
         wrapIfLong = new boolean[n];
+        annotationComment = new byte[n];
         start = new byte[n];
         owner = new int[n];
         breakBefore = new boolean[n];
@@ -132,6 +141,7 @@ final class Syntax {
             s.brace[i] = facts.brace[at];
             s.align[i] = facts.align[at];
             s.wrapIfLong[i] = facts.wrapIfLong[at];
+            s.annotationComment[i] = facts.annotationComment[at];
             s.start[i] = facts.start[at];
             s.breakBefore[i] = facts.breakBefore[at];
             s.joinBefore[i] = facts.joinBefore[at];
@@ -203,6 +213,7 @@ final class Syntax {
         final byte[] brace;
         final boolean[] align;
         final boolean[] wrapIfLong;
+        final byte[] annotationComment;
         final byte[] start;
         final int[] owner;
         final boolean[] breakBefore;
@@ -229,6 +240,7 @@ final class Syntax {
             brace = new byte[length + 1];
             align = new boolean[length + 1];
             wrapIfLong = new boolean[length + 1];
+            annotationComment = new byte[length + 1];
             start = new byte[length + 1];
             owner = new int[length + 1];
             breakBefore = new boolean[length + 1];
@@ -397,6 +409,35 @@ final class Syntax {
                         && !lineBetween(e(a), at))) {
                     breakBefore[at] = true;
                 }
+            }
+        }
+
+        /**
+         * The comments after a method's or constructor's annotations. When its modifiers are only annotations, IntelliJ
+         * puts a line comment on the line of the last one on a line of its own, and every comment between the last
+         * annotation and the type one indent further in, unless a Javadoc comment comes first (not after a type-use
+         * nullness annotation, which belongs to the type). A line comment after any other annotation goes on a line
+         * of its own only when its line would end past the line width.
+         */
+        private void annotationComments(MethodTree t) {
+            ModifiersTree mods = t.getModifiers();
+            if (mods == null || s(mods) < 0 || mods.getAnnotations().isEmpty()) return;
+            int first = code(s(t));
+            boolean doc = first > 0 && first < tokens.size() && tokens.get(first - 1).text().startsWith("/**");
+            AnnotationTree last = mods.getAnnotations().getLast();
+            for (AnnotationTree a : mods.getAnnotations()) {
+                if (e(a) < 0) continue;
+                int k = index(e(a));
+                int next = code(e(a));
+                if (k >= tokens.size() || next >= tokens.size()) continue;
+                Tokens.Token c = tokens.get(k);
+                boolean trailing = c.kind() == Tokens.Kind.LINE_COMMENT && !lineBetween(e(a), c.start());
+                if (a != last || !mods.getFlags().isEmpty() || typeUseNullness(a, next)) {
+                    if (trailing) annotationComment[c.start()] = IF_LONG;
+                    continue;
+                }
+                if (trailing) breakBefore[c.start()] = true;
+                if (!doc) for (int j = k; j < next; j++) annotationComment[at(j)] = SHIFTED;
             }
         }
 
@@ -688,6 +729,7 @@ final class Syntax {
 
         @Override
         public Void visitMethod(MethodTree t, Void v) {
+            annotationComments(t);
             int from = Math.max(s(t), e(t.getModifiers()));
             if (t.getReturnType() != null) from = Math.max(from, e(t.getReturnType()));
             if (!t.getTypeParameters().isEmpty()) from = Math.max(from, e(t.getTypeParameters().getLast()));
