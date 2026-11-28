@@ -25,7 +25,8 @@ import java.util.Set;
  * (a statement, an argument, a chain or an operand of its own); arguments are one continuation indent in from the
  * call, or from the line its {@code .} starts. Method parameters, {@code for} headers, try resources and record
  * components line up after their parenthesis when the first one is on its line. Statement bodies without braces and
- * switch rule bodies move to the next line when they would end past {@code lineWidth}. Blank lines are kept up to
+ * switch rule bodies move to the next line when they would end past {@code lineWidth}, and so do record components,
+ * as IntelliJ's "wrap if long" does. Blank lines are kept up to
  * {@code maxBlankLines}; the IntelliJ rules after the engine handle the rest.
  */
 public final class Layout {
@@ -172,6 +173,57 @@ public final class Layout {
             return column + 1 + rest.length() <= width;
         }
 
+        /**
+         * Whether a record component that starts at {@code i} moves to the next line, as IntelliJ's "wrap if long"
+         * does: when the line would end past the line width before the next place it can wrap, after the
+         * component's comma. For the last component that is the end of the line, with what follows its
+         * parenthesis and a comment at the end of the line.
+         */
+        private boolean wrapsHere(int i, Frame f) {
+            if (f.kind != PAREN || !f.expectItem || !syn.wrapIfLong[f.opener]) return false;
+            Tokens.Token t = toks.get(i);
+            if (t.comment() || t.op(")") || !componentStart(f.opener, i)) return false;
+            int close = syn.match[f.opener];
+            int w = space(i) + t.text().length();
+            int depth = 0;
+            for (int k = i + 1; k < toks.size() && lines[k] == 0; k++) {
+                Tokens.Token x = toks.get(k);
+                if (x.text().indexOf('\n') >= 0) break;
+                w += gap(k) + x.text().length();
+                boolean typeArgs = syn.role[k] != Syntax.BIN;
+                if (x.op("(") || x.op("[") || x.op("{") || x.op("<") && typeArgs) depth++;
+                else if (x.op(")") || x.op("]") || x.op("}") || x.op(">") && typeArgs) depth--;
+                if (depth == 0 && x.op(",") && k < close) break;
+            }
+            return column + w > width;
+        }
+
+        /**
+         * Whether token {@code i} starts a component of the record header opened at {@code open}: it follows the
+         * parenthesis or a comma between components, not one between type arguments.
+         */
+        private boolean componentStart(int open, int i) {
+            int depth = 0;
+            for (int k = open + 1; k < i; k++) {
+                Tokens.Token x = toks.get(k);
+                boolean typeArgs = syn.role[k] != Syntax.BIN;
+                if (x.op("(") || x.op("[") || x.op("{") || x.op("<") && typeArgs) depth++;
+                else if (x.op(")") || x.op("]") || x.op("}") || x.op(">") && typeArgs) depth--;
+            }
+            return depth == 0;
+        }
+
+        /**
+         * The spaces before token {@code k} when it stays on the line of the token before it.
+         */
+        private int gap(int k) {
+            Tokens.Token b = toks.get(k), a = toks.get(k - 1);
+            int original = b.start() - a.end();
+            if (b.comment()) return original;
+            if (a.comment()) return original > 0 ? 1 : 0;
+            return rule(k - 1, k);
+        }
+
         private boolean join(int i) {
             if (syn.joinBefore[i] || syn.joinIfFits[i]) return true;
             Tokens.Token t = toks.get(i);
@@ -215,6 +267,7 @@ public final class Layout {
                         && !(t.word("if") && toks.get(before(i)).word("else"));
                 if (body || syn.joinIfFits[i]) lines[i] = 1;
             }
+            if (!outside && i > 0 && lines[i] == 0 && wrapsHere(i, f)) lines[i] = 1;
             if (!outside && (lines[i] > 0 || i == 0)) {
                 int ind = i == 0 && t.comment() ? 0 : indentFor(i);
                 if (i > 0) {

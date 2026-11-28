@@ -71,6 +71,10 @@ final class Syntax {
     final byte[] role;
     final byte[] brace;
     final boolean[] align;
+    /**
+     * The {@code (} of a record header: IntelliJ wraps its components where a line would end past the line width.
+     */
+    final boolean[] wrapIfLong;
     final byte[] start;
     final int[] owner;
     final boolean[] breakBefore;
@@ -90,6 +94,7 @@ final class Syntax {
         role = new byte[n];
         brace = new byte[n];
         align = new boolean[n];
+        wrapIfLong = new boolean[n];
         start = new byte[n];
         owner = new int[n];
         breakBefore = new boolean[n];
@@ -126,6 +131,7 @@ final class Syntax {
             s.role[i] = facts.role[at];
             s.brace[i] = facts.brace[at];
             s.align[i] = facts.align[at];
+            s.wrapIfLong[i] = facts.wrapIfLong[at];
             s.start[i] = facts.start[at];
             s.breakBefore[i] = facts.breakBefore[at];
             s.joinBefore[i] = facts.joinBefore[at];
@@ -196,6 +202,7 @@ final class Syntax {
         final byte[] role;
         final byte[] brace;
         final boolean[] align;
+        final boolean[] wrapIfLong;
         final byte[] start;
         final int[] owner;
         final boolean[] breakBefore;
@@ -221,6 +228,7 @@ final class Syntax {
             role = new byte[length + 1];
             brace = new byte[length + 1];
             align = new boolean[length + 1];
+            wrapIfLong = new boolean[length + 1];
             start = new byte[length + 1];
             owner = new int[length + 1];
             breakBefore = new boolean[length + 1];
@@ -580,7 +588,10 @@ final class Syntax {
                 header(t, t.getModifiers(), word(from, t.getSimpleName().toString()));
                 if (t.getKind() == Tree.Kind.RECORD) {
                     int p = find(from, "(");
-                    if (p >= 0) align[at(p)] = true;
+                    if (p >= 0) {
+                        align[at(p)] = true;
+                        wrapIfLong[at(p)] = true;
+                    }
                 }
                 int b = braceAfter(from);
                 if (b >= 0) brace(b, t.getKind() == Tree.Kind.ENUM ? ENUM : CLASS);

@@ -39,7 +39,8 @@ IntelliJ IDEA's default Java code style, from jpm-format's own layout engine (`s
 changes only whitespace: a line is joined or broken only where IntelliJ always does it (one statement per line,
 block contents on their own lines, annotations of declarations on their own lines (not a known type-use
 `@Nullable` before the type), `{` at the end of the line,
-`} else`, `} catch`, `} finally`), and a statement body that would end past `lineWidth` moves to the next line.
+`} else`, `} catch`, `} finally`), and a statement body or a record component that would end past `lineWidth`
+moves to the next line.
 Blocks are 4 in from the line they start on; a line that continues something is one continuation indent (8) in
 from the nearest enclosing statement, argument, chain or operand that starts a line; method parameters, `for`
 headers, try resources and record components line up as in IntelliJ. The IntelliJ rules then handle the rest:
