@@ -21,6 +21,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -244,6 +245,41 @@ class EngineTest {
             System.setErr(err);
         }
         assertEquals("", captured.toString(StandardCharsets.UTF_8), "javac must not print to stderr");
+    }
+
+    @Test
+    void filesAttributedTogetherHaveTheFindingsOfFilesAttributedAlone() throws IOException {
+        String base = "package com.acme;\n\npublic class Base {\n    protected boolean moody() {\n        return false;\n    }\n}\n";
+        String cow = "package com.acme;\n\npublic class Cow extends Base {\n    protected boolean moody() {\n"
+                + "        try {\n            return true;\n        } catch (IllegalStateException | IllegalArgumentException e) {\n"
+                + "            return false;\n        }\n    }\n}\n";
+        write("src/com/acme/Base.java", base);
+        write("src/com/acme/Cow.java", cow);
+        Project typed = new Project(
+                dir, List.of(new Project.Module(dir, List.of(dir.resolve("src")), List.of())), null);
+        Workspace ws = Workspace.open(dir, typed, false, w -> {
+        });
+        List<Map.Entry<String, String>> files =
+                List.of(Map.entry("src/com/acme/Base.java", base), Map.entry("src/com/acme/Cow.java", cow));
+        List<List<String>> alone = new ArrayList<>();
+        for (Map.Entry<String, String> f : files) {
+            alone.add(ws.engine.run(f.getKey(), f.getValue(), Engine.Mode.CHECK).findings().stream()
+                    .map(Finding::brief)
+                    .toList());
+        }
+        List<List<String>> together = ws.engine.runAll(files, Engine.Mode.CHECK).stream()
+                .map(r -> r.findings().stream().map(Finding::brief).toList())
+                .toList();
+        assertEquals(alone, together);
+        assertEquals(
+                List.of("4:23 style/MissingOverrideAnnotation Method 'moody' overrides a supertype method but has no"
+                        + " @Override"),
+                together.get(1));
+        assertEquals(
+                2,
+                typed.attributeAll(Map.of(
+                                dir.resolve("src/com/acme/Base.java"), base, dir.resolve("src/com/acme/Cow.java"), cow))
+                        .size());
     }
 
     @Test

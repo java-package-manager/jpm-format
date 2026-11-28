@@ -26,6 +26,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.UnionType;
 
 /**
  * The file an {@link Inspection} reads: its tree (the attributed one when types are known, which has the same
@@ -152,7 +153,15 @@ public final class Scan {
         return isA(type(t), qualifiedName);
     }
 
+    /**
+     * True if {@code m} is {@code qualifiedName} or a subtype of it (erased); a multi-catch parameter's union type
+     * is if every alternative is.
+     */
     public boolean isA(TypeMirror m, String qualifiedName) {
+        if (m instanceof UnionType u) {
+            return !u.getAlternatives().isEmpty()
+                    && u.getAlternatives().stream().allMatch(a -> isA(a, qualifiedName));
+        }
         if (types == null || m == null || m.getKind() != TypeKind.DECLARED && m.getKind() != TypeKind.TYPEVAR) {
             return false;
         }

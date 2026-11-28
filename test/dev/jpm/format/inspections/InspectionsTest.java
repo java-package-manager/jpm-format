@@ -20,6 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class InspectionsTest {
     private static final Map<String, String> CASES = new LinkedHashMap<>();
+    /**
+     * Further cases, keyed by the inspection's name, a {@code /} and what the case is about.
+     */
+    private static final Map<String, String> MORE_CASES = new LinkedHashMap<>();
 
     static {
         CASES.put("UnnecessaryReturn", """
@@ -266,7 +270,7 @@ class InspectionsTest {
         CASES.put("IntegerDivisionInFloatingPointContext", """
                 typed:class A { double f(int a, int b) { double d = »a / b; return d; } int g(int a, int b) { return a / b; } }""");
         CASES.put("IntegerMultiplicationImplicitCastToLong", """
-                typed:class A { long f(int days) { long ms = »days * 86400000; return ms; } }""");
+                typed:class A { long f(int days, long w, int o, int b) { long ms = »days * 86400000; return ms + (w >>> (o * b)); } }""");
         CASES.put("MathRoundingWithIntArgument", """
                 typed:class A { long f(int a, int b) { return »Math.round(a / b); } }""");
         CASES.put("ComparisonOfShortAndChar", """
@@ -341,6 +345,11 @@ class InspectionsTest {
                 class A { static final Object LOG = LoggerFactory.getLogger(»B.class); static final Object OK = LoggerFactory.getLogger(A.class); } class B {}""");
         CASES.put("LoggingPlaceholderCountMatchesArgumentCount", """
                 class A { Logger log; void f(int a, Exception e) { log.info(»"{} {}", a); log.info("{}", a); log.warn("failed {}", a, e); } }""");
+        MORE_CASES.put("LoggingPlaceholderCountMatchesArgumentCount/multi-catch", """
+                typed:package org.slf4j;
+                interface Logger { void warn(String m, Object... a); }
+                class A { Logger log; void g() throws java.io.IOException {}
+                    void f(int a) { try { g(); } catch (java.io.IOException | RuntimeException e) { log.warn("failed {}", a, e); log.warn(»"{}", a, e, a); } } }""");
         CASES.put("StringConcatenationArgumentToLogCall", """
                 class A { Logger log; void f(int a) { log.debug(»"a = " + a); log.debug("a = {}", a); log.error("a = " + a); } }""");
         CASES.put("DanglingJavadoc", """
@@ -377,9 +386,17 @@ class InspectionsTest {
     @Test
     void eachInspectionReportsWhereMarked() {
         List<String> failures = new ArrayList<>();
-        for (Inspection i : Inspections.all()) {
-            String marked = CASES.get(i.id());
-            if (marked == null) continue;
+        Map<String, Inspection> byId = new LinkedHashMap<>();
+        for (Inspection i : Inspections.all()) byId.put(i.id(), i);
+        Map<String, String> cases = new LinkedHashMap<>(CASES);
+        cases.putAll(MORE_CASES);
+        for (Map.Entry<String, String> c : cases.entrySet()) {
+            Inspection i = byId.get(c.getKey().split("/")[0]);
+            if (i == null) {
+                failures.add(c.getKey() + ": no such inspection");
+                continue;
+            }
+            String marked = c.getValue();
             boolean typed = marked.startsWith("typed:");
             if (typed) marked = marked.substring("typed:".length());
             String path = null;
@@ -407,7 +424,7 @@ class InspectionsTest {
                 got.add(f.start());
                 messages.add(f.start() + " " + f.message());
             }
-            if (!got.equals(expected)) failures.add(i.id() + ": expected " + expected + ", got " + messages);
+            if (!got.equals(expected)) failures.add(c.getKey() + ": expected " + expected + ", got " + messages);
         }
         assertEquals(List.of(), failures);
     }

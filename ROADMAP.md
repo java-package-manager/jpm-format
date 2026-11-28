@@ -75,7 +75,3 @@ on a JVM: Kotlin, Scala, JSON, YAML, SQL, Markdown, Gherkin, Groovy, `pom.xml` s
   - javac's message bundles and classes such as `Log$DeferredDiagnosticHandler` are missing from the image. The
     configuration `jpm start --trace -- --check` records is not enough; javac's classes probably need to be
     initialized at run time (`--initialize-at-run-time=com.sun.tools.javac`) and its resources listed by hand.
-
-## Performance
-
-- [ ] Running `jpm format` in a large codebase chokes every PC on earth, both RAM and CPU go brr
