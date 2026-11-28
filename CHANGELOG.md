@@ -1,5 +1,14 @@
 # jpm-format
 
+## 0.7.2
+
+### Patch Changes
+
+- The IntelliJ style moves a `//` comment after a method's or constructor's annotations to a line of its own where IntelliJ does: always after the last annotation when the modifiers are only annotations (one indent further in without a Javadoc comment), and after any other annotation of a method when the line would end past `java.lineWidth`. On Paper, the lines that differ from IntelliJ go from 238 to 106.
+- Type-aware rules attribute the files of a module together, in up to 512 files per javac task, instead of each file on its own; javac stops after attribution, so a crash in its flow analysis no longer drops a file's types. On a project of 1,664 files, `jpm format --check` takes 7.6 s instead of 292 s, and 1.6 GB of heap instead of 8 GB. LoggingPlaceholderCountMatchesArgumentCount counts a multi-catch parameter as an exception, and IntegerMultiplicationImplicitCastToLong no longer reports the distance of a shift.
+- The IntelliJ style lays out blocks in a `case` group as IntelliJ does: a block that is the group's first statement joins the label's line (`case 1: {`), its contents one indent in from the label, and a block on a line of its own and the statements from a block on are at the label's indent. The parity corpus goes from 1,180 to 619 differing lines.
+- The IntelliJ style wraps record components that would end past `java.lineWidth`, as IntelliJ's "wrap if long" does: before the first component whose line ends past the width, lined up with the first component. On Paper, the lines that differ from IntelliJ go from 301 to 238.
+
 ## 0.7.1
 
 ### Patch Changes
