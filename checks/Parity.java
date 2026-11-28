@@ -45,7 +45,7 @@ public final class Parity {
                 "format": {
                   "java": { "style": "intellij" },
                   "imports": { "removeUnused": false, "sort": false },
-                  "linter": { "enabled": false }
+                  "linter": { "enabled": false, "rules": { "style": { "UnnecessaryModifier": "off" } } }
                 }
               }
             }

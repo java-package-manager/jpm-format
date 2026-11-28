@@ -3,3 +3,6 @@
 org.apache.commons:commons-lang3:3.17.0 5fdcac21ad329766054a95367d7583dfcdca737d221d5e01a5f2a198c04c6b18
 org.apache.commons:commons-text:1.12.0 191fef119a5f96c9ea99845f35e9fec61b9d4daa23592802bb9894f2efee4f13
 org.junit.jupiter:junit-jupiter-api:5.11.4 5f54639572bcafc393754f0ce89677192947c01ffe2600a597b60b59bc437f3b
+net.kyori:adventure-api:5.2.0 421a41cfc88ebc242472f5f9c6969831b077660b049434756075a4baccc2b2c2
+org.springframework:spring-core:7.1.0 693d4bb3a55a56f447394a938efc641a1bea9f3c65ae2c996c14894d2a5b8620
+com.fasterxml.jackson.core:jackson-databind:2.23.0 1f2f827e0e75c4dc2ee7d43a3cdafeb92d994a58dcab3a1a1b64ce0976c977ab
