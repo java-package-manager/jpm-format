@@ -521,7 +521,7 @@ public final class Layout {
             if (syn.alignTo[i] >= 0 && columns[syn.alignTo[i]] >= 0) return columns[syn.alignTo[i]];
             return switch (f.kind) {
                 case ROOT, BLOCK, SWITCH -> switch (syn.start[i]) {
-                    case Syntax.CASE -> f.base + indent;
+                    case Syntax.CASE, Syntax.CASE_LEVEL -> f.base + indent;
                     case Syntax.CASE_STATEMENT -> f.base + 2 * indent;
                     case Syntax.STATEMENT, Syntax.ENUM_CONSTANT ->
                             f.kind == SWITCH ? f.base + 2 * indent : f.base + indent;

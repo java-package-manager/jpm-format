@@ -8,9 +8,6 @@ What jpm-format does not do yet. jpm's own plan is in its
 Parity is measured against IntelliJ's own formatter on real projects (`checks/Parity.java`, see
 [CONTRIBUTING.md](CONTRIBUTING.md)); rules go in `src/dev/jpm/format/intellij/`.
 
-- [ ] **`case X: {` blocks** (222 of the corpus's differing lines, in spring-core and jackson-databind): IntelliJ
-  keeps the `{` on the line of its `case` or `default` label and the block's contents one indent in from the label;
-  jpm-format moves the `{` to the next line and indents the block once more.
 - [ ] **Differences found in Paper** (106 lines in Paper's own 3,096 files, `paper-api` and `paper-server/src/main`):
   - `};` after an anonymous class or enum body becomes `}`, a blank line and `;`; `{}` of a record or a `case` with
     a line before it becomes `{` and `}`; record patterns past the line width wrap after their `(`: about 20 lines;

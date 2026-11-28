@@ -54,7 +54,7 @@ class LayoutTest {
                 }));
             }
         }
-        assertEquals(15, tests.size());
+        assertEquals(16, tests.size());
         return tests.stream();
     }
 
