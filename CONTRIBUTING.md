@@ -17,7 +17,7 @@ jpm start -- <files>                          # format files with this checkout
 
 **IntelliJ parity** is measured, not guessed: `checks/Parity.java` formats the sources jars listed in
 `checks/parity/corpus.txt` (real projects from Maven Central) with IntelliJ IDEA's command-line formatter and its
-default code style, and with jpm-format's formatter alone (no linter, imports untouched), and counts the lines
+default code style, and with jpm-format's formatter alone (no linter, imports and modifiers untouched), and counts the lines
 that differ. The count is a ratchet: `checks/parity/baseline.txt` may only go down.
 
 ```sh
