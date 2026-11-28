@@ -8,10 +8,12 @@ What jpm-format does not do yet. jpm's own plan is in its
 Parity is measured against IntelliJ's own formatter on real projects (`checks/Parity.java`, see
 [CONTRIBUTING.md](CONTRIBUTING.md)); rules go in `src/dev/jpm/format/intellij/`.
 
-- [ ] **Differences found in Paper** (106 lines in Paper's own 3,096 files, `paper-api` and `paper-server/src/main`):
-  - `};` after an anonymous class or enum body becomes `}`, a blank line and `;`; `{}` of a record or a `case` with
-    a line before it becomes `{` and `}`; record patterns past the line width wrap after their `(`: about 20 lines;
+- [ ] **Differences found in Paper** (92 lines in Paper's own 3,096 files, `paper-api` and `paper-server/src/main`):
+  - `};` after an anonymous class or enum body becomes `}`, a blank line and `;`: about 10 lines;
   - indents, spacing and Javadoc shapes: about 80 lines.
+- [ ] **Differences found in Fidorial**: IntelliJ puts the blank lines of a text block at the block's indent (the
+  string is the same); it indents a nested annotation after `values =` at column 0; it re-indents call arguments
+  aligned after their `(` one continuation in.
 - [ ] **Annotations and comments IntelliJ treats differently**: `@Deprecated /* c */ int f;` keeps the field on the
   annotation's line in IntelliJ (jpm-format breaks after the comment); a parameter after `@A // c` lines up with the
   first parameter (jpm-format puts it one continuation further in); a field without modifiers after a Javadoc

@@ -178,10 +178,12 @@ public final class Layout {
          * Whether a record component that starts at {@code i} moves to the next line, as IntelliJ's "wrap if long"
          * does: when the line would end past the line width before the next place it can wrap, after the
          * component's comma. For the last component that is the end of the line, with what follows its
-         * parenthesis and a comment at the end of the line.
+         * parenthesis and a comment at the end of the line. A record pattern's components wrap only once the pattern
+         * is wrapped after its {@code (}.
          */
         private boolean wrapsHere(int i, Frame f) {
             if (f.kind != PAREN || !f.expectItem || !syn.wrapIfLong[f.opener]) return false;
+            if (syn.patternWrap[f.opener] && lines[f.opener + 1] == 0) return false;
             Tokens.Token t = toks.get(i);
             if (t.comment() || t.op(")") || !componentStart(f.opener, i)) return false;
             int close = syn.match[f.opener];
@@ -197,6 +199,22 @@ public final class Layout {
                 if (depth == 0 && x.op(",") && k < close) break;
             }
             return column + w > width;
+        }
+
+        /**
+         * Whether the rest of the line from token {@code i}, the first in a record pattern's parentheses, ends within
+         * the line width. An expression body after {@code ->} moves to a line of its own first, so the line is
+         * measured to the {@code ->} then; a block's {@code {} stays on it.
+         */
+        private boolean patternFits(int i) {
+            int w = space(i) + toks.get(i).text().length();
+            for (int k = i + 1; k < toks.size() && lines[k] == 0; k++) {
+                Tokens.Token x = toks.get(k);
+                if (x.text().indexOf('\n') >= 0) break;
+                if (toks.get(k - 1).op("->") && syn.joinIfFits[k] && !x.op("{")) break;
+                w += gap(k) + x.text().length();
+            }
+            return column + w <= width;
         }
 
         /**
@@ -266,7 +284,11 @@ public final class Layout {
             } else if (i > 0 && lines[i] == 0 && !fits(i)) {
                 boolean body = syn.start[i] == Syntax.BODY && syn.owner[i] >= 0
                         && !(t.word("if") && toks.get(before(i)).word("else"));
-                if (body || syn.joinIfFits[i]) lines[i] = 1;
+                if (body || syn.joinIfFits[i] && !t.op("{")) lines[i] = 1;
+            }
+            if (!outside && i > 0 && lines[i] == 0 && syn.patternWrap[i - 1] && !t.op(")") && !patternFits(i)) {
+                lines[i] = 1;
+                if (syn.match[i - 1] > i) lines[syn.match[i - 1]] = 1;
             }
             if (!outside && i > 0 && lines[i] == 0 && wrapsHere(i, f)) lines[i] = 1;
             if (!outside && i > 0 && lines[i] == 0 && syn.annotationComment[i] == Syntax.IF_LONG

@@ -10,6 +10,7 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.ConditionalExpressionTree;
+import com.sun.source.tree.DeconstructionPatternTree;
 import com.sun.source.tree.DoWhileLoopTree;
 import com.sun.source.tree.EmptyStatementTree;
 import com.sun.source.tree.EnhancedForLoopTree;
@@ -84,9 +85,15 @@ final class Syntax {
     final byte[] brace;
     final boolean[] align;
     /**
-     * The {@code (} of a record header: IntelliJ wraps its components where a line would end past the line width.
+     * The {@code (} of a record header or a record pattern: IntelliJ wraps its components where a line would end past
+     * the line width.
      */
     final boolean[] wrapIfLong;
+    /**
+     * The {@code (} of a record pattern: past the line width, IntelliJ puts its components on the next line and its
+     * {@code )} on a line of its own.
+     */
+    final boolean[] patternWrap;
     final byte[] annotationComment;
     final byte[] start;
     final int[] owner;
@@ -108,6 +115,7 @@ final class Syntax {
         brace = new byte[n];
         align = new boolean[n];
         wrapIfLong = new boolean[n];
+        patternWrap = new boolean[n];
         annotationComment = new byte[n];
         start = new byte[n];
         owner = new int[n];
@@ -146,6 +154,7 @@ final class Syntax {
             s.brace[i] = facts.brace[at];
             s.align[i] = facts.align[at];
             s.wrapIfLong[i] = facts.wrapIfLong[at];
+            s.patternWrap[i] = facts.patternWrap[at];
             s.annotationComment[i] = facts.annotationComment[at];
             s.start[i] = facts.start[at];
             s.breakBefore[i] = facts.breakBefore[at];
@@ -218,6 +227,7 @@ final class Syntax {
         final byte[] brace;
         final boolean[] align;
         final boolean[] wrapIfLong;
+        final boolean[] patternWrap;
         final byte[] annotationComment;
         final byte[] start;
         final int[] owner;
@@ -245,6 +255,7 @@ final class Syntax {
             brace = new byte[length + 1];
             align = new boolean[length + 1];
             wrapIfLong = new boolean[length + 1];
+            patternWrap = new boolean[length + 1];
             annotationComment = new byte[length + 1];
             start = new byte[length + 1];
             owner = new int[length + 1];
@@ -642,7 +653,8 @@ final class Syntax {
                 int b = braceAfter(from);
                 if (b >= 0) brace(b, t.getKind() == Tree.Kind.ENUM ? ENUM : CLASS);
                 body = b >= 0 ? at(b) : 0;
-                if (b >= 0 && b + 1 < tokens.size() && tokens.get(b + 1).op("}") && !lineBetween(s(t), at(b))) {
+                if (b >= 0 && b + 1 < tokens.size() && tokens.get(b + 1).op("}") && !lineBetween(s(t), at(b))
+                        && t.getKind() != Tree.Kind.ENUM) {
                     breakBefore[at(b + 1)] = true;
                 }
             }
@@ -853,6 +865,16 @@ final class Syntax {
                     }
                 }
             }
+        }
+
+        @Override
+        public Void visitDeconstructionPattern(DeconstructionPatternTree t, Void v) {
+            int p = find(e(t.getDeconstructor()), "(");
+            if (p >= 0) {
+                patternWrap[at(p)] = true;
+                wrapIfLong[at(p)] = true;
+            }
+            return super.visitDeconstructionPattern(t, v);
         }
 
         @Override

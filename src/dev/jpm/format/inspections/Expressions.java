@@ -24,14 +24,14 @@ import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
 import dev.jpm.format.api.Fix;
 
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Set;
 
 /**
  * IntelliJ's inspections about expressions: pointless and constant ones, comparisons, numbers, objects and threads.

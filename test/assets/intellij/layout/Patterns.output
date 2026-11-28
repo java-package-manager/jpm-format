@@ -1,0 +1,70 @@
+package demo;
+
+public class Patterns {
+    record Flat(String floorBlockName, int floorThickness, String biomeName, String anotherVeryLongComponentName) {
+    }
+
+    record Pair(Object first, Object second) {
+    }
+
+    int rules(Object config) {
+        return switch (config) {
+            case Flat(
+                    final String floorBlockName, final int floorThickness, final String biomeName, final String x
+            ) -> {
+                yield floorThickness;
+            }
+            case Pair(Flat(final String a, final int b, final String c, final String d), final Object second) -> {
+                yield b;
+            }
+            case Pair(final Object first, final Object second) -> {
+                yield 0;
+            }
+            case Flat(final String floorBlockName, final int floorThickness, final String biomeName, final String x) ->
+                    floorThickness;
+            default -> 0;
+        };
+    }
+
+    void colon(Object config) {
+        switch (config) {
+            case Flat(final String floorBlockName, final int floorThickness, final String biomeName, final String x): {
+                break;
+            }
+            default:
+        }
+    }
+
+    boolean instanceOf(Object config) {
+        if (config instanceof Flat(
+                final String floorBlockName, final int floorThickness, final String biomeName, final String x
+        )) {
+            return true;
+        }
+        return config instanceof Flat(
+                final String floorBlockName, final int floorThickness, final String biomeName, final String x
+        );
+    }
+
+    record Wide(String floorBlockName, int floorThickness, String biomeNameThatIsLongEnoughToWrapItAgain) {
+    }
+
+    Object wide(Object config) {
+        return switch (config) {
+            case Wide(
+                    final String floorBlockName, final int floorThickness,
+                    final String biomeNameThatIsLongEnoughToWrapItAgain
+            ) -> floorBlockName;
+            default -> config;
+        };
+    }
+
+    void longArrow(Object config) {
+        switch (config) {
+            case Pair(final Object first, final Object second) ->
+                    System.out.println("a long expression body that goes past the width" + first);
+            default -> {
+            }
+        }
+    }
+}

@@ -1,6 +1,7 @@
 package dev.jpm.format.intellij;
 
 import com.sun.source.tree.BlockTree;
+import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.CatchTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.DoWhileLoopTree;
@@ -30,8 +31,9 @@ import java.util.List;
  *
  * <p>Method and constructor bodies, named classes, initializer blocks and the blocks of {@code if}, {@code else},
  * loops, {@code try}, {@code catch}, {@code finally} and {@code synchronized}, and those of lambdas and anonymous
- * classes, whose {@code }} goes under the line the lambda or the {@code new} starts on. {@code switch} cases and
- * array initializers keep {@code {}}.
+ * classes, whose {@code }} goes under the line the lambda or the {@code new} starts on, and the blocks of
+ * {@code switch} cases, whose {@code }} goes under the {@code case}. Array initializers and empty enums keep
+ * {@code {}}.
  */
 public final class EmptyBodies implements IntelliJRule {
     public static final String ID = "EmptyBodies";
@@ -64,9 +66,10 @@ public final class EmptyBodies implements IntelliJRule {
 
             @Override
             public Void visitClass(ClassTree c, Void v) {
-                if (c.getMembers().stream().allMatch(m -> ctx.start(m) < 0)) {
-                    int end = ctx.end(c);
-                    if (end >= 2 && src.charAt(end - 1) == '}') braces.add(new int[]{end - 2, ctx.start(c)});
+                int end = ctx.end(c);
+                boolean empty = c.getMembers().stream().allMatch(m -> ctx.start(m) < 0 || ctx.start(m) < end - 2);
+                if (empty && c.getKind() != Tree.Kind.ENUM && end >= 2 && src.charAt(end - 1) == '}') {
+                    braces.add(new int[]{end - 2, ctx.start(c)});
                 }
                 for (Tree m : c.getMembers()) if (m instanceof BlockTree) block(m);
                 return super.visitClass(c, v);
@@ -136,6 +139,13 @@ public final class EmptyBodies implements IntelliJRule {
             public Void visitCatch(CatchTree t, Void v) {
                 block(t.getBlock());
                 return super.visitCatch(t, v);
+            }
+
+            @Override
+            public Void visitCase(CaseTree t, Void v) {
+                if (t.getCaseKind() == CaseTree.CaseKind.RULE) block(t.getBody(), t);
+                else if (!t.getStatements().isEmpty()) block(t.getStatements().getFirst(), t);
+                return super.visitCase(t, v);
             }
 
             @Override

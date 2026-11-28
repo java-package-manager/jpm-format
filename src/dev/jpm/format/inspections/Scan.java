@@ -21,12 +21,12 @@ import dev.jpm.format.api.Context;
 import dev.jpm.format.api.Fix;
 import dev.jpm.format.api.TypeInfo;
 
-import java.util.List;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.UnionType;
+import java.util.List;
 
 /**
  * The file an {@link Inspection} reads: its tree (the attributed one when types are known, which has the same

@@ -34,9 +34,9 @@ import com.sun.source.tree.YieldTree;
 import com.sun.source.util.TreePath;
 import dev.jpm.format.api.Fix;
 
+import javax.lang.model.type.TypeKind;
 import java.util.ArrayList;
 import java.util.List;
-import javax.lang.model.type.TypeKind;
 
 /**
  * IntelliJ's inspections about control flow: redundant jumps, empty and suspicious statements, loops and

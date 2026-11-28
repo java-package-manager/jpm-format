@@ -10,8 +10,8 @@ import com.sun.source.util.TreeScanner;
 import dev.jpm.format.api.Context;
 import dev.jpm.format.api.Lint;
 
-import java.util.Set;
 import javax.lang.model.element.Modifier;
+import java.util.Set;
 
 /**
  * Private fields and methods nothing in the file refers to. Reported only. Annotated members (frameworks

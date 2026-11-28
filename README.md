@@ -53,8 +53,8 @@ headers, try resources and record components line up as in IntelliJ. The Intelli
 
 `"java": {"style": "palantir"}` is Palantir Java Format's output as it is (2.103.0, from its own jar): it
 chooses the line breaks itself, wrapping at 120. Imports follow
-IntelliJ's layout: all other imports, then `java.*` and `javax.*`, then static imports, each group sorted
-alphabetically and separated by a blank line. Javadoc is not reflowed.
+IntelliJ's layout: all other imports, then `javax.*` and `java.*`, then static imports, with a blank line between
+groups and each pattern's imports sorted alphabetically. Javadoc is not reflowed.
 
 ## Configuration
 
@@ -87,7 +87,7 @@ down (and `.git/info/exclude`) by git's rules, so the `build/` folders of a mult
       "imports": {
         "removeUnused": true,                      // unused, redundant and duplicate imports
         "sort": true,                              // alphabetical, in groups
-        "groups": ["*", ["java.*", "javax.*"], "static *"],
+        "groups": ["*", ["javax.*", "java.*"], "static *"],
         "wildcardThreshold": 0                     // N > 0: N imports from one package become a wildcard
       },
       "linter": {
